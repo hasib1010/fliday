@@ -7,7 +7,7 @@ import { Search } from 'lucide-react';
 export default function AllDestinations() {
   const [activeFilter, setActiveFilter] = useState('Countries');
   const [searchQuery, setSearchQuery] = useState('');
-  
+
   // Sample data for destinations
   const destinations = [
     { id: 1, name: 'Turkey', price: 3.99, flag: '🇹🇷', type: 'country' },
@@ -39,34 +39,33 @@ export default function AllDestinations() {
     { id: 26, name: 'Indonesia', price: 3.99, flag: '🇮🇩', type: 'country' },
     { id: 27, name: 'Germany', price: 3.99, flag: '🇩🇪', type: 'country' },
   ];
-  
+
   // Filter destinations based on search query
-  const filteredDestinations = destinations.filter(destination => 
+  const filteredDestinations = destinations.filter(destination =>
     destination.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
-  
+
   return (
-    <div className="container mx-auto px-4 py-12">
-      <h1 className="text-3xl font-bold mb-2">All destinations</h1>
+    <div className="max-w-[1220px] mx-auto px-1">
+      <h1 className="text-[40px] font-medium mb-2">All destinations</h1>
       <p className="text-gray-600 mb-6">Explore eSIM plans in 100+ countries.</p>
-      
+
       {/* Filter tabs */}
       <div className="flex gap-3 mb-6">
         {['Countries', 'Regions', 'Global'].map(filter => (
           <button
             key={filter}
             onClick={() => setActiveFilter(filter)}
-            className={`px-5 py-2 rounded-full text-sm font-medium transition-colors ${
-              activeFilter === filter 
-                ? 'bg-black text-white' 
+            className={`px-5 py-2 rounded-full text-sm font-medium transition-colors ${activeFilter === filter
+                ? 'bg-black text-white'
                 : 'bg-white text-black border border-gray-200'
-            }`}
+              }`}
           >
             {filter}
           </button>
         ))}
       </div>
-      
+
       {/* Search box */}
       <div className="mb-8 relative">
         <input
@@ -74,20 +73,20 @@ export default function AllDestinations() {
           placeholder="Enter your destination"
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full px-4 py-3 pr-12 rounded-full border border-gray-200 focus:outline-none focus:ring-2 focus:ring-[#F15A25]"
+        className="w-full px-4 py-3 pr-12 rounded-full border border-[#F15A25] focus:outline-none focus:ring-2 focus:ring-[#F15A25]"
         />
         <div className="absolute right-3 top-1/2 transform -translate-y-1/2 bg-[#F15A25] p-2 rounded-full text-white">
           <Search size={18} />
         </div>
       </div>
-      
+
       {/* Destinations grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredDestinations.map(destination => (
-          <Link 
+          <Link
             key={destination.id}
             href={`/destinations/${destination.name.toLowerCase().replace(/\s+/g, '-')}`}
-            className="bg-white rounded-lg p-4 flex items-center justify-between hover:shadow-md transition-shadow group"
+            className="bg-[#F6F6F6] rounded-lg p-4 flex items-center justify-between hover:shadow-md transition-shadow group"
           >
             <div className="flex items-center">
               <div className="w-10 h-10 bg-[#F15A25] rounded-full flex items-center justify-center text-white mr-3">

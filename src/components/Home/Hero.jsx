@@ -11,19 +11,22 @@ export default function Hero() {
             <div class="relative h-32 w-full flex justify-center items-center">
 
                 <div class="absolute top-4 left-[35.5%] -translate-x-1/2 rotate-[-7.775deg] flex items-center gap-2 px-[19px] py-[14px] border border-orange-500 rounded-full bg-[#F4EBE8] shadow">
-                    <div class="w-4 h-4 bg-orange-500 rounded-full flex items-center justify-center text-white text-xs">✔</div>
+                    <div class="w-5 h-5 p-0.5 bg-orange-500 rounded-full flex items-center justify-center text-white  ">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check-icon lucide-check"><path d="M20 6 9 17l-5-5" /></svg></div>
                     <span class="text-[18px] font-medium text-gray-800">Instant Setup</span>
                 </div>
 
 
                 <div class="absolute top-4 left-[49%] -translate-x-1/2 rotate-[7.871deg] flex items-center gap-2 px-[19px] py-[14px] border border-orange-500 rounded-full bg-[#F4EBE8] shadow">
-                    <div class="w-4 h-4 bg-orange-500 rounded-full flex items-center justify-center text-white text-xs">✔</div>
+                    <div class="w-5 h-5 p-0.5 bg-orange-500 rounded-full flex items-center justify-center text-white  ">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check-icon lucide-check"><path d="M20 6 9 17l-5-5" /></svg></div>
                     <span class="text-[18px] font-medium text-gray-800">Global Coverage</span>
                 </div>
 
 
                 <div class="absolute top-4 left-[62%] -translate-x-1/2 rotate-[-4.268deg] flex items-center gap-2 px-[19px] py-[14px] border border-orange-500 rounded-full bg-[#F4EBE8] shadow">
-                    <div class="w-4 h-4 bg-orange-500 rounded-full flex items-center justify-center text-white text-xs">✔</div>
+                    <div class="w-5 h-5 p-0.5 bg-orange-500 rounded-full flex items-center justify-center text-white  ">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check-icon lucide-check"><path d="M20 6 9 17l-5-5" /></svg></div>
                     <span class="text-[18px] font-medium text-gray-800">No Roaming</span>
                 </div>
             </div>
@@ -50,7 +53,7 @@ export default function Hero() {
                     <Search size={20} />
                 </button>
             </div>
- 
+
         </div>
     );
 }

@@ -2,6 +2,11 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
+import { AiFillTikTok } from "react-icons/ai";
+import { AiFillInstagram } from "react-icons/ai";
+import { FaFacebook } from "react-icons/fa";
+import { FaYoutube } from "react-icons/fa";
+import { FaLinkedin } from "react-icons/fa";
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -40,35 +45,35 @@ export default function Footer() {
     { 
       name: 'TikTok', 
       icon: (
-        '/social/TikTok.png'
+        <AiFillTikTok />
       ), 
       href: 'https://tiktok.com/' 
     },
     { 
       name: 'YouTube', 
       icon: (
-        '/social/YouTube.png'
+        <FaYoutube/>
       ), 
       href: 'https://youtube.com/' 
     },
     { 
       name: 'Instagram', 
       icon: (
-        '/social/Instagram.png'
+        <AiFillInstagram />
       ), 
       href: 'https://instagram.com/' 
     },
     { 
       name: 'Facebook', 
       icon: (
-        '/social/Facebook.png'
+        <FaFacebook />
       ), 
       href: 'https://facebook.com/' 
     },
     { 
       name: 'LinkedIn', 
       icon: (
-        '/social/LinkedIn.png'
+        <FaLinkedin />
       ), 
       href: 'https://linkedin.com/' 
     },
@@ -80,7 +85,7 @@ export default function Footer() {
         {/* Top border */}
         <div className="border-t border-gray-200 mb-12"></div>
         
-        <div className="flex justify-evenly flex-col lg:flex-row  ">
+        <div className="flex justify-between flex-col lg:flex-row  ">
           {/* Company Info */}
           <div className='max-w-[355px]'>
             <Link href="/" className="inline-block w-[355px] mb-6">
@@ -155,7 +160,7 @@ export default function Footer() {
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex flex-col md:flex-row items-center space-y-4 md:space-y-0">
               <p className="text-gray-500 text-sm">
-                {currentYear} eSimWings. All rights reserved.
+                {currentYear} Fliday. All rights reserved.
               </p>
               
               <div className="md:ml-8 flex space-x-4">
@@ -176,12 +181,12 @@ export default function Footer() {
                 <Link 
                   key={link.name}
                   href={link.href} 
-                  className="text-gray-500 hover:text-[#F15A25] transition-colors"
+                  className="text-gray-500 text-3xl hover:text-[#F15A25] transition-colors"
                   aria-label={link.name}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                 <img src={link.icon} alt="" />
+                  {link.icon} 
                 </Link>
               ))}
             </div>

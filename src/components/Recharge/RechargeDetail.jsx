@@ -66,10 +66,10 @@ export default function DestinationDetail({ params }) {
     };
 
     return (
-        <div className="container mx-auto px-4 py-12">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="max-w-[1220px] mx-auto px-1 py-12">
+            <div className=" gap-[78px] flex justify-evenly lg:flex-row flex-col">
                 {/* Left column - Destination image */}
-                <div className="relative rounded-lg overflow-hidden h-[400px] md:h-[500px]">
+                <div className=" relative rounded-lg overflow-hidden w-[360px] h-[400px] md:h-[623px]">
                     <Image
                         src={destinationImage}
                         alt={`eSIM for ${formattedTitle}`}
@@ -80,7 +80,7 @@ export default function DestinationDetail({ params }) {
                 </div>
 
                 {/* Right column - eSIM details and plans */}
-                <div>
+                <div className='max-w-[653px]'>
                     <div className="flex items-center mb-3">
                         <div className="w-8 h-8 bg-[#F15A25] rounded-full flex items-center justify-center text-white mr-3">
                             <span>{countryFlag}</span>
@@ -112,14 +112,13 @@ export default function DestinationDetail({ params }) {
                                 )}
                                 <div className="flex items-start mb-2">
                                     <div onClick={() => setSelectedPlan(plan.data)} className="flex items-center cursor-pointer">
-                                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
                                             <circle
                                                 cx="8"
                                                 cy="8"
-                                                r="7"
-                                                strokeWidth="2"
-                                                stroke={selectedPlan === plan.data ? '#F15A25' : '#C9C9C9'}
-                                                fill="none"
+                                                r="6"
+                                                strokeWidth={`${selectedPlan === plan.data ? '4' : '2'}`}
+                                                stroke={`${selectedPlan === plan.data ? '#F15A25' : '#C9C9C9'}`}
                                             />
                                         </svg>
                                         <span className="ml-2">{plan.label}</span>
@@ -185,9 +184,9 @@ export default function DestinationDetail({ params }) {
                                 <a href="#faq"> FAQ</a>
                             </button>
                             <button className="text-sm font-medium  cursor-pointer pb-2">
-                               <a href="#ben">
-                               Technical details
-                               </a>
+                                <a href="#ben">
+                                    Technical details
+                                </a>
                             </button>
                         </div>
                     </div>
@@ -212,7 +211,7 @@ export default function DestinationDetail({ params }) {
             <SetupProcess />
             <div id='ben'  >
 
-            <BenefitsSection />
+                <BenefitsSection />
             </div>
             <div id='faq'  >
                 <FAQSection />

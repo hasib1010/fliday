@@ -19,7 +19,7 @@ export default function DestinationDetail({ params }) {
     const plans = [
         { id: 1, data: '1 GB', days: '7 days', price: 3.99 },
         { id: 2, data: '3 GB', days: '30 days', price: 8.99 },
-        { id: 3, data: '5 GB', days: '30 days', price: 9.99, popular: true },
+        { id: 3, data: '5 GB', days: '30 days', price: 9.99, },
         { id: 4, data: '10 GB', days: '30 days', price: 15.99, discount: true, originalPrice: 18.99 },
         { id: 5, data: '20 GB', days: '30 days', price: 22.99, discount: true, originalPrice: 25.99 },
     ];
@@ -46,8 +46,8 @@ export default function DestinationDetail({ params }) {
     const destinationImage = destinationImages[id] || destinationImages['default'];
 
     return (
-        <div className="  px-4 py-12">
-            <div className="  gap-[78px] flex justify-center lg:flex-row flex-col">
+        <div className="max-w-[1220px] mx-auto px-1 py-12">
+            <div className="  gap-[78px] flex justify-evenly lg:flex-row flex-col">
                 {/* Left column - Destination image */}
                 <div className="relative rounded-lg overflow-hidden w-[360px] h-[400px] md:h-[623px]">
                     <Image
@@ -60,7 +60,7 @@ export default function DestinationDetail({ params }) {
                 </div>
 
                 {/* Right column - eSIM details and plans */}
-                <div className='max-w-[633px]'>
+                <div className=' max-w-[653px]'>
                     <div className="flex items-center mb-3">
                         <div className="w-8 h-8 bg-[#F15A25] rounded-full flex items-center justify-center text-white mr-3">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -103,8 +103,8 @@ export default function DestinationDetail({ params }) {
                                     <circle
                                         cx="8"
                                         cy="8"
-                                        r="7"
-                                        strokeWidth="2"
+                                        r="6"
+                                        strokeWidth={`${selectedPlan === plan.data ? '4' : '2'}`}
                                         stroke={`${selectedPlan === plan.data ? '#F15A25' : '#C9C9C9'}`}
                                     />
                                 </svg>
@@ -169,10 +169,13 @@ export default function DestinationDetail({ params }) {
                                 Key features
                             </button>
                             <button className="text-sm font-medium   pb-2">
-                                FAQ
+                                <a href="#faq2">FAQ</a>
                             </button>
                             <button className="text-sm font-medium   pb-2">
+                                <a href="#setup">
                                 Technical details
+
+                                </a>
                             </button>
                         </div>
                     </div>
@@ -194,9 +197,14 @@ export default function DestinationDetail({ params }) {
                     </ul>
                 </div>
             </div>
-            <SetupProcess/>
-            <BenefitsSection/>
-            <FAQSection/>
+           <div id="setup">
+           <SetupProcess />
+           </div>
+            <BenefitsSection />
+            <div id="faq2">
+
+            <FAQSection />
+            </div>
         </div>
     );
 }

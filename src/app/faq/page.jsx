@@ -65,7 +65,7 @@ export default function FAQ() {
     };
 
     return (
-        <section className="max-w-[1220px] mx-auto py-10">
+        <section className="max-w-[1220px] mx-auto  ">
             <div className=" mx-auto  ">
                 <h2 className="text-3xl md:text-[40px] font-medium ">Frequently Asked Questions</h2>
                 <p className='mb-12 mt-1 text-[22px]'>We have got answers to your most common questions.</p>
