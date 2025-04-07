@@ -11,7 +11,6 @@ export default function NotFound() {
   return (
     <div className="min-[90vh] bg-gray-50 flex flex-col">
      
-
       <div className="flex-1 flex flex-col items-center justify-center px-4 py-16 text-center">
         <div className="bg-white p-8 rounded-lg shadow-md max-w-lg w-full">
           <div className="flex justify-center mb-6">
@@ -36,8 +35,8 @@ export default function NotFound() {
 
           <h1 className="text-2xl font-bold mb-2">Page Not Found</h1>
           <p className="text-gray-600 mb-8">
-            Oops! The page you're looking for has gone off the grid. 
-            There's no connectivity here.
+            Oops! The page you&apos;re looking for has gone off the grid. 
+            There&apos;s no connectivity here.
           </p>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
