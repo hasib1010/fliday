@@ -168,10 +168,10 @@ export default function DestinationDetail({ params }) {
                             <button className="text-sm font-medium text-gray-900 border-b-2 border-[#F15A25] pb-2">
                                 Key features
                             </button>
-                            <button className="text-sm font-medium text-gray-500 pb-2">
+                            <button className="text-sm font-medium   pb-2">
                                 FAQ
                             </button>
-                            <button className="text-sm font-medium text-gray-500 pb-2">
+                            <button className="text-sm font-medium   pb-2">
                                 Technical details
                             </button>
                         </div>

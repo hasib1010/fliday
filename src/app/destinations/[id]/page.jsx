@@ -3,8 +3,9 @@ import DestinationDetail from '@/components/Destinations/DestinationDetail';
 
 export async function generateMetadata({ params }) {
   try {
-    // Safely access params.id with optional chaining
-    const id = params?.id || 'default';
+    // Await the params object before accessing its properties
+    const resolvedParams = await params;
+    const id = resolvedParams?.id || 'default';
     
     // Format the destination name for the metadata
     const formattedTitle = id
