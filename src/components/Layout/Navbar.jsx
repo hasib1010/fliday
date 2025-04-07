@@ -22,16 +22,17 @@ export default function Navbar() {
   ];
 
   return (
-    <nav className="py-5 bg-[#F3F0F0]">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+    <nav className={`py-5 ${pathname === '/' ? 'bg-[#F3F0F0]' : 'bg-white'}`}>
+
+      <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <div className="flex-shrink-0">
             <Link href="/" className="flex items-center">
-              <Image 
-                width={100} 
-                height={100} 
-                src="/logo.png" 
+              <Image
+                width={100}
+                height={100}
+                src="/logo.png"
                 alt="Company Logo"
                 priority
               />
@@ -41,25 +42,23 @@ export default function Navbar() {
           {/* Desktop Navigation Links */}
           <div className="hidden md:flex space-x-8 items-center">
             {navLinks.map((link) => (
-              <Link 
+              <Link
                 key={link.href}
-                href={link.href} 
-                className={`font-medium text-[20px] transition-colors ${
-                  pathname === link.href 
-                    ? 'text-[#F15A25]' 
-                    : 'text-black hover:text-gray-700'
-                }`}
+                href={link.href}
+                className={`font-medium text-[.875rem] transition-colors ${pathname === link.href
+                    ? 'text-[#F15A25]'
+                    : 'text-black hover:text-[#F15A25]'
+                  }`}
               >
                 {link.label}
               </Link>
             ))}
             <Link
               href="/destinations"
-              className={`rounded-[30px] px-6 py-2 border font-medium text-[20px] hover:bg-gray-100 transition-colors ${
-                pathname === '/destinations' 
-                  ? 'text-[#F15A25] border-[#F15A25]' 
-                  : 'text-black border-black'
-              }`}
+              className={`rounded-[30px] px-6 py-2 border font-medium text-[.875rem] hover:bg-gray-100 transition-colors ${pathname === '/destinations'
+                  ? 'text-[#F15A25] border-[#F15A25]'
+                  : 'text-black border-black hover:text-[#F15A25] hover:border-[#F15A25]'
+                }`}
             >
               View Destinations
             </Link>
@@ -104,11 +103,10 @@ export default function Navbar() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`font-medium text-[18px] px-4 py-2 hover:bg-gray-100 rounded-md transition-colors ${
-                    pathname === link.href 
-                      ? 'text-[#F15A25]' 
+                  className={`font-medium text-[.875rem] px-4 py-2 hover:bg-gray-100 rounded-md transition-colors ${pathname === link.href
+                      ? 'text-[#F15A25]'
                       : 'text-black'
-                  }`}
+                    }`}
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   {link.label}
@@ -116,11 +114,10 @@ export default function Navbar() {
               ))}
               <Link
                 href="/destinations"
-                className={`font-medium text-[18px] px-4 py-2 border rounded-[30px] text-center hover:bg-gray-100 mx-4 transition-colors ${
-                  pathname === '/destinations' 
-                    ? 'text-[#F15A25] border-[#F15A25]' 
+                className={`font-medium text-[.875rem] px-4 py-2 border rounded-[30px] text-center hover:bg-gray-100 mx-4 transition-colors ${pathname === '/destinations'
+                    ? 'text-[#F15A25] border-[#F15A25]'
                     : 'text-black border-black'
-                }`}
+                  }`}
                 onClick={() => setIsMobileMenuOpen(false)}
               >
                 View Destinations

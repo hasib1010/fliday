@@ -85,8 +85,7 @@ export default function Footer() {
           <div className='max-w-[355px]'>
             <Link href="/" className="inline-block w-[355px] mb-6">
               <div className="flex items-center">
-                <Image src="/camel.png" alt="CamelSIM Logo" width={40} height={40} />
-                <span className="ml-2 text-[26px]   font-bold">Camel</span><span className='text-[26px] font-medium'>SIM</span>
+                <Image src="/logo.png" alt="CamelSIM Logo" width={100} height={50} /> 
               </div>
             </Link>
             

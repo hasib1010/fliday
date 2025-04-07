@@ -6,7 +6,7 @@ import { Search } from 'lucide-react';
 
 export default function Hero() {
     return (
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 pt-10">
+        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 pt-10">
             {/* Feature badges */}
             <div class="relative h-32 w-full flex justify-center items-center">
 

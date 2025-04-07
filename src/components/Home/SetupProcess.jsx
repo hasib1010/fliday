@@ -63,7 +63,7 @@ export default function SetupProcess() {
           ))}
         </div>
         
-        <div className="mt-16 bg-[#FFF8F6] rounded-xl p-8">
+        <div className="mt-16 bg-[#FFF3EE] rounded-xl p-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="mb-6 md:mb-0 md:mr-6">
               <h3 className="text-[30px] font-medium mb-3">Does your device support eSIM technology?</h3>
