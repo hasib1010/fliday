@@ -8,10 +8,10 @@ import { Search, MessageCircle, Mail, Phone, HelpCircle, FileText, Globe, Clock 
 export default function Support() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
-  
+
   // Support categories
   const categories = ['All', 'Purchasing', 'Activation', 'Connectivity', 'Billing', 'Technical'];
-  
+
   // Common support questions
   const supportQuestions = [
     {
@@ -65,14 +65,14 @@ export default function Support() {
       url: "/support/improve-data-speed"
     }
   ];
-  
+
   // Filter questions based on search query and selected category
   const filteredQuestions = supportQuestions.filter(item => {
     const matchesSearch = item.question.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesCategory = selectedCategory === 'All' || item.category === selectedCategory;
     return matchesSearch && matchesCategory;
   });
-  
+
   // Contact methods
   const contactMethods = [
     {
@@ -88,16 +88,9 @@ export default function Support() {
       icon: <Mail className="w-6 h-6 text-[#F15A25]" />,
       action: "Email Us",
       url: "mailto:support@fliday.com"
-    },
-    {
-      title: "Phone Support",
-      description: "Available Monday-Friday, 9am-5pm GMT",
-      icon: <Phone className="w-6 h-6 text-[#F15A25]" />,
-      action: "Call Now",
-      url: "tel:+18001234567"
     }
   ];
-  
+
   // Self-help resources
   const resources = [
     {
@@ -134,7 +127,7 @@ export default function Support() {
         <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-8">
           Get the support you need for your eSIM. Search for answers or reach out to our team directly.
         </p>
-        
+
         {/* Search Box */}
         <div className="max-w-2xl mx-auto relative">
           <input
@@ -149,34 +142,33 @@ export default function Support() {
           </div>
         </div>
       </div>
-      
+
       {/* Common Questions Section */}
       <div className="mb-16">
-        <h2 className="text-[40px] font-medium mb-6">Common Questions</h2>
-        
+        <h2 className="lg:text-[40px] text-xl  text-center lg:text-left font-medium mb-6">Common Questions</h2>
+
         {/* Categories filter */}
-        <div className="flex flex-wrap gap-2 mb-6">
+        <div className="flex flex-wrap justify-center lg:justify-start gap-2 mb-6">
           {categories.map((category) => (
             <button
               key={category}
               onClick={() => setSelectedCategory(category)}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                selectedCategory === category 
-                  ? 'bg-[#F15A25] text-white' 
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${selectedCategory === category
+                  ? 'bg-[#F15A25] text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
+                }`}
             >
               {category}
             </button>
           ))}
         </div>
-        
+
         {/* Questions grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {filteredQuestions.length > 0 ? (
             filteredQuestions.map((item, index) => (
-              <Link 
-                key={index} 
+              <Link
+                key={index}
                 href={item.url}
                 className="p-4 border border-gray-200 rounded-lg hover:border-[#F15A25] hover:shadow-sm transition-all"
               >
@@ -198,10 +190,10 @@ export default function Support() {
           )}
         </div>
       </div>
-      
+
       {/* Contact Methods Section */}
       <div className="mb-16">
-        <h2 className="text-[40px] font-medium mb-6">Contact Our Support Team</h2>
+        <h2 className="lg:text-[40px]  text-xl  text-center lg:text-left font-medium mb-6">Contact Our Support Team</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {contactMethods.map((method, index) => (
             <div key={index} className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition-all">
@@ -212,8 +204,8 @@ export default function Support() {
                 <h3 className="text-xl font-medium">{method.title}</h3>
               </div>
               <p className="text-gray-600 mb-6">{method.description}</p>
-              <a 
-                href={method.url} 
+              <a
+                href={method.url}
                 className="inline-block bg-[#F15A25] text-white px-6 py-2 rounded-full font-medium hover:bg-[#e04e1a] transition-colors"
               >
                 {method.action}
@@ -222,14 +214,14 @@ export default function Support() {
           ))}
         </div>
       </div>
-      
+
       {/* Self-Help Resources Section */}
       <div>
-        <h2 className="text-[40px] font-medium mb-6">Self-Help Resources</h2>
+        <h2 className="lg:text-[40px]  text-xl  text-center lg:text-left font-medium mb-6">Self-Help Resources</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {resources.map((resource, index) => (
-            <Link 
-              key={index} 
+            <Link
+              key={index}
               href={resource.url}
               className="bg-gray-50 p-6 rounded-xl hover:bg-[#FFF0EC] transition-all"
             >
@@ -244,16 +236,16 @@ export default function Support() {
           ))}
         </div>
       </div>
-      
+
       {/* Help Prompt Section */}
-      <div className="bg-[#FFF3EE] rounded-lg p-8 my-16 flex flex-col md:flex-row justify-between items-center">
+      <div className="bg-[#FFF3EE] rounded-lg p-8 mt-16 flex flex-col md:flex-row justify-between items-center">
         <div>
-          <h2 className="text-[40px] font-medium mb-2">Still can't find an answer to your question?</h2>
-          <p className="text-gray-600">Our team is here to help you out—just reach out!</p>
+          <h2 className="lg:text-[40px]  text-xl  text-center lg:text-left font-medium mb-2">Still can't find an answer to your question?</h2>
+          <p className="text-gray-600 lg:text-left text-center">Our team is here to help you out—just reach out!</p>
         </div>
         <div className="mt-6 md:mt-0">
-          <a 
-            href="mailto:support@fliday.com" 
+          <a
+            href="mailto:support@fliday.com"
             className="inline-block px-8 py-3 bg-[#F15A25] text-white rounded-full font-medium hover:bg-[#e04e1a] transition-colors"
           >
             Contact Us

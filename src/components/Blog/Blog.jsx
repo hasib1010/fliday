@@ -7,17 +7,17 @@ import Link from 'next/link';
 export default function Blog() {
   const [activeCategory, setActiveCategory] = useState('All');
   const [currentPage, setCurrentPage] = useState(1);
-  
+
   // List of available categories
   const categories = ['All', 'eSim', 'Guides', 'Travel', 'Tech', 'News'];
-  
+
   // Sample blog post data
   const blogPosts = [
     {
       id: 1,
       title: "How Fliday eSIM helps you save mobile data",
       excerpt: "You'll probably get an eSIM for your next trip abroad to avoid the sky-high roaming charges, right? If you do, go for an eSIM that...",
-      author: "Ulas R.",
+      author: "Ilias R.",
       authorImage: "/blog/authors/ulas.png",
       date: "Mar 24, 2025",
       readTime: "6 min read",
@@ -29,7 +29,7 @@ export default function Blog() {
       id: 2,
       title: "How Fliday eSIM helps you save mobile data",
       excerpt: "Traveling abroad doesn't have to mean high data costs. Learn how to save on roaming with these simple tips.",
-      author: "Ulas R.",
+      author: "Ilias R.",
       authorImage: "/blog/authors/ulas.png",
       date: "Mar 24, 2025",
       readTime: "6 min read",
@@ -40,7 +40,7 @@ export default function Blog() {
       id: 3,
       title: "How Fliday eSIM helps you save mobile data",
       excerpt: "Traveling abroad doesn't have to mean high data costs. Learn how to save on roaming with these simple tips.",
-      author: "Ulas R.",
+      author: "Ilias R.",
       authorImage: "/blog/authors/ulas.png",
       date: "Mar 24, 2025",
       readTime: "6 min read",
@@ -51,7 +51,7 @@ export default function Blog() {
       id: 4,
       title: "How Fliday eSIM helps you save mobile data",
       excerpt: "Traveling abroad doesn't have to mean high data costs. Learn how to save on roaming with these simple tips.",
-      author: "Ulas R.",
+      author: "Ilias R.",
       authorImage: "/blog/authors/ulas.png",
       date: "Mar 24, 2025",
       readTime: "6 min read",
@@ -62,7 +62,7 @@ export default function Blog() {
       id: 5,
       title: "How Fliday eSIM helps you save mobile data",
       excerpt: "Traveling abroad doesn't have to mean high data costs. Learn how to save on roaming with these simple tips.",
-      author: "Ulas R.",
+      author: "Ilias R.",
       authorImage: "/blog/authors/ulas.png",
       date: "Mar 24, 2025",
       readTime: "6 min read",
@@ -73,7 +73,7 @@ export default function Blog() {
       id: 6,
       title: "How Fliday eSIM helps you save mobile data",
       excerpt: "Traveling abroad doesn't have to mean high data costs. Learn how to save on roaming with these simple tips.",
-      author: "Ulas R.",
+      author: "Ilias R.",
       authorImage: "/blog/authors/ulas.png",
       date: "Mar 24, 2025",
       readTime: "6 min read",
@@ -84,7 +84,7 @@ export default function Blog() {
       id: 7,
       title: "How Fliday eSIM helps you save mobile data",
       excerpt: "Traveling abroad doesn't have to mean high data costs. Learn how to save on roaming with these simple tips.",
-      author: "Ulas R.",
+      author: "Ilias R.",
       authorImage: "/blog/authors/ulas.png",
       date: "Mar 24, 2025",
       readTime: "6 min read",
@@ -95,7 +95,7 @@ export default function Blog() {
       id: 8,
       title: "How Fliday eSIM helps you save mobile data",
       excerpt: "Traveling abroad doesn't have to mean high data costs. Learn how to save on roaming with these simple tips.",
-      author: "Ulas R.",
+      author: "Ilias R.",
       authorImage: "/blog/authors/ulas.png",
       date: "Mar 24, 2025",
       readTime: "6 min read",
@@ -106,7 +106,7 @@ export default function Blog() {
       id: 9,
       title: "How Fliday eSIM helps you save mobile data",
       excerpt: "Traveling abroad doesn't have to mean high data costs. Learn how to save on roaming with these simple tips.",
-      author: "Ulas R.",
+      author: "Ilias R.",
       authorImage: "/blog/authors/ulas.png",
       date: "Mar 24, 2025",
       readTime: "6 min read",
@@ -117,7 +117,7 @@ export default function Blog() {
       id: 10,
       title: "How Fliday eSIM helps you save mobile data",
       excerpt: "Traveling abroad doesn't have to mean high data costs. Learn how to save on roaming with these simple tips.",
-      author: "Ulas R.",
+      author: "Ilias R.",
       authorImage: "/blog/authors/ulas.png",
       date: "Mar 24, 2025",
       readTime: "6 min read",
@@ -128,7 +128,7 @@ export default function Blog() {
       id: 11,
       title: "How Fliday eSIM helps you save mobile data",
       excerpt: "Traveling abroad doesn't have to mean high data costs. Learn how to save on roaming with these simple tips.",
-      author: "Ulas R.",
+      author: "Ilias R.",
       authorImage: "/blog/authors/ulas.png",
       date: "Mar 24, 2025",
       readTime: "6 min read",
@@ -139,7 +139,7 @@ export default function Blog() {
       id: 12,
       title: "How Fliday eSIM helps you save mobile data",
       excerpt: "Traveling abroad doesn't have to mean high data costs. Learn how to save on roaming with these simple tips.",
-      author: "Ulas R.",
+      author: "Ilias R.",
       authorImage: "/blog/authors/ulas.png",
       date: "Mar 24, 2025",
       readTime: "6 min read",
@@ -150,7 +150,7 @@ export default function Blog() {
       id: 13,
       title: "How Fliday eSIM helps you save mobile data",
       excerpt: "Traveling abroad doesn't have to mean high data costs. Learn how to save on roaming with these simple tips.",
-      author: "Ulas R.",
+      author: "Ilias R.",
       authorImage: "/blog/authors/ulas.png",
       date: "Mar 24, 2025",
       readTime: "6 min read",
@@ -161,7 +161,7 @@ export default function Blog() {
       id: 14,
       title: "How Fliday eSIM helps you save mobile data",
       excerpt: "Traveling abroad doesn't have to mean high data costs. Learn how to save on roaming with these simple tips.",
-      author: "Ulas R.",
+      author: "Ilias R.",
       authorImage: "/blog/authors/ulas.png",
       date: "Mar 24, 2025",
       readTime: "6 min read",
@@ -172,7 +172,7 @@ export default function Blog() {
       id: 15,
       title: "How Fliday eSIM helps you save mobile data",
       excerpt: "Traveling abroad doesn't have to mean high data costs. Learn how to save on roaming with these simple tips.",
-      author: "Ulas R.",
+      author: "Ilias R.",
       authorImage: "/blog/authors/ulas.png",
       date: "Mar 24, 2025",
       readTime: "6 min read",
@@ -181,29 +181,29 @@ export default function Blog() {
     },
     // Add more blog posts as needed
   ];
-  
+
   // Get featured post
   const featuredPost = blogPosts.find(post => post.featured);
-  
+
   // Filter posts based on selected category
-  const filteredPosts = activeCategory === 'All' 
-    ? blogPosts.filter(post => !post.featured) 
+  const filteredPosts = activeCategory === 'All'
+    ? blogPosts.filter(post => !post.featured)
     : blogPosts.filter(post => post.category === activeCategory && !post.featured);
-  
+
   // Pagination logic
   const postsPerPage = 9;
   const indexOfLastPost = currentPage * postsPerPage;
   const indexOfFirstPost = indexOfLastPost - postsPerPage;
   const currentPosts = filteredPosts.slice(indexOfFirstPost, indexOfLastPost);
   const totalPages = Math.ceil(filteredPosts.length / postsPerPage);
-  
+
   const pageNumbers = [];
   for (let i = 1; i <= totalPages; i++) {
     pageNumbers.push(i);
   }
 
   return (
-    <div className="max-w-[1220px] mx-auto px-4 py-24">
+    <div className="max-w-[1220px] mx-auto px-4 lg:py-24">
       {/* Featured Post Section */}
       {featuredPost && (
         <div className="mb-16">
@@ -247,7 +247,7 @@ export default function Blog() {
           </Link>
         </div>
       )}
-      
+
       {/* Category Filter */}
       <div className="mb-12">
         <h2 className="text-2xl font-medium mb-6">Choose category</h2>
@@ -256,18 +256,17 @@ export default function Blog() {
             <button
               key={category}
               onClick={() => setActiveCategory(category)}
-              className={`px-6 py-3 rounded-full text-sm font-medium transition-colors ${
-                activeCategory === category 
-                  ? 'bg-black text-white' 
-                  : 'bg-white text-black border border-gray-200 hover:bg-gray-50'
-              }`}
+              className={`px-6 py-3 rounded-full text-sm font-medium transition-colors ${activeCategory === category
+                ? 'bg-black text-white'
+                : 'bg-white text-black border border-gray-200 hover:bg-gray-50'
+                }`}
             >
               {category}
             </button>
           ))}
         </div>
       </div>
-      
+
       {/* Blog Posts Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
         {currentPosts.map(post => (
@@ -278,7 +277,7 @@ export default function Blog() {
                   src={post.image}
                   alt={post.title}
                   fill
-                  className="object-cover"
+                  className="object-cover rounded-xl"
                 />
               </div>
               <div className="p-6 flex-1 flex flex-col">
@@ -299,7 +298,7 @@ export default function Blog() {
                     {post.title}
                   </h3>
                 </div>
-                <div className="flex items-center mt-4">
+                <div className="flex items-center ">
                   <Image
                     src={post.authorImage}
                     alt={post.author}
@@ -314,25 +313,32 @@ export default function Blog() {
           </Link>
         ))}
       </div>
-      
+
       {/* Pagination */}
       {totalPages > 1 && (
         <div className="flex justify-center items-center space-x-2">
+          {currentPage > 1 && (
+            <button
+              onClick={() => setCurrentPage(currentPage - 1)}
+              className="flex items-center justify-center ml-2 text-sm font-medium text-gray-700 hover:text-black"
+            >
+              ← Go Back
+            </button>
+          )}
           {pageNumbers.map(number => (
             <button
               key={number}
               onClick={() => setCurrentPage(number)}
-              className={`w-8 h-8 flex items-center justify-center rounded-full ${
-                currentPage === number 
-                  ? 'bg-black text-white' 
-                  : 'bg-white text-black border border-gray-200 hover:bg-gray-50'
-              }`}
+              className={`w-8 h-8 flex items-center justify-center rounded-full ${currentPage === number
+                ? 'bg-black text-white'
+                : 'bg-white text-black border border-gray-200 hover:bg-gray-50'
+                }`}
             >
               {number}
             </button>
           ))}
           {currentPage < totalPages && (
-            <button 
+            <button
               onClick={() => setCurrentPage(currentPage + 1)}
               className="flex items-center justify-center ml-2 text-sm font-medium text-gray-700 hover:text-black"
             >

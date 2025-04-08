@@ -220,7 +220,7 @@ export default function DestinationDetail({ params }) {
                     {/* Tab content */}
                     <div className="py-4">
                         {activeTab === 'features' && (
-                            <ul className="space-y-2 text-sm">
+                            <ul className="space-y-2  ">
                                 <li className="flex items-start">
                                     <span className="text-gray-400 mr-2">•</span>
                                     <span>Affordable data from just $3.99</span>

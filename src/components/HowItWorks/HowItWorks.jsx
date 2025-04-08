@@ -87,7 +87,7 @@ export default function HowItWorks() {
     ];
 
     return (
-        <div className="max-w-[1220px] mx-auto py-12">
+        <div className="max-w-[1220px] mx-auto lg:py-12">
             {/* Hero Section */}
             <div className="bg-[#FFF8F6] py-16 px-4 md:px-8 rounded-b-3xl">
                 <div className="max-w-5xl mx-auto text-center">
@@ -110,13 +110,13 @@ export default function HowItWorks() {
             </div>
 
             {/* Process Steps Section */}
-            <div className="py-20 px-4 md:px-8">
+            <div className="lg:py-20 py-3 px-4 md:px-8">
                 <div className="max-w-6xl mx-auto">
                     <h2 className="text-3xl md:text-4xl font-medium text-center mb-16">
                         How Fliday eSIM works
                     </h2>
 
-                    <div className="space-y-20">
+                    <div className="    space-y-20">
                         {steps.map((step, index) => (
                             <div
                                 key={step.id}
@@ -166,7 +166,7 @@ export default function HowItWorks() {
             </div>
 
             {/* Benefits Section */}
-            <div className="bg-[#FFF8F6] py-20 px-4 md:px-8 rounded-3xl my-16">
+            <div className="bg-[#FFF8F6] py-20 px-4 md:px-8 rounded-3xl lg:my-16">
                 <div className="max-w-6xl mx-auto">
                     <h2 className="text-3xl md:text-4xl font-medium text-center mb-16">
                         Why choose a Fliday eSIM?

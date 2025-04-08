@@ -46,10 +46,10 @@ export default function DestinationDetail({ params }) {
     const destinationImage = destinationImages[id] || destinationImages['default'];
 
     return (
-        <div className="max-w-[1220px] mx-auto px-1 py-12">
-            <div className="  gap-[78px] flex justify-evenly lg:flex-row flex-col">
-                {/* Left column - Destination image */}
-                <div className="relative rounded-lg overflow-hidden w-[468px] h-[624px] md:h-[623px]">
+        <div className="max-w-[1220px] mx-auto px-2 py-12 ">
+            <div className="  lg:gap-[78px] gap-6 flex justify-evenly lg:flex-row flex-col">
+
+                <div className=" relative rounded-lg overflow-hidden  lg:w-[468px] h-[624px] md:h-[623px]">
                     <Image
                         src={destinationImage}
                         alt={`eSIM for ${formattedTitle}`}
@@ -58,6 +58,7 @@ export default function DestinationDetail({ params }) {
                         priority
                     />
                 </div>
+
 
                 {/* Right column - eSIM details and plans */}
                 <div className=' max-w-[653px]'>
@@ -90,12 +91,12 @@ export default function DestinationDetail({ params }) {
                                     }`}
                             >
                                 {plan.popular && (
-                                    <div className="absolute -top-2 -right-2 bg-[#F15A25] text-white text-xs px-2 py-1 rounded-full">
+                                    <div className="absolute -top-2 -right-1 bg-[#F15A25] text-white text-xs px-2 py-1 rounded-full">
                                         10% <br />OFF
                                     </div>
                                 )}
                                 {plan.discount && (
-                                    <div className="absolute -top-2 -right-2 bg-[#F15A25] text-white text-xs px-2 py-1 rounded-full">
+                                    <div className="absolute -top-2 -right-1 bg-[#F15A25] text-white text-xs px-2 py-1 rounded-full">
                                         15%<br />OFF
                                     </div>
                                 )}
@@ -207,7 +208,7 @@ export default function DestinationDetail({ params }) {
                     {/* Tab content */}
                     <div className="py-4">
                         {activeTab === 'features' && (
-                            <ul className="space-y-2 text-sm">
+                            <ul className="space-y-2  ">
                                 <li className="flex items-start">
                                     <span className="text-gray-400 mr-2">•</span>
                                     <span>Affordable data from just $3.99</span>

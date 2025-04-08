@@ -85,7 +85,7 @@ export default function Footer() {
         {/* Top border */}
         <div className="border-t border-gray-200 mb-12"></div>
         
-        <div className="flex justify-between flex-col lg:flex-row  ">
+        <div className="flex justify-between flex-wrap lg:flex-row  ">
           {/* Company Info */}
           <div className='max-w-[355px]'>
             <Link href="/" className="inline-block w-[355px] mb-6">
@@ -94,11 +94,11 @@ export default function Footer() {
               </div>
             </Link>
             
-            <p className="text-[#8E8E8E] text-[16px] font-normal mb-4">
+            <p className="text-[#8E8E8E] text-[16px] font-normal mb-4 text-center lg:text-left">
               Our mission is to make travel simpler, smarter, and more connected.
             </p>
             
-            <p className="text-[#8E8E8E] text-[16px] font-normal">
+            <p className="text-[#8E8E8E] text-[16px] font-normal text-center lg:text-left">
               We help globetrotters stay online with instant eSIMs for 100+ countries — no roaming fees, no SIM card swaps, just seamless data wherever you land.
             </p>
           </div>
