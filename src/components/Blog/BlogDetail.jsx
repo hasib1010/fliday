@@ -208,7 +208,7 @@ export default function BlogDetail({ params }) {
                                             />
                                         </div>
                                         <div className="p-6 flex-1 flex flex-col">
-                                            <div className="inline-block px-2 py-1 bg-gray-100 rounded-full text-xs text-gray-600 mb-3">
+                                            <div className="inline-block w-fit px-2 py-1 bg-gray-100 rounded-full text-xs text-gray-600 mb-3">
                                                 {article.category}
                                             </div>
                                             <div className="flex items-center text-xs text-gray-500 mb-3">
