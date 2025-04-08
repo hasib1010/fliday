@@ -13,28 +13,28 @@ export default function HowItWorks() {
             title: "Choose your destination",
             description: "Select from over 100+ countries worldwide. We offer affordable eSIM plans for every traveler's needs.",
             icon: <Globe className="w-12 h-12 text-[#F15A25]" />,
-            image: "/how-it-works/choose-destination.png"
+            image: "/howitworks/1.png"
         },
         {
             id: 2,
             title: "Select your data plan",
             description: "Pick the amount of data you need and the duration of your trip. We offer flexible plans from 1GB to 20GB with validity from 7 to 30 days.",
             icon: <CreditCard className="w-12 h-12 text-[#F15A25]" />,
-            image: "/how-it-works/select-plan.png"
+            image: "/howitworks/2.png"
         },
         {
             id: 3,
             title: "Install your eSIM",
             description: "After purchase, you'll receive a QR code. Scan it with your phone to install the eSIM profile. No physical SIM card needed!",
             icon: <Smartphone className="w-12 h-12 text-[#F15A25]" />,
-            image: "/how-it-works/install-esim.png"
+            image: "/howitworks/3.png"
         },
         {
             id: 4,
             title: "Activate and enjoy",
             description: "When you arrive at your destination, activate your eSIM with a single tap. Enjoy fast, reliable internet throughout your journey.",
             icon: <Clock className="w-12 h-12 text-[#F15A25]" />,
-            image: "/how-it-works/activate-enjoy.png"
+            image: "/howitworks/4.png"
         }
     ];
 
@@ -87,7 +87,7 @@ export default function HowItWorks() {
     ];
 
     return (
-        <div className="max-w-[1220px] mx-auto">
+        <div className="max-w-[1220px] mx-auto py-12">
             {/* Hero Section */}
             <div className="bg-[#FFF8F6] py-16 px-4 md:px-8 rounded-b-3xl">
                 <div className="max-w-5xl mx-auto text-center">
@@ -104,7 +104,7 @@ export default function HowItWorks() {
                         >
                             Explore Destinations
                         </Link>
-                         
+
                     </div>
                 </div>
             </div>
@@ -141,12 +141,24 @@ export default function HowItWorks() {
                                     )}
                                 </div>
 
-                                <div className="w-full md:w-1/2 aspect-video relative rounded-xl overflow-hidden shadow-lg">
-                                    <div className="h-[300px] bg-gray-200 rounded-xl flex items-center justify-center">
-                                        {step.icon}
-                                        <p className="text-gray-400 text-sm mt-4">Illustration for {step.title}</p>
-                                    </div>
+
+
+                                <div className="relative max-w-[513px] h-[360.99px] flex-1">
+                                    {/* Background behind image */}
+                                    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[513px] h-[249px] bg-[#FFF3EE] rounded-[20px] z-0"></div>
+
+                                    {/* Image on top */}
+                                    <Image
+                                        src={step.image}
+                                        alt={step.title}
+                                        width={372.02}
+                                        height={360.99}
+                                        className="relative z-10 rounded-xl mx-auto"
+                                    />
                                 </div>
+
+
+
                             </div>
                         ))}
                     </div>
@@ -175,7 +187,7 @@ export default function HowItWorks() {
             </div>
 
             {/* FAQ Section */}
-                        <FAQSection/>
+            <FAQSection />
         </div>
     );
 }

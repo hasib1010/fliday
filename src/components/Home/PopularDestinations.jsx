@@ -57,7 +57,7 @@ export default function PopularDestinations() {
                     {destinations.map(dest => (
                         <Link
                             key={dest.id}
-                            href={`/destination/${dest.name.toLowerCase().replace(/\s+/g, '-')}`}
+                            href={`/destinations/${dest.name.toLowerCase().replace(/\s+/g, '-')}`}
                             className="bg-[#F6F6F6] rounded-lg p-4 flex items-center justify-between hover:shadow-md transition-shadow group"
                         >
                             <div className="flex items-center">

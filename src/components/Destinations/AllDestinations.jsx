@@ -46,7 +46,7 @@ export default function AllDestinations() {
   );
 
   return (
-    <div className="max-w-[1220px] mx-auto px-1">
+    <div className="max-w-[1220px] mx-auto px-1 py-12">
       <h1 className="text-[40px] font-medium mb-2">All destinations</h1>
       <p className="text-gray-600 mb-6">Explore eSIM plans in 100+ countries.</p>
 

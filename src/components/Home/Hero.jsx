@@ -33,7 +33,7 @@ export default function Hero() {
 
 
             {/* Main heading */}
-            <h1 className="text-center text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
+            <h1 className="text-center text-4xl md:text-5xl lg:text-6xl font-semibold mb-6">
                 eSIM for the <span className="text-[#F15A25]">Bold</span> & <span className="text-[#F15A25]">the Curious.</span>
             </h1>
 
