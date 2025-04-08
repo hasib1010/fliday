@@ -30,7 +30,7 @@ export default function Navbar() {
   };
 
   return (
-    <nav className={`py-5 ${pathname === '/' ? 'bg-[#F3F0F0]' : 'bg-white'}`}>
+    <nav className={` }`}>
       <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}

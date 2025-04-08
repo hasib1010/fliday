@@ -33,11 +33,11 @@ export default function SetupProcess() {
 
   return (
     <>
-      <section className="py-16   ">
+      <section className="pt-16   ">
         <div className="  mx-auto  ">
           <div className="  mb-12">
-            <h2 className="text-[40px] font-medium mb-3">Set up your eSIM in 1 minute</h2>
-            <p className="text-gray-700 text-lg">Easy and straight forward activation.</p>
+            <h2 className="lg:text-[40px] text-xl text-center lg:text-left font-medium mb-3">Set up your eSIM in 1 minute</h2>
+            <p className="text-gray-700 text-lg   text-center lg:text-left">Easy and straight forward activation.</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6  place-items-stretch">
@@ -66,8 +66,8 @@ export default function SetupProcess() {
           <div className="mt-16 bg-[#FFF3EE] rounded-xl p-8">
             <div className="flex flex-col md:flex-row justify-between items-center">
               <div className="mb-6 md:mb-0 md:mr-6">
-                <h3 className="text-[30px] font-medium mb-3">Does your device support eSIM technology?</h3>
-                <p className="text-gray-700">Make sure your phone supports eSIM before choosing your plan.</p>
+                <h3 className="lg:text-[30px] text-xl text-center lg:text-left font-medium mb-3">Does your device support eSIM technology?</h3>
+                <p className="text-gray-700 text-xl text-center lg:text-base lg:text-left">Make sure your phone supports eSIM before choosing your plan.</p>
               </div>
               <Link
                 href="/compatibility"
@@ -79,26 +79,26 @@ export default function SetupProcess() {
           </div>
         </div>
       </section>
-      <section className=" lg:mb-28 mb-3">
+      <section className="  bg-[url('/fly.png')] bg-cover  bg-no-repeat bg-center rounded-[24px] mt-16 lg:mb-28 mb-3">
         <div className="  mx-auto  ">
           <div className="relative overflow-hidden w-full">
             {/* Background Image */}
-            <div className="absolute inset-0 w-full h-full">
-              <Image
+           
+              {/* <Image
                 src="/fly.png"
                 alt="Paragliding over mountains"
                 fill
                 className="rounded-[24px] *:object-cover object-center"
                 priority
-              />
+              /> */}
               {/* Gradient Overlay */}
               <div className="absolute inset-0 rounded-[24px]" style={{ background: 'linear-gradient(90deg, rgba(49, 18, 8, 0.45) 0%, rgba(64, 24, 10, 0.00) 100%)' }}></div>
-            </div>
+            
 
             {/* Content */}
             <div className="relative z-10 p-12 md:p-16 flex flex-col items-start">
               <h3 className="text-white text-xl font-medium mb-3">Support</h3>
-              <h2 className="text-white lg:text-[44px]  font-medium mb-4 leading-[60px] ">
+              <h2 className="text-white lg:text-[44px]  font-medium mb-4 lg:leading-[60px] ">
                 Do you have questions? <br />
                 We<span className='italic'>'</span>re here to help!
               </h2>

@@ -45,11 +45,11 @@ export default function BenefitsSection() {
   return (
     <section className=" ">
       <div className=" ">
-        <h2 className="text-[40px] md:text-4xl font-medium mb-12">Stay connected wherever you go</h2>
+        <h2 className="lg:text-[40px] text-xl  text-center lg:text-left font-medium my-12">Stay connected wherever you go</h2>
         
         <div className="bg-[#FFF3EE] rounded-2xl p-8  ">
           {/* Benefits Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-10">
+          <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-10">
             {benefits.map((benefit, index) => (
               <div key={index} className="flex flex-col lg:items-start items-center ">
                 <div className="mb-4">

@@ -20,11 +20,11 @@ export default function PopularDestinations() {
     ];
 
     return (
-        <section className="py-16  ">
+        <section className="pt-16  ">
             <div className="  ">
-                <div className="flex justify-between items-center mb-6">
+                <div className="flex lg:justify-between text-center lg:text-left flex-col lg:flex-row justify-center items-center mb-6">
                     <div>
-                        <h2 className="text-[40px] font-medium mb-2">Choose your destination:</h2>
+                        <h2 className="lg:text-[40px] font-medium mb-2">Choose your destination:</h2>
                         <p className="text-gray-600">Explore eSIM plans in 100+ countries.</p>
                     </div>
 

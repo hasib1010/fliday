@@ -8,14 +8,26 @@ body {
   font-family: var(--font-poppins);
 }
 
-.hero-container { 
-  background-image: url('/hero.png');
-   max-width: 1440px;
-   background-size: cover;
+/* .hero-container { 
+  background-image: url('/hero.png'); 
+   background-size: contain;
    background-position: center;
   background-repeat: no-repeat;
-  height: 100vh;
+  height: 58vh;
   width: 100%; 
 }
 
+ 
+@media screen and (max-width: 768px) {
+  .hero-container { 
+    background-image: url('/hero2.png'); 
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+    height: 45vh;
+    width: 100%; 
+  }
+  
+} */
+ 
  

@@ -65,9 +65,9 @@ export default function FAQSection() {
   };
 
   return (
-    <section className=" py-20">
-      <div className="container mx-auto max-w-6xl">
-        <h2 className="text-3xl md:text-[40px] font-medium mb-12">Frequently Asked Questions</h2>
+    <section className="max-w-[1220px] pt-20">
+      <div className="  mx-auto  ">
+        <h2 className=" lg:text-[40px] text-2xl  text-center lg:text-left font-medium mb-12">Frequently Asked Questions</h2>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {faqItems.map((item, index) => (

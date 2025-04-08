@@ -100,7 +100,7 @@ export default function FAQ() {
             </div>
             <div className="bg-[#F6F6F6] rounded-lg p-8 my-12 flex flex-col md:flex-row justify-between items-center">
                 <div>
-                    <h2 className="text-2xl font-bold mb-2">Still can't find an answer to your question?</h2>
+                    <h2 className="text-2xl font-medium mb-2">Still can't find an answer to your question?</h2>
                     <p className="text-gray-600">Our team is here to help you out—just reach out!</p>
                 </div>
                 <div className="mt-6 md:mt-0">
