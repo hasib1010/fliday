@@ -65,9 +65,9 @@ export default function FAQSection() {
   };
 
   return (
-    <section className="max-w-[1220px] lg:pt-20 pt-5">
+    <section className="max-w-[1220px] lg:pt-20 pt-5 p-3 lg:p-0">
       <div className="  mx-auto  ">
-        <h2 className=" lg:text-[40px] text-2xl  text-center lg:text-left font-medium lg:mb-12 mb-5">Frequently Asked Questions</h2>
+        <h2 className=" lg:text-[40px] text-[28px]   text-left font-medium lg:mb-12 mb-5">Frequently Asked Questions</h2>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {faqItems.map((item, index) => (

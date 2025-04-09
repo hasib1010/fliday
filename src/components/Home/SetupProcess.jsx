@@ -80,11 +80,11 @@ export default function SetupProcess() {
 
   return (
     <>
-      <section className="lg:pt-16 pt-5">
+      <section className=" p-3 lg:p-0 pt-[3rem]">
         <div className="mx-auto">
           <div className="mb-12">
-            <h2 className="lg:text-[40px] text-[1.75rem] text-center lg:text-left font-medium mb-3">Set up your eSIM in 1 minute</h2>
-            <p className="text-gray-700 text-lg text-center lg:text-left">Easy and straight forward activation.</p>
+            <h2 className="lg:text-[40px] text-[1.75rem]  text-left font-medium mb-3">Set up your eSIM in 1 minute</h2>
+            <p className="text-gray-700 text-base text-left">Easy and straight forward activation.</p>
           </div>
 
           {/* Conditional rendering based on screen size */}
@@ -138,16 +138,16 @@ export default function SetupProcess() {
         </div>
       </section>
 
-      <section className="bg-[url('/fly.png')] bg-cover bg-no-repeat bg-center rounded-[24px] lg:mt-16 mt-5 lg:mb-28 mb-3">
+      <section className="bg-[url('/fly.png')] bg-cover bg-no-repeat bg-center rounded-[24px] lg:mt-16 mt-5 lg:mb-28 mb-3 m-3 lg:m-0">
         <div className="mx-auto">
           <div className="relative overflow-hidden w-full"> 
             {/* Gradient Overlay */}
-            <div className="absolute inset-0 rounded-[24px]" style={{ background: 'linear-gradient(90deg, rgba(49, 18, 8, 0.45) 0%, rgba(64, 24, 10, 0.00) 100%)' }}></div>
+            <div className="absolute inset-0   rounded-[24px]" style={{ background: 'linear-gradient(90deg, rgba(49, 18, 8, 0.45) 0%, rgba(64, 24, 10, 0.00) 100%)' }}></div>
             
             {/* Content */}
             <div className="relative z-10 p-12 md:p-16 flex flex-col lg:items-start items-center">
-              <h3 className="text-white text-xl  font-medium mb-3">Support</h3>
-              <h2 className="text-white lg:text-[44px] text-2xl text-center lg:text-left font-medium mb-4 lg:leading-[60px]">
+              <h3 className="text-white text-sm  font-medium mb-3">Support</h3>
+              <h2 className="text-white lg:text-[44px] text-xl text-center lg:text-left font-medium mb-4 lg:leading-[60px]">
                 Do you have questions? <br />
                 We<span className='italic'>'</span>re here to help!
               </h2>

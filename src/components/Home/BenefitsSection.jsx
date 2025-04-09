@@ -43,9 +43,9 @@ export default function BenefitsSection() {
   ];
 
   return (
-    <section className=" p-3 lg:p-0">
+    <section className=" p-3 lg:p-0  ">
       <div className=" ">
-        <h2 className="lg:text-[40px] text-2xl   text-left font-medium lg:my-12 my-5">Stay connected wherever you go</h2>
+        <h2 className="lg:text-[40px] text-[28px]   text-left font-medium lg:my-12 my-5">Stay connected wherever you go</h2>
         
         <div className="bg-[#FFF3EE] rounded-2xl p-8  ">
           {/* Benefits Grid */}

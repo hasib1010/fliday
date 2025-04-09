@@ -46,7 +46,7 @@ export default function DestinationDetail({ params }) {
     const destinationImage = destinationImages[id] || destinationImages['default'];
 
     return (
-        <div className="max-w-[1220px] mx-auto px-2 py-12 ">
+        <div className="max-w-[1220px] mx-auto px-2 py-12 lg:pt-24">
             <div className="  lg:gap-[78px] gap-6 flex justify-evenly lg:flex-row flex-col">
 
                 <div className=" relative rounded-lg overflow-hidden  lg:w-[468px] h-[624px] md:h-[623px]">

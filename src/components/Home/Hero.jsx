@@ -5,8 +5,8 @@ import { Search } from 'lucide-react';
 
 export default function Hero() {
     return (
-        <div className='  bg-[#F4EBE8]  '>
-            <div className="  w-full  flex items-start justify-center   bg-cover md:min-h-[710px] bg-no-repeat bg-bottom md:bg-[url('/hero.png')] bg-[url('/hero2.png')]">
+        <div className='  bg-[#f8f4f4]  '>
+            <div className="  w-full  flex items-start justify-center   bg-contain md:min-h-[710px] bg-no-repeat bg-bottom md:bg-[url('/hero.png')] bg-[url('/hero2.png')]">
                 {/* Content */}
                 <div className="   pt-[85px]    ">
                     {/* Feature badges */}
@@ -46,7 +46,7 @@ export default function Hero() {
                         </div>
                     </div>
                     {/* Main heading */}
-                    <h1 className="text-center lg:text-[55px] text-2xl md:text-5xl lg:text-6xl font-semibold pb-8">
+                    <h1 className="text-center lg:text-[55px] text-4xl md:text-5xl lg:text-6xl font-semibold pb-8">
                         eSIM for the <span className="text-[#F15A25]">Bold</span> & <span className="text-[#F15A25]">the Curious.</span>
                     </h1>
 
@@ -60,7 +60,7 @@ export default function Hero() {
                         <input
                             type="text"
                             placeholder="Enter your destination"
-                            className="w-full px-6 py-4 rounded-full border-2 border-[#F15A25]    focus:outline-none focus:ring-1 focus:ring-[#F15A25] text-lg"
+                            className="w-full px-6 py-4 rounded-full border-2 border-[#F15A25]  bg-white   focus:outline-none focus:ring-1 focus:ring-[#F15A25] text-lg"
                         />
                         <button className="absolute right-5  top-1/2 transform -translate-y-1/2 bg-[#F15A25] p-3 rounded-full text-white">
                             <Search size={20} />

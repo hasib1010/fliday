@@ -120,11 +120,11 @@ export default function Support() {
   ];
 
   return (
-    <div className="max-w-[1440px] mx-auto px-4 lg:py-12 pt-5">
+    <div className="max-w-[1440px] mx-auto px-4 lg:py-12 pt-5 lg:pt-20 ">
       {/* Hero Section */}
       <div className="lg:text-center lg:mb-16 mb-5">
-        <h1 className="lg:text-[40px] text-2xl font-medium lg:mb-6">How can we help you?</h1>
-        <p className="lg:text-lg text-sm text-gray-600 max-w-2xl mx-auto lg:mb-8 mb-3">
+        <h1 className="lg:text-[40px] text-[28px] font-medium lg:mb-6">How can we help you?</h1>
+        <p className="lg:text-lg text-[16px] text-gray-600 max-w-2xl mx-auto lg:mb-8 mb-3">
           Get the support you need for your eSIM. Search for answers or reach out to our team directly.
         </p>
 
@@ -145,7 +145,7 @@ export default function Support() {
 
       {/* Common Questions Section */}
       <div className="lg:mb-16 mb-5">
-        <h2 className="lg:text-[40px] text-2xl   text-left font-medium mb-6">Common Questions</h2>
+        <h2 className="lg:text-[40px] text-[28px]   text-left font-medium mb-6">Common Questions</h2>
 
         {/* Categories filter */}
         <div className="flex flex-wrap justify-center lg:justify-start gap-2 mb-6">
@@ -193,7 +193,7 @@ export default function Support() {
 
       {/* Contact Methods Section */}
       <div className="lg:mb-16 mb-5">
-        <h2 className="lg:text-[40px]  text-2xl   text-left font-medium mb-6">Contact Our Support Team</h2>
+        <h2 className="lg:text-[40px]  text-[28px]  text-left font-medium mb-6">Contact Our Support Team</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {contactMethods.map((method, index) => (
             <div key={index} className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition-all">
@@ -217,7 +217,7 @@ export default function Support() {
 
       {/* Self-Help Resources Section */}
       <div>
-        <h2 className="lg:text-[40px]  text-2xl  text-left font-medium mb-6">Self-Help Resources</h2>
+        <h2 className="lg:text-[40px] text-[28px] text-left font-medium mb-6">Self-Help Resources</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {resources.map((resource, index) => (
             <Link
@@ -240,7 +240,7 @@ export default function Support() {
       {/* Help Prompt Section */}
       <div className="bg-[#FFF3EE] rounded-lg p-8 mt-16 flex flex-col md:flex-row justify-between items-center">
         <div>
-          <h2 className="lg:text-[40px]  text-xl  text-center lg:text-left font-medium mb-2">Still can't find an answer to your question?</h2>
+          <h2 className="lg:text-[40px]  text-[20px]  text-center lg:text-left font-medium mb-2">Still can't find an answer to your question?</h2>
           <p className="text-gray-600 lg:text-left text-center">Our team is here to help you out—just reach out!</p>
         </div>
         <div className="mt-6 md:mt-0">

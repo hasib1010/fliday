@@ -20,7 +20,7 @@ export default function PopularDestinations() {
     ];
 
     return (
-        <section className="lg:pt-16 pt-5">
+        <section className="pt-[3rem] p-3 lg:p-0 ">
             <div>
                 <div className="flex lg:justify-between  text-left flex-col lg:flex-row  lg:items-center mb-6 p-1 lg:p-0">
                     <div>
@@ -30,7 +30,7 @@ export default function PopularDestinations() {
 
                     <Link
                         href="/destinations"
-                        className="bg-[#F15A25] text-white text-center px-5 py-2 rounded-full text-sm font-medium hover:bg-[#e04e1a] transition-colors"
+                        className="bg-[#F15A25] hidden lg:block text-white text-center px-5 py-2 rounded-full text-sm font-medium hover:bg-[#e04e1a] transition-colors"
                     >
                         View Destinations
                     </Link>
@@ -53,12 +53,12 @@ export default function PopularDestinations() {
                 </div>
 
                 {/* Destinations grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 p-2 lg:p-0">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8 gap-3 p-2 lg:p-0">
                     {destinations.map(dest => (
                         <Link
                             key={dest.id}
                             href={`/destinations/${dest.name.toLowerCase().replace(/\s+/g, '-')}`}
-                            className="hover:bg-[#db9b8060] bg-[#FFF3EE]   transition-colors  rounded-lg p-4 flex items-center justify-between   group"
+                            className="hover:bg-[#d5d5d5] bg-[#f7f7f8]   transition-colors  rounded-lg p-4 flex items-center justify-between min-h-[56px]  group"
                         >
                             <div className="flex items-center">
                                 <div className="     rounded-full flex items-center justify-center text-white mr-3 overflow-hidden">
@@ -70,18 +70,22 @@ export default function PopularDestinations() {
                                     />
                                 </div>
                                 <div>
-                                    <h3 className="font-medium lg:text-[26px] text-[1.25rem]">{dest.name}</h3>
-                                    <p className="text-xs text-[#6B6B6B]">From USD {dest.price}</p>
+                                    <h3 className="font-medium   text-[20px]">{dest.name}</h3>
+                                    <p className="text-[16px] text-[#6B6B6B]">From USD {dest.price}</p>
                                 </div>
                             </div>
                             <div>
-                                <svg xmlns="http://www.w3.org/2000/svg" width="9" height="16" viewBox="0 0 9 16" fill="none">
-                                    <path d="M8.1992 8.73001C8.58947 8.33924 8.58906 7.70607 8.19828 7.3158L1.83021 0.955957C1.43943 0.565686 0.806263 0.566095 0.415992 0.956872C0.0257201 1.34765 0.0261301 1.98081 0.416907 2.37109L6.07742 8.02428L0.424225 13.6848C0.0339538 14.0756 0.0343633 14.7087 0.42514 15.099C0.815917 15.4893 1.44908 15.4889 1.83935 15.0981L8.1992 8.73001ZM7.00065 9.02368L7.49228 9.02336L7.49099 7.02336L6.99935 7.02368L7.00065 9.02368Z" fill="black" />
-                                </svg>
+                                <svg role="img" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" class="mt-1 ltr:-rotate-90 rtl:rotate-90 pointer-events-none text-tertiary"><title>Chevron right</title><path fill="currentColor" fill-rule="evenodd" d="M13.2151 6.8326L8.43758 11.4101C8.27758 11.5451 8.12758 11.6001 8.00008 11.6001C7.87258 11.6001 7.70083 11.5446 7.58533 11.4329L2.78533 6.8326C2.54543 6.6051 2.53763 6.2026 2.76733 5.9851C2.99546 5.74447 3.37683 5.73665 3.61508 5.96713L8.00008 10.1701L12.3851 5.9701C12.6226 5.73962 13.0046 5.74745 13.2328 5.98807C13.4626 6.2026 13.4551 6.6051 13.2151 6.8326Z"></path></svg>
                             </div>
                         </Link>
                     ))}
                 </div>
+                <Link
+                    href="/destinations"
+                    className="bg-[#F15A25] block lg:hidden text-white text-center p-[11px] rounded-full text-[1rem] my-3 font-medium hover:bg-[#e04e1a] transition-colors"
+                >
+                    View Destinations
+                </Link>
             </div>
         </section>
     );

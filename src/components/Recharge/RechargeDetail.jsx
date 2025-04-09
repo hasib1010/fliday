@@ -67,7 +67,7 @@ export default function DestinationDetail({ params }) {
     };
 
     return (
-        <div className="max-w-[1220px] mx-auto lg:px-1 px-2.5 py-12">
+        <div className="max-w-[1220px] mx-auto lg:px-1 px-2.5 py-12 lg:pt-24">
             <div className=" gap-[78px] flex justify-evenly lg:flex-row flex-col">
                 {/* Left column - Destination image */}
                 <div className=" relative rounded-lg overflow-hidden  lg:w-[468px] h-[624px] md:h-[623px]">

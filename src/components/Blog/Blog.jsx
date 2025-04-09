@@ -203,13 +203,13 @@ export default function Blog() {
   }
 
   return (
-    <div className="max-w-[1220px] mx-auto px-4 lg:py-24">
+    <div className="max-w-[1220px] mx-auto  px-3 lg:px-0 lg:py-24">
       {/* Featured Post Section */}
       {featuredPost && (
-        <div className="mb-16">
+        <div className="mb-16 pt-5 lg:pt-0">
           <Link href={`/blog/${featuredPost.id}`} className="block">
             <div className="relative rounded-xl overflow-hidden flex flex-col lg:flex-row  transition-shadow justify-between">
-              <div className="max-w-[440px] p-8 lg:pr-0 flex flex-col justify-center">
+              <div className="max-w-[440px] lg:p-8 py-4 lg:pr-0 flex flex-col justify-center">
                 <div className="inline-block w-fit px-3 py-1 bg-gray-100 rounded-full text-sm text-gray-600 mb-4">
                   {featuredPost.category}
                 </div>
@@ -236,11 +236,10 @@ export default function Blog() {
                 </div>
               </div>
               <div className="lg:w-[705px] relative h-[300px] lg:h-auto">
-                <Image
+                <img
                   src={featuredPost.image}
                   alt={featuredPost.title}
-                  fill
-                  className="lg:object-cover"
+                 
                 />
               </div>
             </div>

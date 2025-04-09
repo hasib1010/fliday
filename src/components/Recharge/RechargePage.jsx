@@ -55,7 +55,7 @@ export default function RechargePage() {
     );
 
     return (
-        <div className="max-w-[1220px] mx-auto px-2  lg:py-12 pt-5 ">
+        <div className="max-w-[1220px] mx-auto  lg:pt-20  lg:py-12 pt-5  px-3 lg:px-0 ">
             <h1 className="lg:text-[40px]  text-2xl    font-medium mb-2">Recharge Your eSIM in Seconds</h1>
             <p className="text-gray-600 mb-6 text-sm lg:text-base">Running low on data? Top up instantly and stay connected—no new QR code needed.</p>
 
@@ -95,7 +95,7 @@ export default function RechargePage() {
                     <Link
                         key={destination.id}
                         href={`/recharge/${destination.name.toLowerCase().replace(/\s+/g, '-')}`}
-                        className="rounded-lg p-4 flex items-center justify-between hover:bg-[#db9b8060] bg-[#FFF3EE]   transition-colors group"
+                        className="rounded-lg p-4 flex items-center justify-between hover:bg-[#d5d5d5] bg-[#f7f7f8]   transition-colors group"
                     >
                         <div className="flex items-center">
                             <div className="     rounded-full flex items-center justify-center text-white mr-3 overflow-hidden">
@@ -107,14 +107,12 @@ export default function RechargePage() {
                                 />
                             </div>
                             <div>
-                                <h3 className="font-medium lg:text-[26px] text-[1.25rem]">{destination.name}</h3>
-                                <p className="text-xs text-[#6B6B6B]">From USD {destination.price}</p>
+                                <h3 className="font-medium lg:text-[20px] text-[1.25rem]">{destination.name}</h3>
+                                <p className="text-[16px] text-[#6B6B6B]">From USD {destination.price}</p>
                             </div>
                         </div>
-                        <div className="text-gray-400 group-hover:text-[#F15A25] transition-colors">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="9" height="16" viewBox="0 0 9 16" fill="none">
-                                <path d="M8.19822 8.73001C8.58849 8.33924 8.58808 7.70607 8.19731 7.3158L1.82923 0.955957C1.43845 0.565686 0.805287 0.566095 0.415015 0.956872C0.0247436 1.34765 0.0251536 1.98081 0.41593 2.37109L6.07644 8.02428L0.423249 13.6848C0.0329772 14.0756 0.0333868 14.7087 0.424164 15.099C0.81494 15.4893 1.44811 15.4889 1.83838 15.0981L8.19822 8.73001ZM6.99967 9.02368L7.4913 9.02336L7.49001 7.02336L6.99838 7.02368L6.99967 9.02368Z" fill="black" />
-                            </svg>
+                        <div className="text-gray-400  ">
+                            <svg role="img" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" class="mt-1 ltr:-rotate-90 rtl:rotate-90 pointer-events-none text-tertiary"><title>Chevron right</title><path fill="currentColor" fill-rule="evenodd" d="M13.2151 6.8326L8.43758 11.4101C8.27758 11.5451 8.12758 11.6001 8.00008 11.6001C7.87258 11.6001 7.70083 11.5446 7.58533 11.4329L2.78533 6.8326C2.54543 6.6051 2.53763 6.2026 2.76733 5.9851C2.99546 5.74447 3.37683 5.73665 3.61508 5.96713L8.00008 10.1701L12.3851 5.9701C12.6226 5.73962 13.0046 5.74745 13.2328 5.98807C13.4626 6.2026 13.4551 6.6051 13.2151 6.8326Z"></path></svg>
                         </div>
                     </Link>
                 ))}

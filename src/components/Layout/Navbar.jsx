@@ -7,26 +7,21 @@ import { usePathname } from 'next/navigation';
 
 export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
   const pathname = usePathname();
-  const isHomePage = pathname === '/';
+  const isHomePage = pathname.startsWith('/') ;
+  const [isScrolled, setIsScrolled] = useState(!isHomePage);
+  const [isMounted, setIsMounted] = useState(false);
 
   // Add scroll event listener to track scroll position
   useEffect(() => {
     const handleScroll = () => {
-      if (window.scrollY > 0) {
-        setIsScrolled(true);
-      } else {
-        setIsScrolled(false);
-      }
+      setIsScrolled(window.scrollY > 0);
     };
 
     window.addEventListener('scroll', handleScroll);
-    
-    // Check initial scroll position
-    handleScroll();
-    
-    // Clean up event listener
+    handleScroll(); // Initial check
+    setIsMounted(true);
+
     return () => {
       window.removeEventListener('scroll', handleScroll);
     };
@@ -45,20 +40,22 @@ export default function Navbar() {
   ];
 
   // Helper function to check if path starts with a specific route
-  const isActiveLink = (href) => {
+  const isActiveLink = (href ) => {
     if (href === '/') {
       return pathname === '/';
     }
     return pathname.startsWith(href);
   };
 
+  if (!isMounted) return null;
+
   return (
     <>
-      <nav 
-        className={`w-full fixed top-0 z-50 transition-all duration-300 ${
-          isScrolled || !isHomePage 
-            ? 'bg-white shadow-md' 
-            : 'bg-transparent'
+      <nav
+        className={`w-full fixed top-0 z-50 transition-all duration-300 border-b ${
+          isScrolled || !isHomePage
+            ? 'bg-white border-gray-200'
+            : 'bg-transparent border-transparent'
         }`}
       >
         <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
@@ -168,7 +165,7 @@ export default function Navbar() {
           )}
         </div>
       </nav>
-      
+
       {/* Spacer div to prevent content from being hidden under navbar on non-homepage routes */}
       {!isHomePage && <div className="h-20"></div>}
     </>
