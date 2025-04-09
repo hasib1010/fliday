@@ -120,11 +120,11 @@ export default function Support() {
   ];
 
   return (
-    <div className="max-w-[1440px] mx-auto px-4 py-12">
+    <div className="max-w-[1440px] mx-auto px-4 lg:py-12 pt-5">
       {/* Hero Section */}
-      <div className="text-center mb-16">
-        <h1 className="text-[40px] font-medium mb-6">How can we help you?</h1>
-        <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-8">
+      <div className="lg:text-center lg:mb-16 mb-5">
+        <h1 className="lg:text-[40px] text-2xl font-medium lg:mb-6">How can we help you?</h1>
+        <p className="lg:text-lg text-sm text-gray-600 max-w-2xl mx-auto lg:mb-8 mb-3">
           Get the support you need for your eSIM. Search for answers or reach out to our team directly.
         </p>
 
@@ -144,8 +144,8 @@ export default function Support() {
       </div>
 
       {/* Common Questions Section */}
-      <div className="mb-16">
-        <h2 className="lg:text-[40px] text-xl  text-center lg:text-left font-medium mb-6">Common Questions</h2>
+      <div className="lg:mb-16 mb-5">
+        <h2 className="lg:text-[40px] text-2xl   text-left font-medium mb-6">Common Questions</h2>
 
         {/* Categories filter */}
         <div className="flex flex-wrap justify-center lg:justify-start gap-2 mb-6">
@@ -177,7 +177,7 @@ export default function Support() {
                     <HelpCircle size={16} className="text-[#F15A25]" />
                   </div>
                   <div>
-                    <h3 className="font-medium">{item.question}</h3>
+                    <h3 className="font-medium ">{item.question}</h3>
                     <span className="text-xs text-gray-500 mt-1 inline-block">{item.category}</span>
                   </div>
                 </div>
@@ -192,8 +192,8 @@ export default function Support() {
       </div>
 
       {/* Contact Methods Section */}
-      <div className="mb-16">
-        <h2 className="lg:text-[40px]  text-xl  text-center lg:text-left font-medium mb-6">Contact Our Support Team</h2>
+      <div className="lg:mb-16 mb-5">
+        <h2 className="lg:text-[40px]  text-2xl   text-left font-medium mb-6">Contact Our Support Team</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {contactMethods.map((method, index) => (
             <div key={index} className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition-all">
@@ -217,7 +217,7 @@ export default function Support() {
 
       {/* Self-Help Resources Section */}
       <div>
-        <h2 className="lg:text-[40px]  text-xl  text-center lg:text-left font-medium mb-6">Self-Help Resources</h2>
+        <h2 className="lg:text-[40px]  text-2xl  text-left font-medium mb-6">Self-Help Resources</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           {resources.map((resource, index) => (
             <Link

@@ -43,20 +43,20 @@ export default function BenefitsSection() {
   ];
 
   return (
-    <section className=" ">
+    <section className=" p-3 lg:p-0">
       <div className=" ">
-        <h2 className="lg:text-[40px] text-xl  text-center lg:text-left font-medium my-12">Stay connected wherever you go</h2>
+        <h2 className="lg:text-[40px] text-2xl   text-left font-medium lg:my-12 my-5">Stay connected wherever you go</h2>
         
         <div className="bg-[#FFF3EE] rounded-2xl p-8  ">
           {/* Benefits Grid */}
           <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-10">
             {benefits.map((benefit, index) => (
-              <div key={index} className="flex flex-col lg:items-start items-center ">
+              <div key={index} className="flex flex-col  items-start  ">
                 <div className="mb-4">
-                 <Image src={benefit.icon} alt={benefit.title} width={60} height={60}   />
+                 <img className='lg:h-14 h-8' src={benefit.icon} alt={benefit.title}    />
                 </div>
-                <h3 className="text-xl font-medium mb-2">{benefit.title}</h3>
-                <p className="text-gray-500 max-w-[220px]">{benefit.description}</p>
+                <h3 className="lg:text-xl text-[14px] font-medium mb-2">{benefit.title}</h3>
+                <p className="text-gray-500 text-[14px] max-w-[220px]">{benefit.description}</p>
               </div>
             ))}
           </div>
@@ -67,7 +67,7 @@ export default function BenefitsSection() {
           {/* Payment Methods */}
           <div className="flex flex-col md:flex-row justify-between items-center mt-6">
             <p className="text-gray-500 font-medium mb-4 md:mb-0">Secure payment methods</p>
-            <div className="flex flex-wrap gap-6 justify-center">
+            <div className="flex   lg:gap-6 gap-1.5 justify-center">
               {paymentMethods.map((method, index) => (
                 <div key={index} className="h-8">
                     <img src={method.image} 

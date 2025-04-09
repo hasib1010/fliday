@@ -20,17 +20,17 @@ export default function PopularDestinations() {
     ];
 
     return (
-        <section className="pt-16">
+        <section className="lg:pt-16 pt-5">
             <div>
-                <div className="flex lg:justify-between text-center lg:text-left flex-col lg:flex-row justify-center items-center mb-6">
+                <div className="flex lg:justify-between  text-left flex-col lg:flex-row  lg:items-center mb-6 p-1 lg:p-0">
                     <div>
-                        <h2 className="lg:text-[40px] font-medium mb-2">Choose your destination:</h2>
-                        <p className="text-gray-600">Explore eSIM plans in 100+ countries.</p>
+                        <h2 className="lg:text-[40px] text-[1.75rem] font-medium mb-2">Choose your destination:</h2>
+                        <p className="text-gray-600  my-1.5">Explore eSIM plans in 100+ countries.</p>
                     </div>
 
                     <Link
                         href="/destinations"
-                        className="bg-[#F15A25] text-white px-5 py-2 rounded-full text-sm font-medium hover:bg-[#e04e1a] transition-colors"
+                        className="bg-[#F15A25] text-white text-center px-5 py-2 rounded-full text-sm font-medium hover:bg-[#e04e1a] transition-colors"
                     >
                         View Destinations
                     </Link>
@@ -53,24 +53,24 @@ export default function PopularDestinations() {
                 </div>
 
                 {/* Destinations grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 p-2 lg:p-0">
                     {destinations.map(dest => (
                         <Link
                             key={dest.id}
                             href={`/destinations/${dest.name.toLowerCase().replace(/\s+/g, '-')}`}
-                            className="bg-[#F6F6F6] rounded-lg p-4 flex items-center justify-between hover:shadow-md transition-shadow group"
+                            className="hover:bg-[#db9b8060] bg-[#FFF3EE]   transition-colors  rounded-lg p-4 flex items-center justify-between   group"
                         >
                             <div className="flex items-center">
-                                <div className="w-10 h-10 bg-[#F15A25] rounded-full flex items-center justify-center text-white mr-3 overflow-hidden">
+                                <div className="     rounded-full flex items-center justify-center text-white mr-3 overflow-hidden">
                                     {/* Using Flagcdn API for flag images */}
                                     <img
-                                        src={`https://flagcdn.com/w40/${dest.code}.png`}
+                                        src={`https://flagcdn.com/${dest.code}.svg`}
                                         alt={`${dest.name} flag`}
-                                        className="w-8 rounded-full h-8 object-cover"
+                                        className="w-[35px] rounded-full h-[35px] object-cover"
                                     />
                                 </div>
                                 <div>
-                                    <h3 className="font-medium">{dest.name}</h3>
+                                    <h3 className="font-medium lg:text-[26px] text-[1.25rem]">{dest.name}</h3>
                                     <p className="text-xs text-[#6B6B6B]">From USD {dest.price}</p>
                                 </div>
                             </div>

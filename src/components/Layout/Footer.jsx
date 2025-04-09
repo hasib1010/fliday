@@ -80,12 +80,12 @@ export default function Footer() {
   ];
 
   return (
-    <footer className="bg-white py-16 px-4">
+    <footer className="bg-white lg:py-16 py-10 px-4">
       <div className="max-w-[1220px] mx-auto ">
         {/* Top border */}
-        <div className="border-t border-gray-200 mb-12"></div>
+        <div className="border-t border-gray-200 lg:mb-12 mb-4"></div>
         
-        <div className="flex justify-between flex-wrap lg:flex-row  ">
+        <div className="flex justify-between flex-col lg:flex-row  ">
           {/* Company Info */}
           <div className='max-w-[355px]'>
             <Link href="/" className="inline-block w-[355px] mb-6">
@@ -94,11 +94,11 @@ export default function Footer() {
               </div>
             </Link>
             
-            <p className="text-[#8E8E8E] text-[16px] font-normal mb-4 text-center lg:text-left">
+            <p className="text-[#8E8E8E] text-[16px] font-normal mb-4  text-left">
               Our mission is to make travel simpler, smarter, and more connected.
             </p>
             
-            <p className="text-[#8E8E8E] text-[16px] font-normal text-center lg:text-left">
+            <p className="text-[#8E8E8E] text-[16px] font-normal  text-left">
               We help globetrotters stay online with instant eSIMs for 100+ countries — no roaming fees, no SIM card swaps, just seamless data wherever you land.
             </p>
           </div>
@@ -106,7 +106,7 @@ export default function Footer() {
           {/* Popular Destinations */}
           <div className=' '>
             <h3 className="font-medium text-lg my-4">Popular Destinations</h3>
-            <ul className="space-y-2">
+            <ul className="space-y-2 grid grid-cols-2 lg:grid-cols-1">
               {popularDestinations.map((destination) => (
                 <li key={destination.name}>
                   <Link 
@@ -123,7 +123,7 @@ export default function Footer() {
           {/* Resources */}
           <div className='lg:ml-10'>
             <h3 className="font-medium text-lg my-4">Resources</h3>
-            <ul className="space-y-2">
+            <ul className="space-y-2  grid grid-cols-2 lg:grid-cols-1">
               {resources.map((resource) => (
                 <li key={resource.name}>
                   <Link 
@@ -140,7 +140,7 @@ export default function Footer() {
           {/* Help */}
           <div>
             <h3 className="font-medium text-lg my-4">Help</h3>
-            <ul className="space-y-2">
+            <ul className="space-y-2  grid grid-cols-2 lg:grid-cols-1">
               {helpLinks.map((link) => (
                 <li key={link.name}>
                   <Link 

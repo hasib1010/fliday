@@ -223,7 +223,7 @@ export default function BlogDetail({ params }) {
                             src={blog.featuredImage}
                             alt={blog.title}
 
-                            priority
+                           
                         />
                     </div>
 
@@ -239,6 +239,7 @@ export default function BlogDetail({ params }) {
                                 width={32}
                                 height={32}
                                 className="rounded-full mr-2"
+                              
                             />
                             <span className="text-sm">{blog.author.name}</span>
                         </div>
@@ -336,11 +337,11 @@ export default function BlogDetail({ params }) {
                         </div>
                     )}
 
-                     
+
                 </div>
 
                 {/* Sidebar - 1/3 width on desktop */}
-                <div className="lg:col-span-1">
+                <div className="w-[292px]">
                     {/* Table of Contents - Desktop */}
                     <div className="hidden lg:block sticky top-3 w-full">
                         <div className="border border-[#F15A25] rounded-lg p-2 mb-4">
@@ -351,7 +352,7 @@ export default function BlogDetail({ params }) {
                         {/* Promo Card */}
                         <div className="rounded-lg overflow-hidden border border-[#F15A25] w-full">
                             <div className="bg-white p-6">
-                                <h3 className="text-xl font-medium text-black">Never Pay Roaming Fees Again</h3>
+                                <h3 className="text-[24px] font-medium text-black"><span className='text-[#F15A25]'>Never</span> Pay Roaming Fees Again</h3>
                                 <p className="text-black text-sm mt-2 mb-4">Get your travel eSIM today and stay connected abroad.</p>
                                 <Link href="/destinations" className="inline-block bg-[#F15A25] text-white text-sm px-6 py-2 rounded-full font-medium hover:bg-[#e04e1a] transition-colors">
                                     Choose a Destination
@@ -361,7 +362,7 @@ export default function BlogDetail({ params }) {
                                 <img
                                     src="/blog/promo-card.png"
                                     alt="Woman using phone with headphones"
-
+                                   
                                     className=" "
                                 />
                             </div>

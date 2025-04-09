@@ -18,10 +18,12 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${poppins.variable} antialiased font-poppins max-w-[1440px] mx-auto `}>
+      <body className={`${poppins.variable} antialiased font-poppins mx-auto`}>
         <Navbar />
-        {children}
-        <Footer/>
+        <main>
+          {children}
+        </main>
+        <Footer />
       </body>
     </html>
   );

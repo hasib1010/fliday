@@ -46,7 +46,7 @@ export default function AllDestinations() {
     { id: 34, name: 'Russia', price: 3.99, code: 'ru', type: 'country' },
     { id: 35, name: 'India', price: 3.99, code: 'in', type: 'country' },
     { id: 36, name: 'South Africa', price: 3.99, code: 'za', type: 'country' },
-];
+  ];
 
   // Filter destinations based on search query
   const filteredDestinations = destinations.filter(destination =>
@@ -94,24 +94,25 @@ export default function AllDestinations() {
           <Link
             key={destination.id}
             href={`/destinations/${destination.name.toLowerCase().replace(/\s+/g, '-')}`}
-            className="bg-[#F6F6F6] rounded-lg p-4 flex items-center justify-between hover:shadow-md transition-shadow group"
+            className="hover:bg-[#db9b8060] bg-[#FFF3EE]   transition-colors rounded-lg p-4 flex items-center justify-between  group"
           >
             <div className="flex items-center">
-              <div className="w-10 h-10 bg-[#F15A25] rounded-full flex items-center justify-center text-white mr-3">
+              <div className="     rounded-full flex items-center justify-center text-white mr-3 overflow-hidden">
+                {/* Using Flagcdn API for flag images */}
                 <img
-                  src={`https://flagcdn.com/w40/${destination.code}.png`}
+                  src={`https://flagcdn.com/${destination.code}.svg`}
                   alt={`${destination.name} flag`}
-                  className="w-8 rounded-full h-8 object-cover"
+                  className="w-[35px] rounded-full h-[35px] object-cover bg-center"
                 />
               </div>
               <div>
-                <h3 className="font-medium">{destination.name}</h3>
-                <p className="text-sm text-gray-500">From USD {destination.price}</p>
+              <h3 className="font-medium lg:text-[26px] text-[1.25rem]">{destination.name}</h3>
+              <p className="text-xs text-[#6B6B6B]">From USD {destination.price}</p>
               </div>
             </div>
             <div className="text-gray-400 group-hover:text-[#F15A25] transition-colors">
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M9 18l6-6-6-6" />
+              <svg xmlns="http://www.w3.org/2000/svg" width="9" height="16" viewBox="0 0 9 16" fill="none">
+                <path d="M8.1992 8.73001C8.58947 8.33924 8.58906 7.70607 8.19828 7.3158L1.83021 0.955957C1.43943 0.565686 0.806263 0.566095 0.415992 0.956872C0.0257201 1.34765 0.0261301 1.98081 0.416907 2.37109L6.07742 8.02428L0.424225 13.6848C0.0339538 14.0756 0.0343633 14.7087 0.42514 15.099C0.815917 15.4893 1.44908 15.4889 1.83935 15.0981L8.1992 8.73001ZM7.00065 9.02368L7.49228 9.02336L7.49099 7.02336L6.99935 7.02368L7.00065 9.02368Z" fill="black" />
               </svg>
             </div>
           </Link>

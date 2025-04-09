@@ -95,20 +95,20 @@ export default function RechargePage() {
                     <Link
                         key={destination.id}
                         href={`/recharge/${destination.name.toLowerCase().replace(/\s+/g, '-')}`}
-                        className="bg-[#FFF3EE] rounded-lg p-4 flex items-center justify-between hover:shadow-  transition-shadow group"
+                        className="rounded-lg p-4 flex items-center justify-between hover:bg-[#db9b8060] bg-[#FFF3EE]   transition-colors group"
                     >
                         <div className="flex items-center">
-                            <div className="w-10 h-10 bg-[#F15A25] rounded-full flex items-center justify-center text-white mr-3">
-                               
+                            <div className="     rounded-full flex items-center justify-center text-white mr-3 overflow-hidden">
+                                {/* Using Flagcdn API for flag images */}
                                 <img
-                                    src={`https://flagcdn.com/w40/${destination.code}.png`}
+                                    src={`https://flagcdn.com/${destination.code}.svg`}
                                     alt={`${destination.name} flag`}
-                                    className="w-8 rounded-full h-8 object-cover"
+                                    className="w-[35px] rounded-full h-[35px] object-cover bg-center"
                                 />
                             </div>
                             <div>
-                                <h3 className="font-medium">{destination.name}</h3>
-                                <p className="text-sm text-gray-500">From USD {destination.price}</p>
+                                <h3 className="font-medium lg:text-[26px] text-[1.25rem]">{destination.name}</h3>
+                                <p className="text-xs text-[#6B6B6B]">From USD {destination.price}</p>
                             </div>
                         </div>
                         <div className="text-gray-400 group-hover:text-[#F15A25] transition-colors">

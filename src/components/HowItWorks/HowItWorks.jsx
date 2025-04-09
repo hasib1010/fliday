@@ -1,11 +1,37 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { CheckCircle2, Smartphone, Globe, Clock, CreditCard } from 'lucide-react';
 import FAQSection from '../Home/FAQSection';
+// Import Swiper React components
+import { Swiper, SwiperSlide } from 'swiper/react';
+// Import Swiper styles
+import 'swiper/css';
+import 'swiper/css/pagination';
+// Import required modules
+import { Pagination, Autoplay } from 'swiper/modules';
 
 export default function HowItWorks() {
+    const [isMobile, setIsMobile] = useState(false);
+  
+    // Check screen size on client side
+    useEffect(() => {
+      const checkScreenSize = () => {
+        setIsMobile(window.innerWidth < 1024);
+      };
+      
+      // Initial check
+      checkScreenSize();
+      
+      // Add event listener for window resize
+      window.addEventListener('resize', checkScreenSize);
+      
+      // Clean up
+      return () => window.removeEventListener('resize', checkScreenSize);
+    }, []);
+
     // Array of steps for the process
     const steps = [
         {
@@ -85,13 +111,42 @@ export default function HowItWorks() {
             answer: "Yes, most eSIM-compatible phones support Dual SIM Dual Standby (DSDS), allowing you to use both your physical SIM and eSIM simultaneously."
         }
     ];
+    
+    // Step Card component for mobile carousel
+    const StepCard = ({ step }) => (
+        <div className="px-4 flex justify-between flex-col gap-3 ">
+            <div className="flex items-center gap-4 mb-4">
+                <div className="bg-[#FFF0EC] w-12 h-12 rounded-full flex items-center justify-center text-[#F15A25] font-medium text-xl">
+                    {step.id}
+                </div>
+                <h3 className="text-xl font-medium">{step.title}</h3>
+            </div>
+            <p className="text-gray-600 text-base mb-2">{step.description}</p>
+            
+            
+            
+            <div className="relative max-w-[350px] h-[320px] mx-auto flex">
+                {/* Background behind image */}
+                <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[300px] h-[180px] bg-[#FFF3EE] rounded-[20px] z-0"></div>
+                
+                {/* Image on top */}
+                <Image
+                    src={step.image}
+                    alt={step.title}
+                    width={280}
+                    height={280}
+                    className="relative z-10 rounded-xl mx-auto"
+                />
+            </div>
+        </div>
+    );
 
     return (
         <div className="max-w-[1220px] mx-auto lg:py-12">
             {/* Hero Section */}
-            <div className="bg-[#FFF8F6] py-16 px-4 md:px-8 rounded-b-3xl">
-                <div className="max-w-5xl mx-auto text-center">
-                    <h1 className="text-4xl md:text-5xl font-medium mb-6">
+            <div className="bg-[#FFF8F6] lg:py-16 py-2 px-4 md:px-8 rounded-b-3xl">
+                <div className="max-w-5xl mx-auto lg:text-center text-left">
+                    <h1 className="text-[1.75rem] md:text-5xl font-medium mb-6">
                         Get connected in <span className="text-[#F15A25]">1 minute</span> with our eSIM
                     </h1>
                     <p className="text-xl md:text-2xl text-gray-600 mb-10 max-w-2xl mx-auto">
@@ -104,7 +159,6 @@ export default function HowItWorks() {
                         >
                             Explore Destinations
                         </Link>
-
                     </div>
                 </div>
             </div>
@@ -112,63 +166,86 @@ export default function HowItWorks() {
             {/* Process Steps Section */}
             <div className="lg:py-20 py-3 px-4 md:px-8">
                 <div className="max-w-6xl mx-auto">
-                    <h2 className="text-3xl md:text-4xl font-medium text-center mb-16">
+                    <h2 className="text-[1.75rem] md:text-4xl font-medium  text-center  lg:mb-16 mb-7">
                         How Fliday eSIM works
                     </h2>
 
-                    <div className="    space-y-20">
-                        {steps.map((step, index) => (
-                            <div
-                                key={step.id}
-                                className={`flex flex-col ${index % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'
-                                    } gap-8 md:gap-16 items-center`}
+                    {isMobile ? (
+                        /* Mobile & Tablet: Carousel */
+                        <div className="">
+                            <Swiper
+                                slidesPerView={1}
+                                spaceBetween={10}
+                                pagination={{
+                                    clickable: true,
+                                    dynamicBullets: true,
+                                }}
+                                autoplay={{
+                                    delay: 4000,
+                                    disableOnInteraction: false,
+                                }}
+                                modules={[Pagination, Autoplay]}
+                                className="mySwiper"
                             >
-                                <div className="w-full md:w-1/2">
-                                    <div className="flex items-center gap-4 mb-4">
-                                        <div className="bg-[#FFF0EC] w-12 h-12 rounded-full flex items-center justify-center text-[#F15A25] font-medium text-xl">
-                                            {step.id}
+                                {steps.map((step) => (
+                                    <SwiperSlide key={step.id}>
+                                        <StepCard step={step} />
+                                    </SwiperSlide>
+                                ))}
+                            </Swiper>
+                        </div>
+                    ) : (
+                        /* Desktop: Original Layout */
+                        <div className="space-y-20">
+                            {steps.map((step, index) => (
+                                <div
+                                    key={step.id}
+                                    className={`flex flex-col ${
+                                        index % 2 === 0 ? 'md:flex-row' : 'md:flex-row-reverse'
+                                    } gap-8 md:gap-16 items-center`}
+                                >
+                                    <div className="w-full md:w-1/2">
+                                        <div className="flex items-center gap-4 mb-4">
+                                            <div className="bg-[#FFF0EC] w-12 h-12 rounded-full flex items-center justify-center text-[#F15A25] font-medium text-xl">
+                                                {step.id}
+                                            </div>
+                                            <h3 className="text-2xl font-medium">{step.title}</h3>
                                         </div>
-                                        <h3 className="text-2xl font-medium">{step.title}</h3>
+                                        <p className="text-gray-600 text-lg mb-6">{step.description}</p>
+
+                                        {step.id === 3 && (
+                                            <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                                                <p className="text-sm text-gray-600">
+                                                    <span className="font-medium">Pro tip:</span> Install your eSIM before your trip so you're ready to connect as soon as you land.
+                                                </p>
+                                            </div>
+                                        )}
                                     </div>
-                                    <p className="text-gray-600 text-lg mb-6">{step.description}</p>
 
-                                    {step.id === 3 && (
-                                        <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                                            <p className="text-sm text-gray-600">
-                                                <span className="font-medium">Pro tip:</span> Install your eSIM before your trip so you're ready to connect as soon as you land.
-                                            </p>
-                                        </div>
-                                    )}
+                                    <div className="relative max-w-[513px] h-[360.99px] flex-1 items-end">
+                                        {/* Background behind image */}
+                                        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[513px] h-[249px] bg-[#FFF3EE] rounded-[20px] z-0"></div>
+
+                                        {/* Image on top */}
+                                        <Image
+                                            src={step.image}
+                                            alt={step.title}
+                                            width={372.02}
+                                            height={360.99}
+                                            className="relative z-10   mx-auto"
+                                        />
+                                    </div>
                                 </div>
-
-
-
-                                <div className="relative max-w-[513px] h-[360.99px] flex-1">
-                                    {/* Background behind image */}
-                                    <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[513px] h-[249px] bg-[#FFF3EE] rounded-[20px] z-0"></div>
-
-                                    {/* Image on top */}
-                                    <Image
-                                        src={step.image}
-                                        alt={step.title}
-                                        width={372.02}
-                                        height={360.99}
-                                        className="relative z-10 rounded-xl mx-auto"
-                                    />
-                                </div>
-
-
-
-                            </div>
-                        ))}
-                    </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </div>
 
             {/* Benefits Section */}
-            <div className="bg-[#FFF8F6] py-20 px-4 md:px-8 rounded-3xl lg:my-16">
+            <div className="bg-[#FFF8F6] lg:py-20 py-5 px-4 md:px-8 rounded-3xl lg:my-16">
                 <div className="max-w-6xl mx-auto">
-                    <h2 className="text-3xl md:text-4xl font-medium text-center mb-16">
+                    <h2 className="  text-2xl md:text-4xl font-medium lg:text-center lg:mb-16 mb-4">
                         Why choose a Fliday eSIM?
                     </h2>
 
@@ -188,6 +265,21 @@ export default function HowItWorks() {
 
             {/* FAQ Section */}
             <FAQSection />
+            
+            {/* Add Swiper CSS for pagination styling */}
+            <style jsx global>{`
+                .swiper-pagination-bullet {
+                    background: #F15A25;
+                    opacity: 0.5;
+                }
+                .swiper-pagination-bullet-active {
+                    background: #F15A25;
+                    opacity: 1;
+                }
+                .swiper {
+                    padding-bottom: 40px;
+                }
+            `}</style>
         </div>
     );
 }

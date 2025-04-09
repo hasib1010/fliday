@@ -8,7 +8,7 @@ import SetupProcess from "@/components/Home/SetupProcess";
 export default function Home() {
   return (
     <main>
-      <div className="hero-container">  
+      <div className=" ">  
         <Hero />
       </div>
       <div className="max-w-[1220px] mx-auto px-1">
