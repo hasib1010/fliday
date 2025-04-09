@@ -20,7 +20,7 @@ export default function PopularDestinations() {
     ];
 
     return (
-        <section className="pt-[3rem] p-3 lg:p-0 ">
+        <section className="pt-[3rem] p-3 lg:p-0 lg:mt-16  ">
             <div>
                 <div className="flex lg:justify-between  text-left flex-col lg:flex-row  lg:items-center mb-6 p-1 lg:p-0">
                     <div>
@@ -53,7 +53,7 @@ export default function PopularDestinations() {
                 </div>
 
                 {/* Destinations grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8 gap-3 p-2 lg:p-0">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3   p-2 gap-4 lg:p-0">
                     {destinations.map(dest => (
                         <Link
                             key={dest.id}

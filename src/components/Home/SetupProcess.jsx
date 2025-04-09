@@ -80,7 +80,7 @@ export default function SetupProcess() {
 
   return (
     <>
-      <section className=" p-3 lg:p-0 pt-[3rem]">
+      <section className=" p-3 lg:p-0 pt-[3rem] lg:mt-16 ">
         <div className="mx-auto">
           <div className="mb-12">
             <h2 className="lg:text-[40px] text-[1.75rem]  text-left font-medium mb-3">Set up your eSIM in 1 minute</h2>
