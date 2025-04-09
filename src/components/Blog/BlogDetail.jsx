@@ -213,7 +213,7 @@ export default function BlogDetail({ params }) {
     }
 
     return (
-        <div className="max-w-[1220px] mx-auto   lg:py-12 pt-5 lg:pt-20  px-3 lg:px-0">
+        <div className="max-w-[1220px] mx-auto  mt-20 pt-5 lg:pt-20  px-3 lg:px-0">
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 {/* Main Content - 2/3 width on desktop */}
                 <div className="lg:col-span-2">

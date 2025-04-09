@@ -142,7 +142,7 @@ export default function HowItWorks() {
     );
 
     return (
-        <div className="max-w-[1220px] mx-auto lg:py-12  lg:pt-24 ">
+        <div className="max-w-[1220px] mx-auto lg:py-12  mt-24 ">
             {/* Hero Section */}
             <div className="bg-[#FFF8F6] lg:py-16 py-2  p-3 lg:p-0 md:px-8 rounded-3xl">
                 <div className="max-w-5xl mx-auto  text-center  ">

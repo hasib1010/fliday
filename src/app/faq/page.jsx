@@ -65,7 +65,7 @@ export default function FAQ() {
     };
 
     return (
-        <section className="max-w-[1220px] mx-auto lg:pt-20 pt-5 px-3 lg:px-0">
+        <section className="max-w-[1220px] mx-auto mt-24 pt-5 px-3 lg:px-0">
             <div className=" mx-auto  ">
                 <h2 className="lg:text-[40px] text-[28px] text-left md:text-[40px] font-medium ">Frequently Asked Questions</h2>
                 <p className='lg:mb-12 mb-3.5 mt-1 lg:text-[22px] text-base   text-left'>We have got answers to your most common questions.</p>

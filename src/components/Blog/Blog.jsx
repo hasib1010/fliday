@@ -203,7 +203,7 @@ export default function Blog() {
   }
 
   return (
-    <div className="max-w-[1220px] mx-auto  px-3 lg:px-0 lg:py-24">
+    <div className="max-w-[1220px] mx-auto  px-3 lg:px-0 mt-24">
       {/* Featured Post Section */}
       {featuredPost && (
         <div className="mb-16 pt-5 lg:pt-0">

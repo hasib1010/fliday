@@ -120,7 +120,7 @@ export default function Support() {
   ];
 
   return (
-    <div className="max-w-[1440px] mx-auto px-4 lg:py-12 pt-5 lg:pt-20 ">
+    <div className="max-w-[1440px] mx-auto px-4 pt-24  lg:pt-20 ">
       {/* Hero Section */}
       <div className="lg:text-center lg:mb-16 mb-5">
         <h1 className="lg:text-[40px] text-[28px] font-medium lg:mb-6">How can we help you?</h1>

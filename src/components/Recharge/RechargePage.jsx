@@ -55,7 +55,7 @@ export default function RechargePage() {
     );
 
     return (
-        <div className="max-w-[1220px] mx-auto  lg:pt-20  lg:py-12 pt-5  px-3 lg:px-0 ">
+        <div className="max-w-[1220px] mx-auto  pt-24      px-3 lg:px-0 ">
             <h1 className="lg:text-[40px]  text-2xl    font-medium mb-2">Recharge Your eSIM in Seconds</h1>
             <p className="text-gray-600 mb-6 text-sm lg:text-base">Running low on data? Top up instantly and stay connected—no new QR code needed.</p>
 
