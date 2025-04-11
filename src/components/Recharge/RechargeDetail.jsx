@@ -70,7 +70,7 @@ export default function DestinationDetail({ params }) {
         <div className="max-w-[1220px] mx-auto lg:px-1 px-2.5 py-12 pt-24">
             <div className=" gap-[78px] flex justify-evenly lg:flex-row flex-col">
                 {/* Left column - Destination image */}
-                <div className=" relative rounded-lg overflow-hidden  lg:w-[468px] h-[624px] md:h-[623px]">
+                <div className=" relative  hidden md:block rounded-lg overflow-hidden  lg:w-[468px] h-[624px] md:h-[623px]">
                     <Image
                         src={destinationImage}
                         alt={`eSIM for ${formattedTitle}`}
@@ -86,7 +86,7 @@ export default function DestinationDetail({ params }) {
                         <div className="w-8 h-8 bg-[#F15A25] rounded-full flex items-center justify-center text-white mr-3">
                             <span>{countryFlag}</span>
                         </div>
-                        <h1 className="text-[40px] font-medium">Recharge eSim for {formattedTitle}</h1>
+                        <h1 className="lg:text-[40px] text-2xl font-medium">Recharge eSim for {formattedTitle}</h1>
                     </div>
 
                     <p className="text-gray-600 mb-6">

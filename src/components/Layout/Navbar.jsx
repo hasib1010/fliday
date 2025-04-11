@@ -6,9 +6,9 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
 export default function Navbar() {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const pathname = usePathname();
-  const isHomePage = pathname === '/';
+  const isHomePage = pathname.startsWith('/') ;
   const [isScrolled, setIsScrolled] = useState(!isHomePage);
   const [isMounted, setIsMounted] = useState(false);
 
@@ -27,8 +27,8 @@ export default function Navbar() {
     };
   }, []);
 
-  const toggleMenu = () => {
-    setIsMenuOpen(!isMenuOpen);
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
   };
 
   const navLinks = [
@@ -40,7 +40,7 @@ export default function Navbar() {
   ];
 
   // Helper function to check if path starts with a specific route
-  const isActiveLink = (href) => {
+  const isActiveLink = (href ) => {
     if (href === '/') {
       return pathname === '/';
     }
@@ -73,8 +73,8 @@ export default function Navbar() {
               </Link>
             </div>
 
-            {/* Desktop Navigation Links - Only shown on large screens (lg and above) */}
-            <div className="hidden lg:flex space-x-8 items-center">
+            {/* Desktop Navigation Links */}
+            <div className="hidden md:flex space-x-8 items-center">
               {navLinks.map((link) => (
                 <Link
                   key={link.href}
@@ -100,15 +100,15 @@ export default function Navbar() {
               </Link>
             </div>
 
-            {/* Menu Button - Shown on small/medium screens (below lg) */}
-            <div className="lg:hidden">
+            {/* Mobile Menu Button */}
+            <div className="md:hidden">
               <button
                 type="button"
                 className="text-black focus:outline-none"
-                aria-label={isMenuOpen ? "Close menu" : "Open menu"}
-                onClick={toggleMenu}
+                aria-label={isMobileMenuOpen ? "Close menu" : "Open menu"}
+                onClick={toggleMobileMenu}
               >
-                {isMenuOpen ? (
+                {isMobileMenuOpen ? (
                   <svg className="h-6 w-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path
                       strokeLinecap="round"
@@ -131,9 +131,9 @@ export default function Navbar() {
             </div>
           </div>
 
-          {/* Responsive Menu - Shown for mobile, tablet, and small laptops */}
-          {isMenuOpen && (
-            <div className="lg:hidden bg-white shadow-lg rounded-lg mt-2 py-4 px-2 transition-all duration-300 ease-in-out">
+          {/* Mobile Menu */}
+          {isMobileMenuOpen && (
+            <div className="md:hidden bg-white shadow-lg rounded-lg mt-2 py-4 px-2 transition-all duration-300 ease-in-out">
               <div className="flex flex-col space-y-4">
                 {navLinks.map((link) => (
                   <Link
@@ -144,7 +144,7 @@ export default function Navbar() {
                         ? 'text-[#F15A25]'
                         : 'text-black'
                     }`}
-                    onClick={() => setIsMenuOpen(false)}
+                    onClick={() => setIsMobileMenuOpen(false)}
                   >
                     {link.label}
                   </Link>
@@ -156,7 +156,7 @@ export default function Navbar() {
                       ? 'text-[#F15A25] border-[#F15A25]'
                       : 'text-black border-black'
                   }`}
-                  onClick={() => setIsMenuOpen(false)}
+                  onClick={() => setIsMobileMenuOpen(false)}
                 >
                   View Destinations
                 </Link>
@@ -167,7 +167,7 @@ export default function Navbar() {
       </nav>
 
       {/* Spacer div to prevent content from being hidden under navbar on non-homepage routes */}
-      {!isHomePage && <div className="h-16"></div>}
+      {!isHomePage && <div className="h-20"></div>}
     </>
   );
 }

@@ -8,6 +8,8 @@ import Image from 'next/image';
 export default function AllDestinations() {
   const [activeFilter, setActiveFilter] = useState('Countries');
   const [searchQuery, setSearchQuery] = useState('');
+  const [activeDestination, setActiveDestination] = useState(null);
+  const [activeFilterButton, setActiveFilterButton] = useState(null);
 
   // Sample data for destinations
   const destinations = [
@@ -49,14 +51,32 @@ export default function AllDestinations() {
     { id: 36, name: 'South Africa', price: 3.99, code: 'za', type: 'country' },
   ];
 
+  // Touch event handlers for destinations
+  const handleDestinationTouchStart = (id) => {
+    setActiveDestination(id);
+  };
+
+  const handleDestinationTouchEnd = () => {
+    setActiveDestination(null);
+  };
+
+  // Touch event handlers for filter buttons
+  const handleFilterTouchStart = (filter) => {
+    setActiveFilterButton(filter);
+  };
+
+  const handleFilterTouchEnd = () => {
+    setActiveFilterButton(null);
+  };
+
   // Filter destinations based on search query
   const filteredDestinations = destinations.filter(destination =>
     destination.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
-    <div className="max-w-[1220px] mx-auto pt-32       px-3 lg:px-0">
-      <h1 className="lg:text-[40px]  text-3xl    font-medium mb-2">All destinations</h1>
+    <div className="max-w-[1220px] mx-auto pt-32 px-3 lg:px-0">
+      <h1 className="lg:text-[40px] text-3xl font-medium mb-2">All destinations</h1>
       <p className="text-gray-600 mb-6">Explore eSIM plans in 100+ countries.</p>
 
       {/* Filter tabs */}
@@ -65,10 +85,13 @@ export default function AllDestinations() {
           <button
             key={filter}
             onClick={() => setActiveFilter(filter)}
-            className={`px-5 py-2 rounded-full text-sm font-medium  transition-colors ${activeFilter === filter
-              ? 'bg-black text-white'
-              : 'bg-white text-black hover:bg-[#E2E2E4] cursor-pointer border border-gray-200'
-              }`}
+            className={`px-5 py-2 rounded-full text-sm font-medium transition-colors ${
+              activeFilter === filter
+                ? 'bg-black text-white'
+                : `bg-white text-black hover:bg-[#E2E2E4] active:bg-[#E2E2E4] cursor-pointer border border-gray-200 ${activeFilterButton === filter ? 'bg-[#E2E2E4]' : ''}`
+            }`}
+            onTouchStart={() => handleFilterTouchStart(filter)}
+            onTouchEnd={handleFilterTouchEnd}
           >
             {filter}
           </button>
@@ -95,28 +118,46 @@ export default function AllDestinations() {
           <Link
             key={destination.id}
             href={`/destinations/${destination.name.toLowerCase().replace(/\s+/g, '-')}`}
-            className="hover:bg-[#d5d5d5] bg-[#f7f7f8]   transition-colors rounded-lg p-4 flex items-center justify-between  group"
+            className={`hover:bg-[#d5d5d5] active:bg-[#d5d5d5] ${
+              activeDestination === destination.id ? 'bg-[#d5d5d5]' : 'bg-[#f7f7f8]'
+            } transition-colors rounded-lg p-4 flex items-center justify-between group`}
+            onTouchStart={() => handleDestinationTouchStart(destination.id)}
+            onTouchEnd={handleDestinationTouchEnd}
           >
             <div className="flex items-center">
-              <div className="     rounded-full flex items-center justify-center text-white mr-3 overflow-hidden">
-                   <div className="w-[36px] h-[36px] relative overflow-hidden shrink-0 rounded-full">
-                                                   <Image
-                                                       src={`/flags/${destination.code}_flag.jpeg`}  
-                                                       alt={`${destination.name} flag`}
-                                                       fill
-                                                       className="object-cover"
-                                                       sizes="100vw"
-                                                   />
-                                                   <div className="absolute inset-0 border-[1px] border-[rgba(0,0,0,0.1)] rounded-full pointer-events-none" />
-                                               </div>
+              <div className="rounded-full flex items-center justify-center text-white mr-3 overflow-hidden">
+                <div className="w-[36px] h-[36px] relative overflow-hidden shrink-0 rounded-full">
+                  <Image
+                    src={`/flags/${destination.code}_flag.jpeg`}
+                    alt={`${destination.name} flag`}
+                    fill
+                    className="object-cover"
+                    sizes="100vw"
+                  />
+                  <div className="absolute inset-0 border-[1px] border-[rgba(0,0,0,0.1)] rounded-full pointer-events-none" />
+                </div>
               </div>
               <div>
                 <h3 className="font-medium lg:text-[20px] text-[1.25rem]">{destination.name}</h3>
                 <p className="text-[16px] text-[#6B6B6B]">From USD {destination.price}</p>
               </div>
             </div>
-            <div className="text-gray-400   ">
-              <svg role="img" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" class="mt-1 ltr:-rotate-90 rtl:rotate-90 pointer-events-none text-tertiary"><title>Chevron right</title><path fill="currentColor" fill-rule="evenodd" d="M13.2151 6.8326L8.43758 11.4101C8.27758 11.5451 8.12758 11.6001 8.00008 11.6001C7.87258 11.6001 7.70083 11.5446 7.58533 11.4329L2.78533 6.8326C2.54543 6.6051 2.53763 6.2026 2.76733 5.9851C2.99546 5.74447 3.37683 5.73665 3.61508 5.96713L8.00008 10.1701L12.3851 5.9701C12.6226 5.73962 13.0046 5.74745 13.2328 5.98807C13.4626 6.2026 13.4551 6.6051 13.2151 6.8326Z"></path></svg>
+            <div className="text-gray-400">
+              <svg 
+                role="img" 
+                xmlns="http://www.w3.org/2000/svg" 
+                width="16" 
+                height="16" 
+                viewBox="0 0 16 16" 
+                className="mt-1 ltr:-rotate-90 rtl:rotate-90 pointer-events-none text-tertiary"
+              >
+                <title>Chevron right</title>
+                <path 
+                  fill="currentColor" 
+                  fillRule="evenodd" 
+                  d="M13.2151 6.8326L8.43758 11.4101C8.27758 11.5451 8.12758 11.6001 8.00008 11.6001C7.87258 11.6001 7.70083 11.5446 7.58533 11.4329L2.78533 6.8326C2.54543 6.6051 2.53763 6.2026 2.76733 5.9851C2.99546 5.74447 3.37683 5.73665 3.61508 5.96713L8.00008 10.1701L12.3851 5.9701C12.6226 5.73962 13.0046 5.74745 13.2328 5.98807C13.4626 6.2026 13.4551 6.6051 13.2151 6.8326Z"
+                />
+              </svg>
             </div>
           </Link>
         ))}
