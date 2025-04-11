@@ -86,7 +86,7 @@ export default function DestinationDetail({ params }) {
                         <div className="w-8 h-8 bg-[#F15A25] rounded-full flex items-center justify-center text-white mr-3">
                             <span>{countryFlag}</span>
                         </div>
-                        <h1 className="text-2xl font-medium">Recharge eSim for {formattedTitle}</h1>
+                        <h1 className="text-[40px] font-medium">Recharge eSim for {formattedTitle}</h1>
                     </div>
 
                     <p className="text-gray-600 mb-6">
@@ -102,7 +102,7 @@ export default function DestinationDetail({ params }) {
                                 key={plan.id}
                                 className={`relative border rounded-lg p-4 cursor-pointer transition-all ${selectedPlan === plan.data
                                     ? 'border-[#F15A25]'
-                                    : 'border-gray-200 hover:border-gray-300'
+                                    : 'border-gray-200 hover:border-[#F15A25]'
                                     }`}
                                 onClick={() => setSelectedPlan(plan.data)}
                             >

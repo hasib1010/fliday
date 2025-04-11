@@ -1,33 +1,38 @@
 'use client';
 
 import Image from 'next/image';
+import { RiVerifiedBadgeLine } from "react-icons/ri";
+import { FaHandHoldingUsd } from "react-icons/fa";
+import { BsFillSimSlashFill } from "react-icons/bs";
+import { FaIdCard } from "react-icons/fa";
 
 export default function BenefitsSection() {
   const benefits = [
     {
       icon: (
-        "/icons/VerifiedAccount.png"
+        // "/icons/VerifiedAccount.png"
+        <RiVerifiedBadgeLine />
       ),
       title: "Affordable",
       description: "Plans tailored to your needs"
     },
     {
       icon: (
-        "/icons/GetCash.png"
+        <FaHandHoldingUsd/>
       ),
       title: "No hidden fees",
       description: "Internet without extra costs"
     },
     {
       icon: (
-       "/icons/sim.png"
+        <BsFillSimSlashFill />
       ),
       title: "No plastic SIM",
       description: "Easy & fast online installation"
     },
     {
       icon: (
-        "/icons/IdentityTheft.png"
+        <FaIdCard/>
       ),
       title: "No ID required",
       description: "Just make your purchase and start using"
@@ -52,8 +57,10 @@ export default function BenefitsSection() {
           <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-10">
             {benefits.map((benefit, index) => (
               <div key={index} className="flex flex-col  items-start  ">
-                <div className="mb-4">
-                 <img className='lg:h-14 h-8' src={benefit.icon} alt={benefit.title}    />
+                <div className="mb-4 text-5xl text-[#F15125] ">
+                 {/* <img className='lg:h-14 h-8' src={benefit.icon} alt={benefit.title}    /> */}
+                 {/* <img className='lg:h-14 h-8' src={benefit.icon} alt={benefit.title}    /> */}
+                 {benefit.icon}
                 </div>
                 <h3 className="lg:text-xl text-[14px] font-medium mb-2">{benefit.title}</h3>
                 <p className="text-gray-500 text-[14px] max-w-[220px]">{benefit.description}</p>

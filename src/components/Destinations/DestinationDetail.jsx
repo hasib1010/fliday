@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { CheckCircle, Info } from 'lucide-react';
@@ -9,12 +9,26 @@ import BenefitsSection from '../Home/BenefitsSection';
 import FAQSection from '../Home/FAQSection';
 
 export default function DestinationDetail({ params }) {
+    // Access the ID directly from params
     const id = params?.id || 'default';
-    const formattedTitle = id.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+    
+    // Create formatted title from the ID
+    const formattedTitle = id
+        .split('-')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
 
     // State to track selected plan
     const [selectedPlan, setSelectedPlan] = useState('10 GB');
     const [activeTab, setActiveTab] = useState('features');
+    
+    // For debugging - log what we're receiving
+    useEffect(() => {
+        console.log('DestinationDetail received params:', params);
+        console.log('ID extracted:', id);
+        console.log('Formatted title:', formattedTitle);
+    }, [params, id, formattedTitle]);
+    
     // Sample eSIM plans data
     const plans = [
         { id: 1, data: '1 GB', days: '7 days', price: 3.99 },
@@ -46,10 +60,10 @@ export default function DestinationDetail({ params }) {
     const destinationImage = destinationImages[id] || destinationImages['default'];
 
     return (
-        <div className="max-w-[1220px] mx-auto px-2   pt-24">
-            <div className="  lg:gap-[78px] gap-6 flex justify-evenly lg:flex-row flex-col">
+        <div className="max-w-[1220px] mx-auto px-2 pt-24">
+            <div className="lg:gap-[78px] gap-6 flex justify-evenly lg:flex-row flex-col">
 
-                <div className=" relative rounded-lg overflow-hidden  lg:w-[468px] h-[624px] md:h-[623px]">
+                <div className="relative rounded-lg overflow-hidden lg:w-[468px] h-[624px] md:h-[623px]">
                     <Image
                         src={destinationImage}
                         alt={`eSIM for ${formattedTitle}`}
@@ -61,7 +75,7 @@ export default function DestinationDetail({ params }) {
 
 
                 {/* Right column - eSIM details and plans */}
-                <div className=' max-w-[653px]'>
+                <div className='max-w-[653px]'>
                     <div className="flex items-center mb-3">
                         <div className="w-8 h-8 bg-[#F15A25] rounded-full flex items-center justify-center text-white mr-3">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -70,7 +84,7 @@ export default function DestinationDetail({ params }) {
                                 <path d="M12 12a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
                             </svg>
                         </div>
-                        <h1 className="text-2xl font-medium">eSIM for {formattedTitle}</h1>
+                        <h1 className="text-[40px] font-medium">eSIM for {formattedTitle}</h1>
                     </div>
 
                     <p className="text-gray-600 mb-6">
@@ -87,7 +101,7 @@ export default function DestinationDetail({ params }) {
                                 onClick={() => setSelectedPlan(plan.data)}
                                 className={`relative border rounded-lg p-3 cursor-pointer transition-all ${selectedPlan === plan.data
                                     ? 'border-[#F15A25] bg-[#FFF8F6]'
-                                    : 'border-gray-200 hover:border-gray-300'
+                                    : 'border-gray-200 hover:border-[#F15A25]'
                                     }`}
                             >
                                 {plan.popular && (
@@ -165,7 +179,7 @@ export default function DestinationDetail({ params }) {
 
                     {/* Feature tabs */}
                     <div className="border-b border-gray-200 mb-4">
-                        <div className="flex space-x-6">
+                        <div className="flex space-x-6 overflow-x-auto">
                             <button
                                 onClick={() => setActiveTab('features')}
                                 className={`text-sm cursor-pointer font-medium pb-2 transition-colors ${activeTab === 'features'
@@ -309,7 +323,6 @@ export default function DestinationDetail({ params }) {
             <SetupProcess />
             <BenefitsSection />
             <FAQSection />
-
         </div>
     );
 }

@@ -142,31 +142,13 @@ export default function HowItWorks() {
     );
 
     return (
-        <div className="max-w-[1220px] mx-auto lg:py-12  mt-24 ">
-            {/* Hero Section */}
-            <div className="bg-[#FFF8F6] lg:py-16 py-2  p-3 lg:p-0 md:px-8 rounded-3xl">
-                <div className="max-w-5xl mx-auto  text-center  ">
-                    <h1 className="text-[28px] md:text-5xl font-medium mb-6">
-                        Get connected in <span className="text-[#F15A25]">1 minute</span> with our eSIM
-                    </h1>
-                    <p className="text-base md:text-2xl  text-gray-600 mb-10 max-w-2xl mx-auto">
-                        Travel smart with our hassle-free eSIM technology. Stay connected anywhere without roaming fees or SIM swaps.
-                    </p>
-                    <div className="flex flex-col sm:flex-row justify-center gap-4">
-                        <Link
-                            href="/destinations"
-                            className="bg-[#F15A25] text-white p-[11px] rounded-full text-base font-medium text-center hover:bg-[#d84e1f] transition-colors"
-                        >
-                            Explore Destinations
-                        </Link>
-                    </div>
-                </div>
-            </div>
+        <div className="max-w-[1220px] mx-auto lg:py-16   ">
+            
 
             {/* Process Steps Section */}
-            <div className="lg:py-20 py-3p-3 lg:p-0  md:px-8">
+            <div className="lg:pb-20 py-3p-3 lg:p-0  md:px-8">
                 <div className="max-w-6xl mx-auto">
-                    <h2 className="text-[28px] mt-5 md:text-4xl font-medium  text-center  lg:mb-16 mb-7">
+                    <h2 className="text-[28px] mt-5 md:text-[40px] font-medium  text-center  lg:mb-16 mb-7">
                         How Fliday eSIM works
                     </h2>
 
@@ -245,7 +227,7 @@ export default function HowItWorks() {
             {/* Benefits Section */}
             <div className="bg-[#FFF8F6] lg:py-20 py-5   p-3 lg:p-0 md:px-8 rounded-3xl lg:my-16">
                 <div className="max-w-6xl mx-auto">
-                    <h2 className="  text-[28px] md:text-4xl font-medium lg:text-center lg:mb-16 mb-4">
+                    <h2 className="  text-[28px] md:text-[44px] font-medium lg:text-center lg:mb-16 mb-4">
                         Why choose a Fliday eSIM?
                     </h2>
 

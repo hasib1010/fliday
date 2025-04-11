@@ -56,52 +56,78 @@ export default function FAQ() {
         }
     ];
 
-    // State to track which FAQ item is expanded (only one at a time)
-    const [expandedIndex, setExpandedIndex] = useState(null);
+    // State to track expanded FAQ items (multiple can be open at once)
+    const [expandedItems, setExpandedItems] = useState({});
 
     // Function to toggle expanded state of an FAQ item
     const toggleItem = (index) => {
-        setExpandedIndex(prev => prev === index ? null : index);
+        setExpandedItems(prev => ({
+            ...prev,
+            [index]: !prev[index]
+        }));
     };
+
+    // Split FAQ items into two columns for medium screens and up
+    const leftColumnItems = faqItems.slice(0, Math.ceil(faqItems.length / 2));
+    const rightColumnItems = faqItems.slice(Math.ceil(faqItems.length / 2));
+
+    // Render a single FAQ item
+    const renderFaqItem = (item, index) => (
+        <div
+            key={index}
+            className="bg-[#F6F6F6] rounded-lg overflow-hidden mb-4"
+        >
+            <button
+                onClick={() => toggleItem(index)}
+                className="flex justify-between items-center w-full p-5 text-left font-medium hover:bg-gray-100 transition-colors"
+                aria-expanded={expandedItems[index]}
+            >
+                <span className="pr-4">{item.question}</span>
+                <ChevronDown
+                    className={`transition-transform duration-200 flex-shrink-0 ${expandedItems[index] ? 'transform rotate-180' : ''}`}
+                    size={20}
+                />
+            </button>
+
+            <div 
+                className={`overflow-hidden transition-all duration-300 ease-in-out ${
+                    expandedItems[index] 
+                        ? 'max-h-[500px] opacity-100' 
+                        : 'max-h-0 opacity-0'
+                }`}
+            >
+                <div className="p-5 pt-0 text-gray-600">
+                    <p>{item.answer}</p>
+                </div>
+            </div>
+        </div>
+    );
 
     return (
         <section className="max-w-[1220px] mx-auto mt-24 pt-5 px-3 lg:px-0">
-            <div className=" mx-auto  ">
-                <h2 className="lg:text-[40px] text-[28px] text-left md:text-[40px] font-medium ">Frequently Asked Questions</h2>
-                <p className='lg:mb-12 mb-3.5 mt-1 lg:text-[22px] text-base   text-left'>We have got answers to your most common questions.</p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {faqItems.map((item, index) => (
-                        <div
-                            key={index}
-                            className="bg-[#F6F6F6] rounded-lg overflow-hidden"
-                            style={{ height: 'fit-content' }}
-                        >
-                            <button
-                                onClick={() => toggleItem(index)}
-                                className="flex justify-between items-center w-full p-5 text-left font-medium hover:bg-gray-100 transition-colors"
-                                aria-expanded={expandedIndex === index}
-                            >
-                                <span>{item.question}</span>
-                                <ChevronDown
-                                    className={`transition-transform duration-200 flex-shrink-0 ${expandedIndex === index ? 'transform rotate-180' : ''
-                                        }`}
-                                    size={20}
-                                />
-                            </button>
-
-                            {expandedIndex === index && (
-                                <div className="p-5 pt-0 text-gray-600">
-                                    <p>{item.answer}</p>
-                                </div>
-                            )}
-                        </div>
-                    ))}
+            <div className="mx-auto">
+                <h2 className="lg:text-[40px] text-[28px] text-left md:text-[40px] font-medium">Frequently Asked Questions</h2>
+                <p className='lg:mb-12 mb-3.5 mt-1 lg:text-[22px] text-base text-left'>We have got answers to your most common questions.</p>
+                
+                {/* Mobile view: Single column */}
+                <div className="md:hidden">
+                    {faqItems.map((item, index) => renderFaqItem(item, index))}
+                </div>
+                
+                {/* Desktop view: Two columns */}
+                <div className="hidden md:flex md:space-x-4">
+                    <div className="w-1/2">
+                        {leftColumnItems.map((item, index) => renderFaqItem(item, index))}
+                    </div>
+                    <div className="w-1/2">
+                        {rightColumnItems.map((item, index) => renderFaqItem(item, index + leftColumnItems.length))}
+                    </div>
                 </div>
             </div>
             <div className="bg-[#F6F6F6] rounded-lg p-8 mt-12 flex flex-col md:flex-row justify-between items-center">
                 <div>
-                    <h2 className="lg:text-2xl  text-xl  text-center font-medium mb-2">Still can't find an answer to your question?</h2>
-                    <p className="text-gray-600 lg:text-left     text-center">Our team is here to help you out—just reach out!</p>
+                    <h2 className="lg:text-2xl text-xl text-center font-medium mb-2">Still can't find an answer to your question?</h2>
+                    <p className="text-gray-600 lg:text-left text-center">Our team is here to help you out—just reach out!</p>
                 </div>
                 <div className="mt-3 md:mt-0">
                     <a

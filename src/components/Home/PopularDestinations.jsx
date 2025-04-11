@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 
+
 export default function PopularDestinations() {
     const [filterType, setFilterType] = useState('Country');
 
@@ -30,9 +31,9 @@ export default function PopularDestinations() {
 
                     <Link
                         href="/destinations"
-                        className="bg-[#F15A25] hidden lg:block text-white text-center px-5 py-2 rounded-full text-sm font-medium hover:bg-[#e04e1a] transition-colors"
+                        className="bg-[#F15A25] hidden lg:block text-white text-center px-[28px] py-[11px] rounded-full text-base font-medium hover:bg-[#e04e1a] transition-colors"
                     >
-                        View Destinations
+                        View All Destinations
                     </Link>
                 </div>
 
@@ -41,9 +42,9 @@ export default function PopularDestinations() {
                     {['Country', 'Region', 'Global'].map(type => (
                         <button
                             key={type}
-                            className={`px-5 py-2 rounded-full text-sm font-medium transition-colors cursor-pointer ${filterType === type
+                            className={`px-5 py-2 rounded-full text-sm font-medium transition-colors  ${filterType === type
                                 ? 'bg-black text-white'
-                                : 'bg-white text-black border border-gray-200'
+                                : 'bg-white text-black hover:bg-[#E2E2E4] cursor-pointer border border-gray-200'
                                 }`}
                             onClick={() => setFilterType(type)}
                         >
@@ -63,11 +64,33 @@ export default function PopularDestinations() {
                             <div className="flex items-center">
                                 <div className="     rounded-full flex items-center justify-center text-white mr-3 overflow-hidden">
                                     {/* Using Flagcdn API for flag images */}
-                                    <img
+                                    {/* <img
                                         src={`https://flagcdn.com/${dest.code}.svg`}
                                         alt={`${dest.name} flag`}
-                                        className="w-[35px] rounded-full h-[35px] object-cover"
-                                    />
+                                        className="w-[35px] rounded-full h-[35px] object-cover object-center"
+                                    /> */}
+                                    {/* <div
+                                        style={{
+                                            backgroundImage: `url('/flags/${dest.code}_flag.jpeg')`,
+                                            backgroundSize: 'cover',
+                                            backgroundPosition: 'center',
+                                            width: '35px',
+                                            height: '35px',
+                                        }}
+                                        className="rounded-full"
+                                        alt={`${dest.name} flag`}
+                                    ></div> */}
+                                    <div className="w-[36px] h-[36px] relative overflow-hidden shrink-0 rounded-full">
+                                        <Image
+                                            src={`/flags/${dest.code}_flag.jpeg`} // adjust the path and extension if needed
+                                            alt={`${dest.name} flag`}
+                                            fill
+                                            className="object-cover"
+                                            sizes="100vw"
+                                        />
+                                        <div className="absolute inset-0 border-[1px] border-[rgba(0,0,0,0.1)] rounded-full pointer-events-none" />
+                                    </div>
+
                                 </div>
                                 <div>
                                     <h3 className="font-medium   text-[20px]">{dest.name}</h3>
@@ -75,16 +98,31 @@ export default function PopularDestinations() {
                                 </div>
                             </div>
                             <div>
-                                <svg role="img" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" class="mt-1 ltr:-rotate-90 rtl:rotate-90 pointer-events-none text-tertiary"><title>Chevron right</title><path fill="currentColor" fill-rule="evenodd" d="M13.2151 6.8326L8.43758 11.4101C8.27758 11.5451 8.12758 11.6001 8.00008 11.6001C7.87258 11.6001 7.70083 11.5446 7.58533 11.4329L2.78533 6.8326C2.54543 6.6051 2.53763 6.2026 2.76733 5.9851C2.99546 5.74447 3.37683 5.73665 3.61508 5.96713L8.00008 10.1701L12.3851 5.9701C12.6226 5.73962 13.0046 5.74745 13.2328 5.98807C13.4626 6.2026 13.4551 6.6051 13.2151 6.8326Z"></path></svg>
+                                <svg
+                                    role="img"
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="16"
+                                    height="16"
+                                    viewBox="0 0 16 16"
+                                    className="mt-1 ltr:-rotate-90 rtl:rotate-90 pointer-events-none text-tertiary"
+                                >
+                                    <title>Chevron right</title>
+                                    <path
+                                        fill="currentColor"
+                                        fillRule="evenodd"
+                                        d="M13.2151 6.8326L8.43758 11.4101C8.27758 11.5451 8.12758 11.6001 8.00008 11.6001C7.87258 11.6001 7.70083 11.5446 7.58533 11.4329L2.78533 6.8326C2.54543 6.6051 2.53763 6.2026 2.76733 5.9851C2.99546 5.74447 3.37683 5.73665 3.61508 5.96713L8.00008 10.1701L12.3851 5.9701C12.6226 5.73962 13.0046 5.74745 13.2328 5.98807C13.4626 6.2026 13.4551 6.6051 13.2151 6.8326Z"
+                                    />
+                                </svg>
+
                             </div>
                         </Link>
                     ))}
                 </div>
                 <Link
                     href="/destinations"
-                    className="bg-[#F15A25] block lg:hidden text-white text-center p-[11px] rounded-full text-[1rem] my-3 font-medium hover:bg-[#e04e1a] transition-colors"
+                    className="bg-[#F15A25] block w-full md:w-fit mx-auto lg:hidden text-white text-center py-[11px] px-[22px] rounded-full text-[1rem] my-3 font-medium hover:bg-[#e04e1a] transition-colors"
                 >
-                    View Destinations
+                    View All Destinations
                 </Link>
             </div>
         </section>

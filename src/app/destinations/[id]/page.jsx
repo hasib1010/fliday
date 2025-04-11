@@ -1,11 +1,9 @@
-// app/destinations/[id]/page.js
 import DestinationDetail from '@/components/Destinations/DestinationDetail';
 
 export async function generateMetadata({ params }) {
   try {
-    // Await the params object before accessing its properties
-    const resolvedParams = await params;
-    const id = resolvedParams?.id || 'default';
+    // Don't need to await params - it's already a resolved object
+    const id = params?.id || 'default';
     
     // Format the destination name for the metadata
     const formattedTitle = id
@@ -27,7 +25,8 @@ export async function generateMetadata({ params }) {
   }
 }
 
+// In Next.js App Router, for server components like page.js, we don't need 'use client'
 export default function DestinationDetailPage({ params }) {
-  // Ensure params is properly passed to the component
+  // Pass params directly to the DestinationDetail component
   return <DestinationDetail params={params} />;
 }

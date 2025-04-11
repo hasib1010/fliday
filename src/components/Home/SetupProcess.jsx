@@ -122,10 +122,10 @@ export default function SetupProcess() {
           )}
 
           <div className="lg:mt-16 mt-5 bg-[#FFF3EE] rounded-xl p-8">
-            <div className="flex flex-col md:flex-row justify-between items-center">
+            <div className="flex flex-col gap-2.5 lg:gap-0 lg:flex-row justify-between items-center">
               <div className="mb-6 md:mb-0 md:mr-6">
-                <h3 className="lg:text-[30px] text-[24px]  text-center font-medium mb-3">Does your device support eSIM technology?</h3>
-                <p className="text-gray-700 text-[14px]  font-medium  lg:text-base  text-center">Make sure your phone supports eSIM before choosing your plan.</p>
+                <h3 className="lg:text-[30px] text-[24px] lg:text-left text-center font-medium mb-3">Does your device support eSIM technology?</h3>
+                <p className="text-gray-700 text-[14px] lg:text-left font-medium  lg:text-base  text-center">Make sure your phone supports eSIM before choosing your plan.</p>
               </div>
               <Link
                 href="/compatibility"
@@ -147,7 +147,7 @@ export default function SetupProcess() {
             {/* Content */}
             <div className="relative z-10 p-12 md:p-16 flex flex-col lg:items-start items-center">
               <h3 className="text-white text-sm  font-medium mb-3">Support</h3>
-              <h2 className="text-white lg:text-[44px] text-xl text-center lg:text-left font-medium mb-4 lg:leading-[60px]">
+              <h2 className="text-white lg:text-[40px] text-xl text-center lg:text-left font-medium mb-4 lg:leading-[60px]">
                 Do you have questions? <br />
                 We<span className='italic'>'</span>re here to help!
               </h2>

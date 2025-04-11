@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Search } from 'lucide-react';
+import Image from 'next/image';
 
 export default function AllDestinations() {
   const [activeFilter, setActiveFilter] = useState('Countries');
@@ -54,7 +55,7 @@ export default function AllDestinations() {
   );
 
   return (
-    <div className="max-w-[1220px] mx-auto mt-20      px-3 lg:px-0">
+    <div className="max-w-[1220px] mx-auto pt-32       px-3 lg:px-0">
       <h1 className="lg:text-[40px]  text-3xl    font-medium mb-2">All destinations</h1>
       <p className="text-gray-600 mb-6">Explore eSIM plans in 100+ countries.</p>
 
@@ -64,9 +65,9 @@ export default function AllDestinations() {
           <button
             key={filter}
             onClick={() => setActiveFilter(filter)}
-            className={`px-5 py-2 rounded-full text-sm font-medium transition-colors ${activeFilter === filter
+            className={`px-5 py-2 rounded-full text-sm font-medium  transition-colors ${activeFilter === filter
               ? 'bg-black text-white'
-              : 'bg-white text-black border border-gray-200'
+              : 'bg-white text-black hover:bg-[#E2E2E4] cursor-pointer border border-gray-200'
               }`}
           >
             {filter}
@@ -98,12 +99,16 @@ export default function AllDestinations() {
           >
             <div className="flex items-center">
               <div className="     rounded-full flex items-center justify-center text-white mr-3 overflow-hidden">
-                {/* Using Flagcdn API for flag images */}
-                <img
-                  src={`https://flagcdn.com/${destination.code}.svg`}
-                  alt={`${destination.name} flag`}
-                  className="w-[35px] rounded-full h-[35px] object-cover bg-center"
-                />
+                   <div className="w-[36px] h-[36px] relative overflow-hidden shrink-0 rounded-full">
+                                                   <Image
+                                                       src={`/flags/${destination.code}_flag.jpeg`}  
+                                                       alt={`${destination.name} flag`}
+                                                       fill
+                                                       className="object-cover"
+                                                       sizes="100vw"
+                                                   />
+                                                   <div className="absolute inset-0 border-[1px] border-[rgba(0,0,0,0.1)] rounded-full pointer-events-none" />
+                                               </div>
               </div>
               <div>
                 <h3 className="font-medium lg:text-[20px] text-[1.25rem]">{destination.name}</h3>
