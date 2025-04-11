@@ -9,7 +9,19 @@ export default function Hero() {
         <div className="relative bg-[#f8f4f4] ">
             {/* Background Image */}
             <div className="absolute inset-0 z-0">
-                <div className="block lg:hidden">
+
+            <div className="block md:hidden relative h-[400px]">
+    <Image
+        src="/hero2.png"
+        alt="Hero Background Mobile"
+        fill
+        style={{ objectFit: 'contain', objectPosition: 'bottom' }}
+        priority
+    />
+</div>
+
+
+                <div className="md:block lg:hidden">
                     <Image
                         src="/hero2.png"
                         alt="Hero Background Mobile"
@@ -18,6 +30,7 @@ export default function Hero() {
                         priority
                     />
                 </div>
+
                 <div className="hidden xl:block 2xl:hidden ">
                     <Image
                         src="/hero.png"
