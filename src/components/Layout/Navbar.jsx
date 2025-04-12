@@ -58,7 +58,7 @@ export default function Navbar() {
             : 'bg-transparent border-transparent'
         }`}
       >
-        <div className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-[1440px] mx-auto px-4  lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
             <div className="flex-shrink-0">
@@ -74,7 +74,7 @@ export default function Navbar() {
             </div>
 
             {/* Desktop Navigation Links */}
-            <div className="hidden md:flex space-x-8 items-center">
+            <div className="hidden lg:flex space-x-8 items-center">
               {navLinks.map((link) => (
                 <Link
                   key={link.href}
@@ -101,7 +101,7 @@ export default function Navbar() {
             </div>
 
             {/* Mobile Menu Button */}
-            <div className="md:hidden">
+            <div className="lg:hidden">
               <button
                 type="button"
                 className="text-black focus:outline-none"
@@ -133,7 +133,7 @@ export default function Navbar() {
 
           {/* Mobile Menu */}
           {isMobileMenuOpen && (
-            <div className="md:hidden bg-white shadow-lg rounded-lg mt-2 py-4 px-2 transition-all duration-300 ease-in-out">
+            <div className="lg:hidden bg-white shadow-lg rounded-lg mt-2 py-4 px-2 transition-all duration-300 ease-in-out">
               <div className="flex flex-col space-y-4">
                 {navLinks.map((link) => (
                   <Link

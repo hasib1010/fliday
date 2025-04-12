@@ -142,7 +142,7 @@ export default function HowItWorks() {
     );
 
     return (
-        <div className="max-w-[1220px] mx-auto lg:py-16   ">
+        <div className="max-w-[1220px] mx-auto  py-20  ">
             
 
             {/* Process Steps Section */}
