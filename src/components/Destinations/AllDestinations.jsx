@@ -80,7 +80,7 @@ export default function AllDestinations() {
       <p className="text-gray-600 mb-6">Explore eSIM plans in 100+ countries.</p>
 
       {/* Filter tabs */}
-      <div className="flex gap-3 mb-6">
+      <div className="flex md:flex-row flex-wrap gap-3 mb-6">
         {['Countries', 'Regions', 'Global'].map(filter => (
           <button
             key={filter}

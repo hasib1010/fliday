@@ -87,8 +87,8 @@ export default function Footer() {
         
         <div className="flex justify-between flex-col lg:flex-row  ">
           {/* Company Info */}
-          <div className='max-w-[355px]'>
-            <Link href="/" className="inline-block w-[355px] mb-6">
+          <div className='md:max-w-[355px]'>
+            <Link href="/" className="inline-block md:w-[355px] mb-6">
               <div className="flex items-center">
                 <Image src="/logo.png" alt="CamelSIM Logo" width={100} height={50} /> 
               </div>

@@ -81,7 +81,7 @@ export default function RechargePage() {
             <p className="text-gray-600 mb-6 text-sm lg:text-base">Running low on data? Top up instantly and stay connected—no new QR code needed.</p>
 
             {/* Filter tabs */}
-            <div className="flex gap-3 mb-6">
+            <div className="flex md:flex-row flex-wrap gap-3 mb-6">
                 {['Countries', 'Regions', 'Global'].map(filter => (
                     <button
                         key={filter}

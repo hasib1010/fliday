@@ -81,7 +81,7 @@ export default function DestinationDetail({ params }) {
                 </div>
 
                 {/* Right column - eSIM details and plans */}
-                <div className='max-w-[653px]'>
+                <div className='lg:max-w-[653px]'>
                     <div className="flex items-center mb-3">
                         <div className="w-8 h-8 bg-[#F15A25] rounded-full flex items-center justify-center text-white mr-3">
                             <span>{countryFlag}</span>
@@ -177,7 +177,7 @@ export default function DestinationDetail({ params }) {
 
                     {/* Feature tabs */}
                     <div className="border-b border-gray-200 mb-4">
-                        <div className="flex space-x-6">
+                        <div className="flex space-x-6 overflow-x-auto">
                             <button
                                 onClick={() => setActiveTab('features')}
                                 className={`text-sm cursor-pointer font-medium pb-2 transition-colors ${activeTab === 'features'

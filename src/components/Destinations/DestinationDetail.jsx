@@ -75,7 +75,7 @@ export default function DestinationDetail({ params }) {
 
 
                 {/* Right column - eSIM details and plans */}
-                <div className='max-w-[653px]'>
+                <div className='lg:max-w-[653px]'>
                     <div className="flex items-center mb-3">
                         <div className="w-8 h-8 bg-[#F15A25] rounded-full flex items-center justify-center text-white mr-3">
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

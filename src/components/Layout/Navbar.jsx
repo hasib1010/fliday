@@ -52,7 +52,7 @@ export default function Navbar() {
   return (
     <>
       <nav
-        className={`w-full fixed top-0 z-50 transition-all duration-300 border-b ${
+        className={` fixed min-w-[300px] w-full top-0 z-50 transition-all duration-300 border-b ${
           isScrolled || !isHomePage
             ? 'bg-white border-gray-200'
             : 'bg-transparent border-transparent'

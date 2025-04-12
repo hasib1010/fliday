@@ -2,7 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { Search } from 'lucide-react';
+import { Check, Search } from 'lucide-react';
 
 export default function Hero() {
     return (
@@ -65,38 +65,41 @@ export default function Hero() {
 
             {/* Content */}
             <div className="relative z-10 w-full flex items-start justify-center min-h-[710px]">
-                <div className="pt-[85px]">
+                <div className="md:pt-[85px] pt-36">
                     {/* Feature badges */}
-                    <div className="py-9 block relative w-full">
-                        <div className="flex justify-center items-center">
+                    <div className="md:py-9 py-3 block relative w-full px-1">
+                        <div className="flex justify-center mb-10 md:mb-0   items-center">
                             {/* Instant Setup */}
-                            <div className="relative z-10 flex items-center lg:gap-2 gap-0.5 lg:px-[19px] px-2 py-2.5 lg:py-[12px] -rotate-[7.775deg] border border-orange-500 rounded-full bg-[#F4EBE8] shadow mr-[-16px]">
-                                <div className="w-6 h-6 p-0.5 bg-orange-500 rounded-full flex items-center justify-center text-white">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check-icon lucide-check"><path d="M20 6 9 17l-5-5"/></svg>
+                            <div className="relative z-10 flex items-center lg:gap-2 gap-0.5 lg:px-[19px] px-2 md:py-2.5 py-3 lg:py-[12px] -rotate-[7.775deg] border border-orange-500 rounded-full bg-[#F4EBE8] shadow mr-[-16px]">
+                                <div className="md:w-6 md:h-6 w-4 h-4 p-0.5 bg-orange-500 rounded-full flex items-center justify-center text-white">
+
+                                    <Check />
                                 </div>
-                                <span className="lg:text-[18px] text-xs font-medium text-gray-800">Instant Setup</span>
+                                <span className="md:text-[18px]  text-[10px] font-medium text-gray-800">Instant Setup</span>
                             </div>
 
                             {/* Global Coverage */}
-                            <div className="relative z-20 flex items-center lg:gap-2 gap-0.5 lg:px-[19px] px-2 py-2.5 lg:py-[12px] border border-orange-500 rounded-full bg-[#F4EBE8] shadow rotate-[7.871deg] ml-[10px]">
-                            <div className="w-6 h-6 p-0.5 bg-orange-500 rounded-full flex items-center justify-center text-white">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check-icon lucide-check"><path d="M20 6 9 17l-5-5"/></svg>
+                            <div className="relative z-20 flex items-center lg:gap-2 gap-0.5 lg:px-[19px] px-2  md:py-2.5 py-3 lg:py-[12px] border border-orange-500 rounded-full bg-[#F4EBE8] shadow rotate-[7.871deg] ml-[10px]">
+                                <div className="md:w-6 md:h-6 w-4 h-4 p-0.5 bg-orange-500 rounded-full flex items-center justify-center text-white">
+
+                                    <Check />
                                 </div>
-                                <span className="lg:text-[18px] text-xs font-medium text-gray-800">Global Coverage</span>
+                                <span className="md:text-[18px]  text-[10px] font-medium text-gray-800">Global Coverage</span>
                             </div>
 
                             {/* No Roaming */}
-                            <div className="relative z-10 flex items-center lg:gap-2 gap-0.5 lg:px-[19px] px-2 py-2.5 lg:py-[12px] border border-orange-500 rounded-full bg-[#F4EBE8] shadow ml-[-10px] -rotate-[4.268deg]">
-                            <div className="w-6 h-6 p-0.5 bg-orange-500 rounded-full flex items-center justify-center text-white">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-check-icon lucide-check"><path d="M20 6 9 17l-5-5"/></svg>
+                            <div className="relative z-10 flex items-center lg:gap-2 gap-0.5 lg:px-[19px] px-2  md:py-2.5 py-3 lg:py-[12px] border border-orange-500 rounded-full bg-[#F4EBE8] shadow ml-[-10px] -rotate-[4.268deg]">
+                                <div className="md:w-6 md:h-6 w-4 h-4 p-0.5 bg-orange-500 rounded-full flex items-center justify-center text-white">
+
+                                    <Check />
                                 </div>
-                                <span className="lg:text-[18px] text-xs font-medium text-gray-800">No Roaming</span>
+                                <span className="md:text-[18px]  text-[10px] font-medium text-gray-800">No Roaming</span>
                             </div>
                         </div>
                     </div>
 
                     {/* Heading */}
-                    <h1 className="text-center lg:text-[55px] text-4xl md:text-5xl lg:text-6xl font-semibold pb-8">
+                    <h1 className="text-center lg:text-[55px] text-3xl md:text-5xl lg:text-6xl font-semibold pb-8">
                         eSIM for the <span className="text-[#F15A25]">Bold</span> & <span className="text-[#F15A25]">the Curious.</span>
                     </h1>
 
