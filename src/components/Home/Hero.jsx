@@ -75,7 +75,15 @@ export default function Hero() {
 
                                     <Check />
                                 </div>
-                                <span className="md:text-[18px]  text-[10px] font-medium text-gray-800">Instant Setup</span>
+                                <span className="
+  text-[18px] 
+  max-[426px]:text-[13px]  
+  max-[376px]:text-[12px] 
+  max-[321px]:text-[10px] 
+  font-medium text-gray-800">
+                                    Instant Setup
+                                </span>
+
                             </div>
 
                             {/* Global Coverage */}
@@ -84,7 +92,15 @@ export default function Hero() {
 
                                     <Check />
                                 </div>
-                                <span className="md:text-[18px]  text-[10px] font-medium text-gray-800">Global Coverage</span>
+                                <span className="
+  text-[18px] 
+  max-[426px]:text-[13px]  
+  max-[376px]:text-[12px] 
+  max-[321px]:text-[10px] 
+  font-medium text-gray-800">
+  Global Coverage
+</span>
+
                             </div>
 
                             {/* No Roaming */}
@@ -93,7 +109,15 @@ export default function Hero() {
 
                                     <Check />
                                 </div>
-                                <span className="md:text-[18px]  text-[10px] font-medium text-gray-800">No Roaming</span>
+                              <span className="
+  text-[18px] 
+  max-[426px]:text-[13px]  
+  max-[376px]:text-[12px] 
+  max-[321px]:text-[10px] 
+  font-medium text-gray-800">
+  No Roaming
+</span>
+
                             </div>
                         </div>
                     </div>
