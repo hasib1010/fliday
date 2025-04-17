@@ -2,25 +2,23 @@ import DestinationDetail from '@/components/Destinations/DestinationDetail';
 
 export async function generateMetadata({ params }) {
   try {
-    // Don't need to await params - it's already a resolved object
-    const id = params?.id || 'default';
-    
+    // In Next.js 13+, the params object itself is not a promise, but we need to destructure it properly
+    const { id } = params;
+
     // Format the destination name for the metadata
     const formattedTitle = id
-      .split('-')
-      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-      .join(' ');
+      ? id.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')
+      : 'Destination';
 
     return {
-      title: `eSIM for ${formattedTitle} | Fliday`,
-      description: `Get affordable and reliable eSIM data plans for ${formattedTitle}. Instant activation, no roaming fees.`
+      title: `eSIM for ${formattedTitle} | Stay Connected While Traveling`,
+      description: `Get reliable and affordable eSIM data plans for ${formattedTitle}. Instant activation, no contracts, and 24/7 support.`,
     };
   } catch (error) {
-    // Fallback metadata if there's an error
-    console.error('Error generating metadata:', error);
+    console.error("Error generating metadata:", error);
     return {
-      title: 'eSIM Details | Fliday',
-      description: 'Get affordable and reliable eSIM data plans. Instant activation, no roaming fees.'
+      title: "eSIM for Travel | Stay Connected Worldwide",
+      description: "Get reliable and affordable eSIM data plans for your travels. Instant activation, no contracts, and 24/7 support.",
     };
   }
 }

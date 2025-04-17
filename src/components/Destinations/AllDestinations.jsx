@@ -1,66 +1,113 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { Search } from 'lucide-react';
-import Image from 'next/image';
 
-export default function AllDestinations() {
-  const [activeFilter, setActiveFilter] = useState('Countries');
+const AllDestinations = () => {
+  const [countries, setCountries] = useState([]);
+  const [regions, setRegions] = useState([]);
+  const [filteredDestinations, setFilteredDestinations] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeDestination, setActiveDestination] = useState(null);
+  const [activeFilter, setActiveFilter] = useState('Countries');
   const [activeFilterButton, setActiveFilterButton] = useState(null);
+  const [activeDestination, setActiveDestination] = useState(null);
 
-  // Sample data for destinations
-  const destinations = [
-    { id: 1, name: 'Turkey', price: 3.99, code: 'tr', type: 'country' },
-    { id: 2, name: 'United States', price: 3.99, code: 'us', type: 'country' },
-    { id: 3, name: 'Thailand', price: 3.99, code: 'th', type: 'country' },
-    { id: 4, name: 'Malaysia', price: 3.99, code: 'my', type: 'country' },
-    { id: 5, name: 'Morocco', price: 3.99, code: 'ma', type: 'country' },
-    { id: 6, name: 'Italy', price: 3.99, code: 'it', type: 'country' },
-    { id: 7, name: 'Spain', price: 3.99, code: 'es', type: 'country' },
-    { id: 8, name: 'Indonesia', price: 3.99, code: 'id', type: 'country' },
-    { id: 9, name: 'Germany', price: 3.99, code: 'de', type: 'country' },
-    { id: 10, name: 'France', price: 3.99, code: 'fr', type: 'country' },
-    { id: 11, name: 'United Kingdom', price: 3.99, code: 'gb', type: 'country' },
-    { id: 12, name: 'Japan', price: 3.99, code: 'jp', type: 'country' },
-    { id: 13, name: 'China', price: 3.99, code: 'cn', type: 'country' },
-    { id: 14, name: 'Australia', price: 3.99, code: 'au', type: 'country' },
-    { id: 15, name: 'Brazil', price: 3.99, code: 'br', type: 'country' },
-    { id: 16, name: 'Canada', price: 3.99, code: 'ca', type: 'country' },
-    { id: 17, name: 'Mexico', price: 3.99, code: 'mx', type: 'country' },
-    { id: 18, name: 'South Korea', price: 3.99, code: 'kr', type: 'country' },
-    { id: 19, name: 'Singapore', price: 3.99, code: 'sg', type: 'country' },
-    { id: 20, name: 'Vietnam', price: 3.99, code: 'vn', type: 'country' },
-    { id: 21, name: 'Portugal', price: 3.99, code: 'pt', type: 'country' },
-    { id: 22, name: 'Greece', price: 3.99, code: 'gr', type: 'country' },
-    { id: 23, name: 'Netherlands', price: 3.99, code: 'nl', type: 'country' },
-    { id: 24, name: 'Switzerland', price: 3.99, code: 'ch', type: 'country' },
-    { id: 25, name: 'Sweden', price: 3.99, code: 'se', type: 'country' },
-    { id: 26, name: 'Norway', price: 3.99, code: 'no', type: 'country' },
-    { id: 27, name: 'Denmark', price: 3.99, code: 'dk', type: 'country' },
-    { id: 28, name: 'Finland', price: 3.99, code: 'fi', type: 'country' },
-    { id: 29, name: 'Iceland', price: 3.99, code: 'is', type: 'country' },
-    { id: 30, name: 'Ireland', price: 3.99, code: 'ie', type: 'country' },
-    { id: 31, name: 'Austria', price: 3.99, code: 'at', type: 'country' },
-    { id: 32, name: 'Belgium', price: 3.99, code: 'be', type: 'country' },
-    { id: 33, name: 'Poland', price: 3.99, code: 'pl', type: 'country' },
-    { id: 34, name: 'Russia', price: 3.99, code: 'ru', type: 'country' },
-    { id: 35, name: 'India', price: 3.99, code: 'in', type: 'country' },
-    { id: 36, name: 'South Africa', price: 3.99, code: 'za', type: 'country' },
-  ];
-
-  // Touch event handlers for destinations
-  const handleDestinationTouchStart = (id) => {
-    setActiveDestination(id);
+  // Function to apply filtering logic
+  const applyFilter = (countriesList, regionsList, filter, query) => {
+    let results = [];
+    
+    if (filter === 'Countries') {
+      results = countriesList.filter(dest => !dest.name.toLowerCase().startsWith('global'));
+    } else if (filter === 'Regions') {
+      results = regionsList.filter(dest => !dest.name.toLowerCase().startsWith('global'));
+    } else if (filter === 'Global') {
+      results = [...countriesList, ...regionsList].filter(dest =>
+        dest.name.toLowerCase().startsWith('global')
+      );
+    }
+    
+    if (query) {
+      results = results.filter(dest =>
+        dest.name.toLowerCase().includes(query.toLowerCase())
+      );
+    }
+    
+    return results;
   };
 
-  const handleDestinationTouchEnd = () => {
-    setActiveDestination(null);
-  };
+  // Fetch locations and apply initial filter
+  useEffect(() => {
+    const fetchLocations = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch('/api/esim/locations');
 
-  // Touch event handlers for filter buttons
+        if (!response.ok) {
+          throw new Error(`Failed to fetch locations: ${response.status} ${response.statusText}`);
+        }
+
+        const data = await response.json();
+
+        if (!data.success) {
+          throw new Error(data.message || 'Failed to fetch locations');
+        }
+
+        const formattedCountries = (data.data.countries || []).map((country, index) => ({
+          id: country.id || country.code || `country-${index}`,
+          name: country.name || 'Unknown',
+          code: (country.code || country.countryCode || '').toLowerCase(),
+          type: 'country',
+          price: parseFloat(country.price || 3.99).toFixed(2),
+        }));
+
+        const formattedRegions = (data.data.regions || []).map((region, index) => ({
+          id: region.id || region.code || `region-${index}`,
+          name: region.name || 'Unknown',
+          code: (region.code || region.regionCode || '').toLowerCase(),
+          slug: region.slug || '',
+          type: 'region',
+          price: parseFloat(region.price || 7.99).toFixed(2),
+        }));
+
+        setCountries(formattedCountries);
+        setRegions(formattedRegions);
+
+        const initialFiltered = applyFilter(formattedCountries, formattedRegions, activeFilter, searchQuery);
+        setFilteredDestinations(initialFiltered);
+        setError(null);
+      } catch (err) {
+        console.error('Error fetching locations:', err);
+        setError(`Failed to load destinations: ${err.message}. Please try again.`);
+        setCountries([]);
+        setRegions([]);
+        setFilteredDestinations([]);
+      } finally {
+        requestAnimationFrame(() => {
+          setIsLoading(false);
+        });
+      }
+    };
+
+    fetchLocations();
+  }, []);
+
+  // Handle filter and search updates without additional loading state
+  useEffect(() => {
+    if (countries.length === 0 && regions.length === 0) return;
+    
+    const handler = setTimeout(() => {
+      const results = applyFilter(countries, regions, activeFilter, searchQuery);
+      setFilteredDestinations(results);
+    }, 100);
+    
+    return () => clearTimeout(handler);
+  }, [searchQuery, activeFilter, countries, regions]);
+
+  // Touch handlers for mobile
   const handleFilterTouchStart = (filter) => {
     setActiveFilterButton(filter);
   };
@@ -69,36 +116,142 @@ export default function AllDestinations() {
     setActiveFilterButton(null);
   };
 
-  // Filter destinations based on search query
-  const filteredDestinations = destinations.filter(destination =>
-    destination.name.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const handleDestinationTouchStart = (id) => {
+    setActiveDestination(id);
+  };
+
+  const handleDestinationTouchEnd = () => {
+    setActiveDestination(null);
+  };
+
+  // Render flag/icon
+  const renderDestinationIcon = (destination) => {
+    const isCountry = destination.type === 'country';
+    
+    if (isCountry) {
+      const imageSrc = `/flags/${destination.code}_flag.jpeg`;
+      return (
+        <Image
+          src={imageSrc}
+          alt={`${destination.name} flag`}
+          fill
+          className="object-cover"
+          onError={(e) => {
+            e.target.onerror = null;
+            e.target.src = '/flags/default.jpg';
+          }}
+        />
+      );
+    } else {
+      let regionFlag = '';
+      const name = destination.name.toLowerCase();
+      if (name.includes('north america')) {
+        regionFlag = 'north_america_flag.svg';
+      } else if (name.includes('middle east')) {
+        regionFlag = 'middle_east_flag.svg';
+      } else if (name.includes('global')) {
+        regionFlag = 'global_flag.svg';
+      } else if (name.includes('south america')) {
+        regionFlag = 'south_america_flag.svg';
+      } else if (name.includes('europe')) {
+        regionFlag = 'europe_flag.svg';
+      } else if (name.includes('africa')) {
+        regionFlag = 'africa_flag.svg';
+      } else if (name.includes('asia')) {
+        regionFlag = 'asia_flag.svg';
+      } else if (name.includes('caribbean')) {
+        regionFlag = 'caribbean_flag.svg';
+      } else if (name.includes('gulf')) {
+        regionFlag = 'middle_east_flag.svg';
+      } else if (name.includes('china') || name.includes('singapore') || name.includes('thailand')) {
+        regionFlag = 'asia_flag.svg';
+      } else {
+        regionFlag = `${destination.code.split('-')[0]}_flag.svg`;
+      }
+      
+      return (
+        <Image
+          src={`/flags/${regionFlag}`}
+          alt={`${destination.name} flag`}
+          fill
+          className="object-cover"
+          onError={(e) => {
+            e.target.onerror = null;
+            e.target.src = '/flags/default.jpg';
+          }}
+        />
+      );
+    }
+  };
+
+  // Generate appropriate destination URL
+  const getDestinationUrl = (destination) => {
+    if (destination.type === 'country') {
+      return `/destinations/country/${destination.code}`;
+    } else if (destination.type === 'region') {
+      if (destination.slug) {
+        return `/destinations/slug/${destination.slug}`;
+      }
+      return `/destinations/region/${destination.code}`;
+    }
+    return '#';
+  };
+
+  // Render skeleton during initial loading only
+  const renderSkeletons = () => {
+    return Array.from({ length: 12 }).map((_, index) => (
+      <div key={index} className="bg-[#f7f7f8] rounded-lg p-4 animate-pulse">
+        <div className="flex items-center">
+          <div className="w-[36px] h-[36px] bg-gray-300 rounded-full mr-3"></div>
+          <div>
+            <div className="h-5 bg-gray-300 rounded w-24 mb-2"></div>
+            <div className="h-4 bg-gray-300 rounded w-16"></div>
+          </div>
+        </div>
+      </div>
+    ));
+  };
 
   return (
     <div className="max-w-[1220px] mx-auto pt-32 px-3 lg:px-0">
       <h1 className="lg:text-[40px] text-3xl font-medium mb-2">All destinations</h1>
       <p className="text-gray-600 mb-6">Explore eSIM plans in 100+ countries.</p>
 
-      {/* Filter tabs */}
+      {isLoading && (
+        <div className="bg-blue-50 border border-blue-200 text-blue-800 px-4 py-3 rounded mb-6">
+          Loading available destinations...
+        </div>
+      )}
+
+      {error && (
+        <div className="bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-3 rounded mb-6">
+          {error}
+        </div>
+      )}
+
+      {/* Filter tabs - disable during initial load */}
       <div className="flex md:flex-row flex-wrap gap-3 mb-6">
-        {['Countries', 'Regions', 'Global'].map(filter => (
+        {['Countries', 'Regions', 'Global'].map((filter) => (
           <button
             key={filter}
             onClick={() => setActiveFilter(filter)}
             className={`px-5 py-2 rounded-full text-sm font-medium transition-colors ${
               activeFilter === filter
                 ? 'bg-black text-white'
-                : `bg-white text-black hover:bg-[#E2E2E4] active:bg-[#E2E2E4] cursor-pointer border border-gray-200 ${activeFilterButton === filter ? 'bg-[#E2E2E4]' : ''}`
+                : `bg-white text-black hover:bg-[#E2E2E4] active:bg-[#E2E2E4] cursor-pointer border border-gray-200 ${
+                    activeFilterButton === filter ? 'bg-[#E2E2E4]' : ''
+                  }`
             }`}
             onTouchStart={() => handleFilterTouchStart(filter)}
             onTouchEnd={handleFilterTouchEnd}
+            disabled={isLoading}
           >
             {filter}
           </button>
         ))}
       </div>
 
-      {/* Search box */}
+      {/* Search box - disable during initial load */}
       <div className="mb-8 relative">
         <input
           type="text"
@@ -106,6 +259,7 @@ export default function AllDestinations() {
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="w-full px-4 py-3 pr-12 rounded-full border border-[#F15A25] focus:outline-none focus:ring-2 focus:ring-[#F15A25]"
+          disabled={isLoading}
         />
         <div className="absolute right-3 top-1/2 transform -translate-y-1/2 bg-[#F15A25] p-2 rounded-full text-white">
           <Search size={18} />
@@ -114,54 +268,58 @@ export default function AllDestinations() {
 
       {/* Destinations grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredDestinations.map(destination => (
-          <Link
-            key={destination.id}
-            href={`/destinations/${destination.name.toLowerCase().replace(/\s+/g, '-')}`}
-            className={`hover:bg-[#d5d5d5] active:bg-[#d5d5d5] ${
-              activeDestination === destination.id ? 'bg-[#d5d5d5]' : 'bg-[#f7f7f8]'
-            } transition-colors rounded-lg p-4 flex items-center justify-between group`}
-            onTouchStart={() => handleDestinationTouchStart(destination.id)}
-            onTouchEnd={handleDestinationTouchEnd}
-          >
-            <div className="flex items-center">
-              <div className="rounded-full flex items-center justify-center text-white mr-3 overflow-hidden">
-                <div className="w-[36px] h-[36px] relative overflow-hidden shrink-0 rounded-full">
-                  <Image
-                    src={`/flags/${destination.code}_flag.jpeg`}
-                    alt={`${destination.name} flag`}
-                    fill
-                    className="object-cover"
-                    sizes="100vw"
-                  />
-                  <div className="absolute inset-0 border-[1px] border-[rgba(0,0,0,0.1)] rounded-full pointer-events-none" />
+        {isLoading ? (
+          renderSkeletons()
+        ) : filteredDestinations.length > 0 ? (
+          filteredDestinations.map((destination) => (
+            <Link
+              key={destination.id}
+              href={getDestinationUrl(destination)}
+              className={`hover:bg-[#d5d5d5] active:bg-[#d5d5d5] ${
+                activeDestination === destination.id ? 'bg-[#d5d5d5]' : 'bg-[#f7f7f8]'
+              } transition-colors rounded-lg p-4 flex items-center justify-between group`}
+              onTouchStart={() => handleDestinationTouchStart(destination.id)}
+              onTouchEnd={handleDestinationTouchEnd}
+            >
+              <div className="flex items-center">
+                <div className="rounded-full w-[60px] flex items-start justify-center text-white mr-3 overflow-hidden">
+                  <div className="w-[36px] h-[36px] relative overflow-hidden shrink-0 rounded-full">
+                    {renderDestinationIcon(destination)}
+                    <div className="absolute inset-0 border-[1px] border-[rgba(0,0,0,0.1)] rounded-full pointer-events-none" />
+                  </div>
+                </div>
+                <div>
+                  <h3 className="font-medium lg:text-[20px] text-[1.25rem]">{destination.name}</h3>
+                  <p className="text-[16px] text-[#6B6B6B]">From USD {destination.price}</p>
                 </div>
               </div>
-              <div>
-                <h3 className="font-medium lg:text-[20px] text-[1.25rem]">{destination.name}</h3>
-                <p className="text-[16px] text-[#6B6B6B]">From USD {destination.price}</p>
+              <div className="text-gray-400">
+                <svg
+                  role="img"
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="16"
+                  height="16"
+                  viewBox="0 0 16 16"
+                  className="mt-1 ltr:-rotate-90 rtl:rotate-90 pointer-events-none text-tertiary"
+                >
+                  <title>Chevron right</title>
+                  <path
+                    fill="currentColor"
+                    fillRule="evenodd"
+                    d="M13.2151 6.8326L8.43758 11.4101C8.27758 11.5451 8.12758 11.6001 8.00008 11.6001C7.87258 11.6001C7.70083 11.5446 7.58533 11.4329L2.78533 6.8326C2.54543 6.6051 2.53763 6.2026 2.76733 5.9851C2.99546 5.74447 3.37683 5.73665 3.61508 5.96713L8.00008 10.1701L12.3851 5.9701C12.6226 5.73962 13.0046 5.74745 13.2328 5.98807C13.4626 6.2026 13.4551 6.6051 13.2151 6.8326Z"
+                  />
+                </svg>
               </div>
-            </div>
-            <div className="text-gray-400">
-              <svg 
-                role="img" 
-                xmlns="http://www.w3.org/2000/svg" 
-                width="16" 
-                height="16" 
-                viewBox="0 0 16 16" 
-                className="mt-1 ltr:-rotate-90 rtl:rotate-90 pointer-events-none text-tertiary"
-              >
-                <title>Chevron right</title>
-                <path 
-                  fill="currentColor" 
-                  fillRule="evenodd" 
-                  d="M13.2151 6.8326L8.43758 11.4101C8.27758 11.5451 8.12758 11.6001 8.00008 11.6001C7.87258 11.6001 7.70083 11.5446 7.58533 11.4329L2.78533 6.8326C2.54543 6.6051 2.53763 6.2026 2.76733 5.9851C2.99546 5.74447 3.37683 5.73665 3.61508 5.96713L8.00008 10.1701L12.3851 5.9701C12.6226 5.73962 13.0046 5.74745 13.2328 5.98807C13.4626 6.2026 13.4551 6.6051 13.2151 6.8326Z"
-                />
-              </svg>
-            </div>
-          </Link>
-        ))}
+            </Link>
+          ))
+        ) : (
+          <div className="col-span-full py-6 text-center">
+            <p className="text-gray-500">No destinations found matching your search criteria.</p>
+          </div>
+        )}
       </div>
     </div>
   );
-}
+};
+
+export default AllDestinations;
