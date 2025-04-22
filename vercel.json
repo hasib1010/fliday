@@ -1,0 +1,9 @@
+{
+    "functions": {
+      "app/api/auth/[...nextauth]/route.js": {
+        "memory": 1024,
+        "maxDuration": 60
+      }
+    },
+    "crons": []
+  }

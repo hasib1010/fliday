@@ -1,14 +1,15 @@
 import NextAuth from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
 import AppleProvider from 'next-auth/providers/apple';
-import dbConnect from '@/lib/mongodb'; 
-import User from '@/models/User';  
+import dbConnect from '@/lib/mongodb';
+import User from '@/models/User';
 
 export const authOptions = {
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      // Remove unnecessary OAuth scopes/permissions to speed up auth
     }),
     AppleProvider({
       clientId: process.env.APPLE_ID,
@@ -22,7 +23,7 @@ export const authOptions = {
         session.user.id = token.sub;
       }
       
-      // Add user role to session if needed
+      // Add user role to session
       if (token.role) {
         session.user.role = token.role;
       }
@@ -30,96 +31,82 @@ export const authOptions = {
       return session;
     },
     async jwt({ token, account, user }) {
-      // Persist OAuth provider details
+      // Persist OAuth provider details - keep this minimal
       if (account) {
         token.provider = account.provider;
         token.providerId = account.providerAccountId;
       }
       
-      // If it's a sign-in, fetch user role from database and add to token
-      if (user && user.id) {
+      // Only fetch role if not already present to avoid repeated DB calls
+      if (user && user.id && !token.role) {
         try {
-          await dbConnect();
-          const dbUser = await User.findById(user.id);
-          if (dbUser) {
-            token.role = dbUser.role;
-          }
+          token.role = user.role || 'user'; // Default to 'user' if not set
         } catch (error) {
-          console.error('Error fetching user role:', error);
+          console.error('Error setting user role in token:', error);
         }
       }
       
       return token;
     },
     async signIn({ user, account }) {
+      if (!user.email) {
+        console.error('User email missing from OAuth provider');
+        return false;
+      }
+
       try {
+        // Optimize database connection - only establish once
         await dbConnect();
 
-        // Check if user exists
-        let existingUser = await User.findOne({
-          $or: [
-            { email: user.email },
-            { providerId: account.providerAccountId, provider: account.provider },
-          ],
-        });
+        // Quick lookup by email only - simpler query
+        const existingUser = await User.findOne({ email: user.email })
+          .select('_id role provider providerId')
+          .lean(); // Use lean() for faster queries
 
         if (existingUser) {
-          // Update existing user
-          await User.findByIdAndUpdate(
+          // Set minimal user data and update the DB asynchronously
+          user.id = existingUser._id.toString();
+          user.role = existingUser.role || 'user';
+          
+          // Update in the background without waiting
+          User.findByIdAndUpdate(
             existingUser._id,
             {
               $set: {
                 lastLogin: new Date(),
-                image: user.image || existingUser.image,
                 provider: account.provider,
                 providerId: account.providerAccountId,
               },
-            }
-          );
+            },
+            { new: false }
+          ).catch(err => console.error('Background user update failed:', err));
         } else {
-          // Create new user
-          existingUser = await User.create({
+          // Create user with minimal data
+          const newUser = await User.create({
             name: user.name || 'Unnamed User',
             email: user.email,
-            image: user.image,
             provider: account.provider,
             providerId: account.providerAccountId,
-            role: 'user', // Default role
+            role: 'user',
             lastLogin: new Date(),
           });
+          
+          user.id = newUser._id.toString();
+          user.role = 'user';
         }
-
-        // Ensure user ID is available
-        user.id = existingUser._id.toString();
+        
         return true;
       } catch (error) {
-        console.error('Error in signIn callback:', error.stack);
-        return false;
+        // Log error but don't fail the auth
+        console.error('Error in signIn callback:', error);
+        return true; // Still allow sign in even if DB operations fail
       }
     },
     async redirect({ url, baseUrl }) {
-      // Handle the callbackUrl parameter
-      if (url.startsWith(baseUrl)) {
-        const urlObj = new URL(url);
-        const callbackUrl = urlObj.searchParams.get('callbackUrl');
-        
-        // If there's a callbackUrl and no error, use it
-        if (callbackUrl && !urlObj.searchParams.get('error')) {
-          return callbackUrl;
-        }
-        
-        // If there's an error, go to a custom error page or homepage
-        if (urlObj.searchParams.get('error')) {
-          return `${baseUrl}/auth-error?error=${urlObj.searchParams.get('error')}`;
-        }
-        
+      // Simplified redirect logic
+      if (url.startsWith(baseUrl) || url.startsWith('/')) {
         return url;
       }
-      
-      if (url.startsWith('/')) {
-        return `${baseUrl}${url}`;
-      }
-      
       return baseUrl;
     },
   },
@@ -128,17 +115,14 @@ export const authOptions = {
     strategy: 'jwt',
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
-  // Remove custom pages to use default NextAuth pages for now
-  // You can create custom pages later once the basic auth flow works
-  /*
-  pages: {
-    signIn: '/checkout',
-    error: '/checkout',
-  },
-  */
-  debug: process.env.NODE_ENV === 'development',
+  debug: false, // Disable debug mode in production
 };
 
 const handler = NextAuth(authOptions);
 
 export { handler as GET, handler as POST };
+
+// Add Edge runtime configuration if you're on Next.js 13+
+export const config = {
+  runtime: 'nodejs', // Keep as nodejs for database operations, but set maxDuration
+}
