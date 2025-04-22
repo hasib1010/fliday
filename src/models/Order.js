@@ -8,9 +8,10 @@ const OrderSchema = new mongoose.Schema({
   dataAmount: { type: String, required: true },
   duration: { type: String, required: true },
   location: { type: String, required: true },
-  originalPrice: { type: Number, required: true },
+  originalPrice: { type: Number, required: true },  // Provider's price without markup
+  markupAmount: { type: Number, default: 10000 },   // $1.00 markup (10000 in cents)
   discountAmount: { type: Number, default: 0 },
-  finalPrice: { type: Number, required: true },
+  finalPrice: { type: Number, required: true },     // Price with markup (what customer pays)
   currency: { type: String, default: 'USD' },
   taxCountry: { type: String },
   couponCode: { type: String },
@@ -66,6 +67,7 @@ const OrderSchema = new mongoose.Schema({
         createTime: { type: String },
       },
     ],
+    lastUpdateTime: { type: Date }
   },
 });
 

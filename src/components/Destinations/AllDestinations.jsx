@@ -1,50 +1,90 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Search } from 'lucide-react';
 
+// Debounce hook for search input
+const useDebounce = (value, delay) => {
+  const [debouncedValue, setDebouncedValue] = useState(value);
+
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedValue(value);
+    }, delay);
+
+    return () => {
+      clearTimeout(handler);
+    };
+  }, [value, delay]);
+
+  return debouncedValue;
+};
+
 const AllDestinations = () => {
+  // State for data
   const [countries, setCountries] = useState([]);
   const [regions, setRegions] = useState([]);
   const [filteredDestinations, setFilteredDestinations] = useState([]);
+  const [visibleCount, setVisibleCount] = useState(24); // Initial visible items
+  
+  // UI states
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchInput, setSearchInput] = useState('');
   const [activeFilter, setActiveFilter] = useState('Countries');
   const [activeFilterButton, setActiveFilterButton] = useState(null);
   const [activeDestination, setActiveDestination] = useState(null);
+  
+  // Debounce search to prevent excessive filtering
+  const debouncedSearchQuery = useDebounce(searchInput, 300);
 
   // Function to apply filtering logic
-  const applyFilter = (countriesList, regionsList, filter, query) => {
-    let results = [];
-    
-    if (filter === 'Countries') {
-      results = countriesList.filter(dest => !dest.name.toLowerCase().startsWith('global'));
-    } else if (filter === 'Regions') {
-      results = regionsList.filter(dest => !dest.name.toLowerCase().startsWith('global'));
-    } else if (filter === 'Global') {
-      results = [...countriesList, ...regionsList].filter(dest =>
-        dest.name.toLowerCase().startsWith('global')
-      );
-    }
-    
-    if (query) {
-      results = results.filter(dest =>
-        dest.name.toLowerCase().includes(query.toLowerCase())
-      );
-    }
-    
-    return results;
+  const applyFilter = useMemo(() => {
+    return (countriesList, regionsList, filter, query) => {
+      let results = [];
+      
+      if (filter === 'Countries') {
+        results = countriesList.filter(dest => !dest.name.toLowerCase().startsWith('global'));
+      } else if (filter === 'Regions') {
+        results = regionsList.filter(dest => !dest.name.toLowerCase().startsWith('global'));
+      } else if (filter === 'Global') {
+        results = [...countriesList, ...regionsList].filter(dest =>
+          dest.name.toLowerCase().startsWith('global')
+        );
+      }
+      
+      if (query) {
+        results = results.filter(dest =>
+          dest.name.toLowerCase().includes(query.toLowerCase())
+        );
+      }
+      
+      return results;
+    };
+  }, []);
+
+  // Load more destinations
+  const loadMore = () => {
+    setVisibleCount(prev => prev + 24);
   };
 
-  // Fetch locations and apply initial filter
+  // Fetch locations with memoized API call
   useEffect(() => {
+    const controller = new AbortController();
+    const signal = controller.signal;
+    
     const fetchLocations = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch('/api/esim/locations');
+        
+        // Use cache-control headers for browser caching
+        const response = await fetch('/api/esim/locations', { 
+          cache: 'force-cache', // Use cached version if available
+          next: { revalidate: 3600 }, // Revalidate cache every hour
+          signal 
+        });
 
         if (!response.ok) {
           throw new Error(`Failed to fetch locations: ${response.status} ${response.statusText}`);
@@ -73,39 +113,45 @@ const AllDestinations = () => {
           price: parseFloat(region.price || 7.99).toFixed(2),
         }));
 
+        // Store data in state
         setCountries(formattedCountries);
         setRegions(formattedRegions);
 
-        const initialFiltered = applyFilter(formattedCountries, formattedRegions, activeFilter, searchQuery);
+        // Apply initial filtering
+        const initialFiltered = applyFilter(formattedCountries, formattedRegions, activeFilter, debouncedSearchQuery);
         setFilteredDestinations(initialFiltered);
         setError(null);
       } catch (err) {
-        console.error('Error fetching locations:', err);
-        setError(`Failed to load destinations: ${err.message}. Please try again.`);
-        setCountries([]);
-        setRegions([]);
-        setFilteredDestinations([]);
+        if (err.name !== 'AbortError') {
+          console.error('Error fetching locations:', err);
+          setError(`Failed to load destinations: ${err.message}. Please try again.`);
+          setCountries([]);
+          setRegions([]);
+          setFilteredDestinations([]);
+        }
       } finally {
-        requestAnimationFrame(() => {
-          setIsLoading(false);
-        });
+        // Use requestAnimationFrame for smoother UI updates
+        if (!signal.aborted) {
+          requestAnimationFrame(() => {
+            setIsLoading(false);
+          });
+        }
       }
     };
 
     fetchLocations();
-  }, []);
 
-  // Handle filter and search updates without additional loading state
+    // Cleanup function to abort fetch on unmount
+    return () => controller.abort();
+  }, [applyFilter, debouncedSearchQuery, activeFilter]);
+
+  // Update filtered destinations when filter or search changes
   useEffect(() => {
     if (countries.length === 0 && regions.length === 0) return;
     
-    const handler = setTimeout(() => {
-      const results = applyFilter(countries, regions, activeFilter, searchQuery);
-      setFilteredDestinations(results);
-    }, 100);
-    
-    return () => clearTimeout(handler);
-  }, [searchQuery, activeFilter, countries, regions]);
+    const results = applyFilter(countries, regions, activeFilter, debouncedSearchQuery);
+    setFilteredDestinations(results);
+  }, [debouncedSearchQuery, activeFilter, countries, regions, applyFilter]);
 
   // Touch handlers for mobile
   const handleFilterTouchStart = (filter) => {
@@ -124,9 +170,10 @@ const AllDestinations = () => {
     setActiveDestination(null);
   };
 
-  // Render flag/icon
-  const renderDestinationIcon = (destination) => {
+  // Render flag/icon with optimized image loading
+  const renderDestinationIcon = (destination, index) => {
     const isCountry = destination.type === 'country';
+    const isPriority = index < 12; // Prioritize first 12 images
     
     if (isCountry) {
       const imageSrc = `/flags/${destination.code}_flag.jpeg`;
@@ -135,6 +182,8 @@ const AllDestinations = () => {
           src={imageSrc}
           alt={`${destination.name} flag`}
           fill
+          sizes="36px"
+          loading={isPriority ? "eager" : "lazy"}
           className="object-cover"
           onError={(e) => {
             e.target.onerror = null;
@@ -174,6 +223,8 @@ const AllDestinations = () => {
           src={`/flags/${regionFlag}`}
           alt={`${destination.name} flag`}
           fill
+          sizes="36px"
+          loading={isPriority ? "eager" : "lazy"}
           className="object-cover"
           onError={(e) => {
             e.target.onerror = null;
@@ -197,7 +248,7 @@ const AllDestinations = () => {
     return '#';
   };
 
-  // Render skeleton during initial loading only
+  // Render skeleton during loading
   const renderSkeletons = () => {
     return Array.from({ length: 12 }).map((_, index) => (
       <div key={index} className="bg-[#f7f7f8] rounded-lg p-4 animate-pulse">
@@ -229,7 +280,7 @@ const AllDestinations = () => {
         </div>
       )}
 
-      {/* Filter tabs - disable during initial load */}
+      {/* Filter tabs */}
       <div className="flex md:flex-row flex-wrap gap-3 mb-6">
         {['Countries', 'Regions', 'Global'].map((filter) => (
           <button
@@ -251,13 +302,13 @@ const AllDestinations = () => {
         ))}
       </div>
 
-      {/* Search box - disable during initial load */}
+      {/* Search box with debounced input */}
       <div className="mb-8 relative">
         <input
           type="text"
           placeholder="Enter your destination"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          value={searchInput}
+          onChange={(e) => setSearchInput(e.target.value)}
           className="w-full px-4 py-3 pr-12 rounded-full border border-[#F15A25] focus:outline-none focus:ring-2 focus:ring-[#F15A25]"
           disabled={isLoading}
         />
@@ -266,15 +317,16 @@ const AllDestinations = () => {
         </div>
       </div>
 
-      {/* Destinations grid */}
+      {/* Destinations grid with lazy loading */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {isLoading ? (
           renderSkeletons()
-        ) : filteredDestinations.length > 0 ? (
-          filteredDestinations.map((destination) => (
+        ) : filteredDestinations.slice(0, visibleCount).length > 0 ? (
+          filteredDestinations.slice(0, visibleCount).map((destination, index) => (
             <Link
               key={destination.id}
               href={getDestinationUrl(destination)}
+              prefetch={false}
               className={`hover:bg-[#d5d5d5] active:bg-[#d5d5d5] ${
                 activeDestination === destination.id ? 'bg-[#d5d5d5]' : 'bg-[#f7f7f8]'
               } transition-colors rounded-lg p-4 flex items-center justify-between group`}
@@ -284,7 +336,7 @@ const AllDestinations = () => {
               <div className="flex items-center">
                 <div className="rounded-full w-[60px] flex items-start justify-center text-white mr-3 overflow-hidden">
                   <div className="w-[36px] h-[36px] relative overflow-hidden shrink-0 rounded-full">
-                    {renderDestinationIcon(destination)}
+                    {renderDestinationIcon(destination, index)}
                     <div className="absolute inset-0 border-[1px] border-[rgba(0,0,0,0.1)] rounded-full pointer-events-none" />
                   </div>
                 </div>
@@ -306,7 +358,7 @@ const AllDestinations = () => {
                   <path
                     fill="currentColor"
                     fillRule="evenodd"
-                    d="M13.2151 6.8326L8.43758 11.4101C8.27758 11.5451 8.12758 11.6001 8.00008 11.6001C7.87258 11.6001C7.70083 11.5446 7.58533 11.4329L2.78533 6.8326C2.54543 6.6051 2.53763 6.2026 2.76733 5.9851C2.99546 5.74447 3.37683 5.73665 3.61508 5.96713L8.00008 10.1701L12.3851 5.9701C12.6226 5.73962 13.0046 5.74745 13.2328 5.98807C13.4626 6.2026 13.4551 6.6051 13.2151 6.8326Z"
+                    d="M13.2151 6.8326L8.43758 11.4101C8.27758 11.5451 8.12758 11.6001 8.00008 11.6001C7.87258 11.6001 7.70083 11.5446 7.58533 11.4329L2.78533 6.8326C2.54543 6.6051 2.53763 6.2026 2.76733 5.9851C2.99546 5.74447 3.37683 5.73665 3.61508 5.96713L8.00008 10.1701L12.3851 5.9701C12.6226 5.73962 13.0046 5.74745 13.2328 5.98807C13.4626 6.2026 13.4551 6.6051 13.2151 6.8326Z"
                   />
                 </svg>
               </div>
@@ -318,6 +370,18 @@ const AllDestinations = () => {
           </div>
         )}
       </div>
+
+      {/* Load more button - only if there are more items to load */}
+      {filteredDestinations.length > visibleCount && (
+        <div className="text-center mt-8 mb-12">
+          <button 
+            onClick={loadMore} 
+            className="bg-[#F15A25] text-white px-6 py-2 rounded-full hover:bg-[#d14415] transition-colors"
+          >
+            Load More Destinations
+          </button>
+        </div>
+      )}
     </div>
   );
 };

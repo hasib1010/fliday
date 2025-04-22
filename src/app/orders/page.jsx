@@ -5,7 +5,9 @@ import { useSession } from 'next-auth/react';
 import Link from 'next/link';
 import {
     Loader2, Search, RefreshCw, Eye, Download,
-    Smartphone, ArrowUpRight, Clock, CheckCircle, XCircle, AlertCircle
+    Smartphone, ArrowUpRight, Clock, CheckCircle, XCircle, AlertCircle,
+    User2Icon,
+    HouseWifi
 } from 'lucide-react';
 
 export default function MyOrdersPage() {
@@ -188,108 +190,75 @@ export default function MyOrdersPage() {
                             </div>
                         </div>
                     ) : (
-                        <div className="overflow-x-auto bg-white shadow-md rounded-lg">
-                            <table className="min-w-full divide-y divide-gray-200">
-                                <thead className="bg-gray-50">
-                                    <tr>
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Order ID
-                                        </th>
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Location
-                                        </th>
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Package
-                                        </th>
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Date
-                                        </th>
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Price
-                                        </th>
-                                        <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Status
-                                        </th>
-                                        <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                            Actions
-                                        </th>
-                                    </tr>
-                                </thead>
-                                <tbody className="bg-white divide-y divide-gray-200">
-                                    {filteredOrders.map((order) => (
-                                        <tr key={order.orderId} className="hover:bg-gray-50">
-                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                <span className="font-mono">{order.orderId.substring(0, 8)}...</span>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="flex items-center">
-                                                    <div className="h-8 w-8  rounded-full flex items-center justify-center text-white text-xs font-bold">
-                                                        <img
-                                                            className="h-full w-full object-cover rounded-full"
-                                                            src={`/flags/${order.location.substring(0, 2)}_flag.jpeg`}
-                                                            alt="flag"
-                                                        />
-                                                    </div>
-                                                    <div className="ml-3">
-                                                        <div className="text-sm font-medium text-gray-900">{order.location}</div>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="text-sm font-medium text-gray-900">{order.dataAmount}</div>
-                                                <div className="text-sm text-gray-500">{order.duration}</div>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="text-sm text-gray-900">{formatDate(order.createdAt)}</div>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="text-sm font-medium text-gray-900">
-                                                    {order.currency} {formatPrice(order.finalPrice)/100}
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(order.orderStatus)}`}>
-                                                    {getStatusIcon(order.orderStatus)}
-                                                    <span className="ml-1 capitalize">{order.orderStatus.replace('_', ' ')}</span>
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                                <div className="flex justify-end space-x-2">
-                                                    <Link
-                                                        href={`/checkout/confirmation?orderId=${order.orderId}`}
-                                                        className="text-[#F15A25] hover:text-[#E04E1A] inline-flex items-center"
-                                                    >
-                                                        <Eye size={18} />
-                                                        <span className="hidden sm:inline ml-1">View</span>
-                                                    </Link>
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            {filteredOrders.map((order) => (
+                                <div key={order.orderId} className="bg-white shadow-md rounded-lg overflow-hidden">
+                                    <div className="p-6">
+                                        <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                                            Order ID: <span className="font-mono">{order.orderId.substring(0, 8)}...</span>
+                                        </h3>
+                                        <div className="flex items-center mb-2">
+                                            <div className="h-8 w-8 rounded-full flex items-center justify-center text-white text-xs font-bold mr-2">
+                                                <img
+                                                    className="h-full w-full object-cover rounded-full"
+                                                    src={`/flags/${order.location.substring(0, 2)}_flag.jpeg`}
+                                                    alt="flag"
+                                                />
+                                            </div>
+                                            <p className="text-sm text-gray-500">Location: {order.location}</p>
+                                        </div>
+                                        <p className="text-sm text-gray-500 mb-2">Package: {order.dataAmount} - {order.duration}</p>
+                                        <p className="text-sm text-gray-500 mb-2">Date: {formatDate(order.createdAt)}</p>
+                                        <p className="text-sm font-medium text-gray-900 mb-3">
+                                            Price: {order.currency} {formatPrice(order.finalPrice)/100}
+                                        </p>
+                                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(order.orderStatus)} mb-3`}>
+                                            {getStatusIcon(order.orderStatus)}
+                                            <span className="ml-1 capitalize">{order.orderStatus.replace('_', ' ')}</span>
+                                        </span>
+                                        <div className="flex justify-between mt-5  space-x-2">
+                                            <Link
+                                                href={`/checkout/confirmation?orderId=${order.orderId}`}
+                                                className="text-[#F15A25] hover:text-[#E04E1A] inline-flex items-center"
+                                            >
+                                                <Eye size={18} />
+                                                <span className="hidden sm:inline ml-1">View</span>
+                                            </Link>
 
-                                                    {order.orderStatus === 'completed' && order.esimDetails?.qrCodeUrl && (
-                                                        <a
-                                                            href={order.esimDetails.qrCodeUrl}
-                                                            target='_blank'
-                                                            download={`esim-${order.orderId}.png`}
-                                                            className="text-blue-600 hover:text-blue-800 inline-flex items-center"
-                                                        >
-                                                            <Download size={18} />
-                                                            <span className="hidden sm:inline ml-1">QR</span>
-                                                        </a>
-                                                    )}
+                                            {order.orderStatus === 'completed' && order.esimDetails?.qrCodeUrl && (
+                                                <a
+                                                    href={order.esimDetails.qrCodeUrl}
+                                                    target='_blank'
+                                                    download={`esim-${order.orderId}.png`}
+                                                    className="text-blue-600 hover:text-blue-800 inline-flex items-center"
+                                                >
+                                                    <Download size={18} />
+                                                    <span className="hidden sm:inline ml-1">QR</span>
+                                                </a>
+                                            )}
 
-                                                    {order.orderStatus === 'completed' && (
-                                                        <Link
-                                                            href={`/esim/${order.orderId}`}
-                                                            className="text-green-600 hover:text-green-800 inline-flex items-center"
-                                                        >
-                                                            <Smartphone size={18} />
-                                                            <span className="hidden sm:inline ml-1">Install</span>
-                                                        </Link>
-                                                    )}
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                                            {order.orderStatus === 'completed' && (
+                                                <Link
+                                                    href={`/esim/${order.orderId}`}
+                                                    className="text-green-600 hover:text-green-800 inline-flex items-center"
+                                                >
+                                                    <Smartphone size={18} />
+                                                    <span className="hidden sm:inline ml-1">Install</span>
+                                                </Link>
+                                            )}
+                                            {order.orderStatus === 'completed' && (
+                                                <Link
+                                                    href={`/esim/profile/${order.orderId}`}
+                                                    className="text-green-600 hover:text-green-800 inline-flex items-center"
+                                                >
+                                                   <HouseWifi size={18} />
+                                                    <span className="hidden sm:inline ml-1">Check Use</span>
+                                                </Link>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     )}
                 </>

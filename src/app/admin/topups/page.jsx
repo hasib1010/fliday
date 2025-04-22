@@ -1,0 +1,527 @@
+'use client';
+
+import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import Link from 'next/link';
+import { 
+  Search, 
+  RefreshCw, 
+  Filter, 
+  ArrowUp, 
+  ArrowDown, 
+  ChevronLeft, 
+  ChevronRight,
+  DownloadCloud,
+  Eye,
+  RefreshCcw,
+  Calendar,
+  AlignLeft
+} from 'lucide-react';
+
+// Admin layout component with sidebar
+import AdminLayout from '@/components/admin/AdminLayout';
+
+export default function AdminTopUps() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  const [loading, setLoading] = useState(true);
+  const [topUps, setTopUps] = useState([]);
+  const [totalTopUps, setTotalTopUps] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [sortField, setSortField] = useState('createdAt');
+  const [sortDirection, setSortDirection] = useState('desc');
+  const [isExporting, setIsExporting] = useState(false);
+  const topUpsPerPage = 10;
+
+  useEffect(() => {
+    // Check authentication and admin status
+    if (status === 'unauthenticated') {
+      router.push('/auth/signin');
+      return;
+    }
+
+    if (status === 'authenticated' && session?.user?.role !== 'admin') {
+      router.push('/');
+      return;
+    }
+
+    if (status === 'authenticated' && session?.user?.role === 'admin') {
+      fetchTopUps();
+    }
+  }, [status, session, router, currentPage, statusFilter, sortField, sortDirection, searchQuery]);
+
+  const fetchTopUps = async () => {
+    try {
+      setLoading(true);
+      
+      // Build query string
+      const queryParams = new URLSearchParams({
+        page: currentPage,
+        limit: topUpsPerPage,
+        sort: sortField,
+        direction: sortDirection,
+        ...(statusFilter !== 'all' && { status: statusFilter }),
+        ...(searchQuery && { search: searchQuery })
+      });
+      
+      const response = await fetch(`/api/admin/topups?${queryParams.toString()}`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch top-ups');
+      }
+      
+      const data = await response.json();
+      setTopUps(data.topUps);
+      setTotalTopUps(data.total);
+    } catch (error) {
+      console.error('Error fetching top-ups:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const exportTopUps = async () => {
+    try {
+      setIsExporting(true);
+      
+      // Build query string for export (might include all filters but not pagination)
+      const queryParams = new URLSearchParams({
+        sort: sortField,
+        direction: sortDirection,
+        ...(statusFilter !== 'all' && { status: statusFilter }),
+        ...(searchQuery && { search: searchQuery }),
+        export: 'csv'
+      });
+      
+      const response = await fetch(`/api/admin/topups/export?${queryParams.toString()}`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to export top-ups');
+      }
+      
+      // Download the file
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `topups-export-${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch (error) {
+      console.error('Error exporting top-ups:', error);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleSort = (field) => {
+    if (sortField === field) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortField(field);
+      setSortDirection('desc');
+    }
+  };
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: 'USD'
+    }).format(amount / 10000); // Divide by 10000 since 10000 = $1.00
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    return new Date(dateString).toLocaleString();
+  };
+
+  // Calculate pagination details
+  const totalPages = Math.ceil(totalTopUps / topUpsPerPage);
+  const showingFrom = totalTopUps === 0 ? 0 : (currentPage - 1) * topUpsPerPage + 1;
+  const showingTo = Math.min(currentPage * topUpsPerPage, totalTopUps);
+
+  // Get top-up status color
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'completed':
+        return 'bg-green-100 text-green-800';
+      case 'pending':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'processing':
+        return 'bg-blue-100 text-blue-800';
+      case 'failed':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
+
+  // Loading state
+  if (loading && topUps.length === 0) {
+    return (
+      <AdminLayout>
+        <div className="flex justify-center items-center h-full">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#F15A25]"></div>
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  return (
+    <AdminLayout>
+      <div className="p-6">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-6">
+          <h1 className="text-2xl font-bold mb-4 md:mb-0">Top-ups</h1>
+          
+          <div className="flex flex-col sm:flex-row gap-4">
+            <button
+              onClick={exportTopUps}
+              disabled={isExporting || totalTopUps === 0}
+              className="flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isExporting ? (
+                <RefreshCw size={16} className="mr-2 animate-spin" />
+              ) : (
+                <DownloadCloud size={16} className="mr-2" />
+              )}
+              Export CSV
+            </button>
+            
+            <button
+              onClick={fetchTopUps}
+              className="flex items-center justify-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none"
+            >
+              <RefreshCw size={16} className="mr-2" />
+              Refresh
+            </button>
+          </div>
+        </div>
+        
+        {/* Filters and Search */}
+        <div className="bg-white rounded-lg shadow p-4 mb-6">
+          <div className="flex flex-col md:flex-row md:items-center gap-4">
+            {/* Search */}
+            <div className="relative flex-1">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <Search size={16} className="text-gray-400" />
+              </div>
+              <input
+                type="text"
+                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-[#F15A25] focus:border-[#F15A25] sm:text-sm"
+                placeholder="Search by ID, ICCID, or location..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            
+            {/* Status Filter */}
+            <div className="w-full md:w-auto">
+              <div className="relative">
+                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <Filter size={16} className="text-gray-400" />
+                </div>
+                <select
+                  className="block w-full pl-10 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-[#F15A25] focus:border-[#F15A25] sm:text-sm rounded-md"
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                >
+                  <option value="all">All Statuses</option>
+                  <option value="pending">Pending</option>
+                  <option value="processing">Processing</option>
+                  <option value="completed">Completed</option>
+                  <option value="failed">Failed</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Top-ups Table */}
+        <div className="bg-white rounded-lg shadow overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th 
+                    scope="col" 
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                    onClick={() => handleSort('topUpId')}
+                  >
+                    <div className="flex items-center">
+                      Top-up ID
+                      {sortField === 'topUpId' && (
+                        sortDirection === 'asc' ? <ArrowUp size={14} className="ml-1" /> : <ArrowDown size={14} className="ml-1" />
+                      )}
+                    </div>
+                  </th>
+                  <th 
+                    scope="col" 
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                    onClick={() => handleSort('createdAt')}
+                  >
+                    <div className="flex items-center">
+                      Date
+                      {sortField === 'createdAt' && (
+                        sortDirection === 'asc' ? <ArrowUp size={14} className="ml-1" /> : <ArrowDown size={14} className="ml-1" />
+                      )}
+                    </div>
+                  </th>
+                  <th 
+                    scope="col" 
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >
+                    User
+                  </th>
+                  <th 
+                    scope="col" 
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >
+                    Package
+                  </th>
+                  <th 
+                    scope="col" 
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >
+                    ICCID
+                  </th>
+                  <th 
+                    scope="col" 
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                    onClick={() => handleSort('finalPrice')}
+                  >
+                    <div className="flex items-center">
+                      Amount
+                      {sortField === 'finalPrice' && (
+                        sortDirection === 'asc' ? <ArrowUp size={14} className="ml-1" /> : <ArrowDown size={14} className="ml-1" />
+                      )}
+                    </div>
+                  </th>
+                  <th 
+                    scope="col" 
+                    className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                    onClick={() => handleSort('topUpStatus')}
+                  >
+                    <div className="flex items-center">
+                      Status
+                      {sortField === 'topUpStatus' && (
+                        sortDirection === 'asc' ? <ArrowUp size={14} className="ml-1" /> : <ArrowDown size={14} className="ml-1" />
+                      )}
+                    </div>
+                  </th>
+                  <th 
+                    scope="col" 
+                    className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
+                  >
+                    Actions
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {topUps.length > 0 ? (
+                  topUps.map((topUp) => (
+                    <tr key={topUp.topUpId} className="hover:bg-gray-50">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-blue-600">
+                        <Link href={`/admin/topups/${topUp.topUpId}`}>
+                          {topUp.topUpId.substring(0, 8)}...
+                        </Link>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {formatDate(topUp.createdAt)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {topUp.userEmail || 'N/A'}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <div>
+                          <p>{topUp.packageName}</p>
+                          <p className="text-xs text-gray-400">{topUp.location}</p>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <span className="font-mono">{topUp.iccid.substring(0, 6)}...{topUp.iccid.substring(topUp.iccid.length - 4)}</span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {formatCurrency(topUp.finalPrice)}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${getStatusColor(topUp.topUpStatus)}`}>
+                          {topUp.topUpStatus}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <Link 
+                          href={`/admin/topups/${topUp.topUpId}`}
+                          className="text-blue-600 hover:text-blue-900 flex items-center justify-end"
+                        >
+                          <Eye size={16} className="mr-1" />
+                          View
+                        </Link>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="8" className="px-6 py-4 text-center text-sm text-gray-500">
+                      {loading ? 'Loading top-ups...' : 'No top-ups found'}
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+          
+          {/* Pagination */}
+          {totalPages > 0 && (
+            <div className="bg-white px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+              <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-sm text-gray-700">
+                    Showing <span className="font-medium">{showingFrom}</span> to <span className="font-medium">{showingTo}</span> of{' '}
+                    <span className="font-medium">{totalTopUps}</span> top-ups
+                  </p>
+                </div>
+                <div>
+                  <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                    <button
+                      onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                      disabled={currentPage === 1}
+                      className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <span className="sr-only">Previous</span>
+                      <ChevronLeft size={16} />
+                    </button>
+                    
+                    {/* Page numbers */}
+                    {[...Array(totalPages)].map((_, i) => {
+                      const page = i + 1;
+                      // Show current page, first, last, and pages around current
+                      if (
+                        page === 1 ||
+                        page === totalPages ||
+                        (page >= currentPage - 1 && page <= currentPage + 1)
+                      ) {
+                        return (
+                          <button
+                            key={page}
+                            onClick={() => setCurrentPage(page)}
+                            className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
+                              currentPage === page
+                                ? 'z-10 bg-[#FFF1ED] border-[#F15A25] text-[#F15A25]'
+                                : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                            }`}
+                          >
+                            {page}
+                          </button>
+                        );
+                      }
+                      
+                      // Show ellipsis if needed
+                      if (
+                        (page === 2 && currentPage > 3) ||
+                        (page === totalPages - 1 && currentPage < totalPages - 2)
+                      ) {
+                        return (
+                          <span
+                            key={page}
+                            className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700"
+                          >
+                            ...
+                          </span>
+                        );
+                      }
+                      
+                      return null;
+                    })}
+                    
+                    <button
+                      onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                      disabled={currentPage === totalPages}
+                      className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <span className="sr-only">Next</span>
+                      <ChevronRight size={16} />
+                    </button>
+                  </nav>
+                </div>
+              </div>
+              
+              {/* Mobile pagination */}
+              <div className="flex items-center justify-between w-full sm:hidden">
+                <button
+                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                  className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Previous
+                </button>
+                <p className="text-sm text-gray-700">
+                  Page <span className="font-medium">{currentPage}</span> of <span className="font-medium">{totalPages}</span>
+                </p>
+                <button
+                  onClick={() => setCurrentPage(Math.min(totalPages, currentPage + 1))}
+                  disabled={currentPage === totalPages}
+                  className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Next
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+        
+        {/* Top-ups Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
+              <div className="bg-blue-100 p-3 rounded-full">
+                <RefreshCcw size={20} className="text-blue-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-500">Total Top-ups</p>
+                <p className="text-2xl font-bold text-gray-900">{totalTopUps}</p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
+              <div className="bg-green-100 p-3 rounded-full">
+                <Calendar size={20} className="text-green-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-500">This Month</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {topUps.filter(topUp => {
+                    const thisMonth = new Date();
+                    thisMonth.setDate(1);
+                    thisMonth.setHours(0, 0, 0, 0);
+                    return new Date(topUp.createdAt) >= thisMonth;
+                  }).length}
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-lg shadow p-6">
+            <div className="flex items-center">
+              <div className="bg-purple-100 p-3 rounded-full">
+                <AlignLeft size={20} className="text-purple-600" />
+              </div>
+              <div className="ml-4">
+                <p className="text-sm font-medium text-gray-500">Top-up Success Rate</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {totalTopUps === 0 ? '0%' : 
+                    Math.round((topUps.filter(topUp => topUp.topUpStatus === 'completed').length / totalTopUps) * 100) + '%'}
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </AdminLayout>
+  );
+}

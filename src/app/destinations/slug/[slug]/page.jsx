@@ -819,10 +819,11 @@ export default function RegionSlugPage() {
 
             {/* Countries Modal */}
             {showCountriesModal && (
-                <div className="fixed inset-0 bg-black/50 bg-opacity-50 flex items-center justify-center z-50 p-4">
-                    <div className="bg-white rounded-lg w-fit max-h-[80vh] overflow-y-auto">
-                        <div className="sticky top-0 bg-white p-4 border-b flex justify-between items-center">
-                            <h3 className="text-lg font-medium">Coverage Countries</h3>
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <div className="bg-white max-h-[80vh] w-full sm:w-[500px] rounded-2xl overflow-hidden shadow-2xl relative custom-scroll-container">
+                        {/* Header */}
+                        <div className="sticky top-0 bg-white p-4 border-b flex justify-between items-center z-10">
+                            <h3 className="text-lg font-semibold">Coverage Countries</h3>
                             <button
                                 onClick={() => setShowCountriesModal(false)}
                                 className="text-gray-500 hover:text-gray-700"
@@ -830,12 +831,14 @@ export default function RegionSlugPage() {
                                 <X size={20} />
                             </button>
                         </div>
-                        <div className="p-4">
+
+                        {/* Content */}
+                        <div className="p-4 overflow-y-auto max-h-[calc(80vh-130px)] custom-scroll">
                             <ul className="space-y-3">
                                 {regionCountries.map((country, index) => (
                                     <li key={index} className="flex items-center">
                                         <img
-                                            className='w-6 h-6 rounded-full mr-3 object-cover'
+                                            className="w-6 h-6 rounded-full mr-3 object-cover"
                                             src={`/flags/${country.toLowerCase().replace(/\s+/g, '_')}_flag.jpeg`}
                                             alt={country}
                                             onError={(e) => {
@@ -848,7 +851,9 @@ export default function RegionSlugPage() {
                                 ))}
                             </ul>
                         </div>
-                        <div className="sticky bottom-0 bg-white p-4 border-t flex justify-end">
+
+                        {/* Footer */}
+                        <div className="sticky bottom-0 bg-white p-4 border-t flex justify-end z-10">
                             <button
                                 onClick={() => setShowCountriesModal(false)}
                                 className="bg-[#F15A25] hover:bg-[#E04E1A] text-white px-4 py-2 rounded transition-colors"
@@ -859,6 +864,7 @@ export default function RegionSlugPage() {
                     </div>
                 </div>
             )}
+
         </div>
     );
 }

@@ -1,4 +1,9 @@
 import { NextResponse } from 'next/server';
+import NodeCache from 'node-cache'; // You'll need to install: npm install node-cache
+
+// Create a server-side cache with 1 hour TTL
+const cache = new NodeCache({ stdTTL: 3600 }); // 1 hour in seconds
+const CACHE_KEY = 'esim_locations_data';
 
 // Environment variables
 const ESIM_ACCESS_CODE = process.env.ESIM_ACCESS_CODE;
@@ -17,6 +22,15 @@ const ALLOWED_DURATIONS = [7, 30]; // Only allow 7 or 30 days
 
 export async function GET() {
   try {
+    // Check cache first
+    const cachedData = cache.get(CACHE_KEY);
+    if (cachedData) {
+      console.log('Returning cached eSIM locations data');
+      return NextResponse.json(cachedData);
+    }
+
+    console.log('Cache miss, fetching fresh eSIM locations data');
+
     // Validate credentials
     if (!ESIM_ACCESS_CODE) {
       return NextResponse.json(
@@ -25,78 +39,90 @@ export async function GET() {
       );
     }
 
-    // Fetch locations
-    const locationsResponse = await fetch(`${ESIM_API_BASE_URL}/open/location/list`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'RT-AccessCode': ESIM_ACCESS_CODE,
-      },
-      body: JSON.stringify({}),
-    });
-
-    if (!locationsResponse.ok) {
-      const errorData = await locationsResponse.json().catch(() => ({}));
-      return NextResponse.json(
-        {
-          success: false,
-          message: errorData.errorMsg || `Failed to fetch locations: ${locationsResponse.status}`,
-        },
-        { status: locationsResponse.status }
-      );
-    }
-
-    const locationsData = await locationsResponse.json();
-    const locations = locationsData?.obj?.locationList || [];
-
-    // Fetch packages from eSIM API directly
-    let allPackages = [];
-    try {
-      const esimPackagesResponse = await fetch(`${ESIM_API_BASE_URL}/open/package/list`, {
+    // Fetch both endpoints in parallel
+    const [locationsResponse, packagesResponse] = await Promise.all([
+      fetch(`${ESIM_API_BASE_URL}/open/location/list`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'RT-AccessCode': ESIM_ACCESS_CODE,
         },
         body: JSON.stringify({}),
-      });
+        // Set timeout and retry logic
+        signal: AbortSignal.timeout(10000), // 10 second timeout
+      }).catch(err => {
+        console.error('Error fetching locations:', err);
+        return { ok: false, status: 500, error: err.message };
+      }),
+      
+      fetch(`${ESIM_API_BASE_URL}/open/package/list`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'RT-AccessCode': ESIM_ACCESS_CODE,
+        },
+        body: JSON.stringify({}),
+        signal: AbortSignal.timeout(10000), // 10 second timeout
+      }).catch(err => {
+        console.error('Error fetching packages:', err);
+        return { ok: false, status: 500, error: err.message };
+      })
+    ]);
 
-      if (esimPackagesResponse.ok) {
-        const esimPackagesData = await esimPackagesResponse.json();
-        allPackages = esimPackagesData?.obj?.packageList || [];
-        console.log(`Found ${allPackages.length} total packages from eSIM API`);
-      }
-    } catch (error) {
-      console.warn('Failed to fetch packages:', error);
+    // Handle location response
+    if (!locationsResponse.ok) {
+      return NextResponse.json(
+        {
+          success: false,
+          message: locationsResponse.error || `Failed to fetch locations: ${locationsResponse.status}`,
+        },
+        { status: locationsResponse.status || 500 }
+      );
     }
 
-    // Filter packages based on configuration
-    const filteredPackages = allPackages.filter(pkg => {
-      if (DISABLE_FILTERS) return true;
+    const locationsData = await locationsResponse.json();
+    const locations = locationsData?.obj?.locationList || [];
 
-      const hasAllowedDataSize = ALLOWED_DATA_SIZES.includes(pkg.volume);
-      const hasAllowedDuration = 
-        ALLOWED_DURATIONS.includes(pkg.duration) && 
-        (pkg.durationUnit?.toUpperCase() === 'DAY' || pkg.durationUnit?.toUpperCase() === 'DAYS');
+    // Process packages
+    let allPackages = [];
+    if (packagesResponse.ok) {
+      const packagesData = await packagesResponse.json();
+      allPackages = packagesData?.obj?.packageList || [];
+    } else {
+      console.warn('Failed to fetch packages, will continue with empty packages list');
+    }
 
-      return hasAllowedDataSize && hasAllowedDuration;
-    });
+    // Filter packages with optimized code
+    const filteredPackages = DISABLE_FILTERS 
+      ? allPackages 
+      : allPackages.filter(pkg => {
+          const hasAllowedDataSize = ALLOWED_DATA_SIZES.includes(pkg.volume);
+          const hasAllowedDuration = 
+            ALLOWED_DURATIONS.includes(pkg.duration) && 
+            (pkg.durationUnit?.toUpperCase() === 'DAY' || pkg.durationUnit?.toUpperCase() === 'DAYS');
 
-    console.log(`Filtered packages: ${filteredPackages.length} out of ${allPackages.length}`);
+          return hasAllowedDataSize && hasAllowedDuration;
+        });
 
     // Helper function to convert API price to display price
     const convertPrice = (apiPrice) => {
       return (parseFloat(apiPrice) + 10000) / 10000;
     };
 
-    // Process locations
+    // Optimized data processing - create all collections upfront
     const countries = [];
     const regions = [];
-    const globalPackages = []; // New list for global packages
-
-    // First, handle global packages
-    const remainingPackages = filteredPackages.filter(pkg => {
-      const isGlobal = pkg.slug.toLowerCase().startsWith('gl-') || pkg.name.toLowerCase().startsWith('global');
+    const globalPackages = [];
+    
+    // Process global packages first (optimization: one loop through packages)
+    const packageMap = new Map(); // For quick lookup by location
+    
+    // Create a map for faster lookups by location
+    filteredPackages.forEach(pkg => {
+      // Check if it's a global package
+      const isGlobal = pkg.slug.toLowerCase().startsWith('gl-') || 
+                      pkg.name.toLowerCase().startsWith('global');
+      
       if (isGlobal) {
         const lowestPrice = convertPrice(pkg.price);
         globalPackages.push({
@@ -104,23 +130,31 @@ export async function GET() {
           name: pkg.name,
           code: pkg.slug.toLowerCase(),
           regionCode: pkg.slug,
-          type: 'region', // Still treated as a region type for frontend compatibility
+          type: 'region',
           countries: pkg.location ? pkg.location.split(',').map(code => ({ code, name: code })) : [],
           price: lowestPrice.toFixed(2),
           slug: pkg.slug,
         });
-        return false; // Exclude from remaining packages
+      } else {
+        // For non-global packages, create location-to-package mapping
+        if (pkg.location) {
+          const locations = pkg.location.split(',');
+          locations.forEach(loc => {
+            if (!packageMap.has(loc)) {
+              packageMap.set(loc, []);
+            }
+            packageMap.get(loc).push(pkg);
+          });
+        }
       }
-      return true;
     });
 
+    // Process locations
     locations.forEach((location) => {
       if (location.type === 1) {
-        // Single country
-        const countryPackages = remainingPackages.filter(pkg => 
-          pkg.location && pkg.location.split(',').includes(location.code)
-        );
-
+        // Process single country
+        const countryPackages = packageMap.get(location.code) || [];
+        
         if (countryPackages.length > 0) {
           const lowestPrice = Math.min(
             ...countryPackages.map(pkg => convertPrice(pkg.price)).filter(p => p > 0)
@@ -135,31 +169,35 @@ export async function GET() {
             price: lowestPrice.toFixed(2),
           });
         }
-      } else if (location.type === 2) {
-        // Region
-        if (!location.subLocationList || location.subLocationList.length === 0) {
-          return; // Skip this region
-        }
-
+      } else if (location.type === 2 && location.subLocationList?.length > 0) {
+        // Process region
         const regionCountryCodes = location.subLocationList.map(subLoc => subLoc.code);
-
-        // Find packages that match this region
-        const regionPackages = remainingPackages.filter(pkg => {
+        
+        // Find packages for this region using our map
+        const regionPackagesSet = new Set();
+        regionCountryCodes.forEach(code => {
+          const packagesForCountry = packageMap.get(code) || [];
+          packagesForCountry.forEach(pkg => regionPackagesSet.add(pkg));
+        });
+        
+        const regionPackages = Array.from(regionPackagesSet);
+        
+        // Filter to packages that cover at least 70% of countries
+        const validRegionPackages = regionPackages.filter(pkg => {
           if (!pkg.location) return false;
-
+          
           const pkgLocations = pkg.location.split(',');
           const countriesCovered = regionCountryCodes.filter(code => 
             pkgLocations.includes(code)
           ).length;
-
-          // Consider a package valid if it covers at least 70% of the region's countries
+          
           const coverageRatio = countriesCovered / regionCountryCodes.length;
           return coverageRatio >= 0.7 || pkg.name.toLowerCase().includes(location.name.toLowerCase());
         });
-
-        if (regionPackages.length > 0) {
+        
+        if (validRegionPackages.length > 0) {
           const lowestPrice = Math.min(
-            ...regionPackages.map(pkg => convertPrice(pkg.price)).filter(p => p > 0)
+            ...validRegionPackages.map(pkg => convertPrice(pkg.price)).filter(p => p > 0)
           );
 
           regions.push({
@@ -170,16 +208,21 @@ export async function GET() {
             type: 'region',
             countries: location.subLocationList,
             price: lowestPrice.toFixed(2),
-            slug: regionPackages[0]?.slug || '',
+            slug: validRegionPackages[0]?.slug || '',
           });
         }
       }
     });
 
-    // Add synthetic regions based on remaining packages (e.g., Africa)
-    remainingPackages.forEach(pkg => {
+    // Add synthetic regions (e.g., Africa) from packages
+    const syntheticRegions = new Set();
+    filteredPackages.forEach(pkg => {
       const pkgNameLower = pkg.name.toLowerCase();
-      if (pkgNameLower.includes('africa') && !regions.some(r => r.name.toLowerCase() === 'africa')) {
+      
+      // Africa region
+      if (pkgNameLower.includes('africa') && !syntheticRegions.has('africa') && 
+          !regions.some(r => r.name.toLowerCase() === 'africa')) {
+        syntheticRegions.add('africa');
         const lowestPrice = convertPrice(pkg.price);
         regions.push({
           id: 'AFRICA',
@@ -192,23 +235,31 @@ export async function GET() {
           slug: pkg.slug,
         });
       }
-      // Add more synthetic regions if needed
+      
+      // Add other synthetic regions as needed
     });
 
-    // Combine regions and global packages for the frontend
+    // Combine and sort results 
     const allRegions = [...regions, ...globalPackages];
-
-    return NextResponse.json({
+    
+    // Prepare the response
+    const response = {
       success: true,
       data: {
         countries: countries.sort((a, b) => a.name.localeCompare(b.name)),
         regions: allRegions.sort((a, b) => a.name.localeCompare(b.name)),
         all: [...countries, ...allRegions],
         filtersDisabled: DISABLE_FILTERS,
+        cachedAt: Date.now(),
       },
-    });
+    };
+    
+    // Store in cache
+    cache.set(CACHE_KEY, response);
+    
+    return NextResponse.json(response);
   } catch (error) {
-    console.error('Error fetching locations:', error);
+    console.error('Error in locations API:', error);
     return NextResponse.json(
       {
         success: false,
@@ -216,5 +267,22 @@ export async function GET() {
       },
       { status: 500 }
     );
+  }
+}
+
+// Optional: Add a route handler for manual cache invalidation
+export async function POST(request) {
+  try {
+    const body = await request.json();
+    
+    // Simple cache invalidation with a secret to prevent abuse
+    if (body.action === 'clear_cache' && body.secret === process.env.API_SECRET) {
+      cache.del(CACHE_KEY);
+      return NextResponse.json({ success: true, message: 'Cache cleared successfully' });
+    }
+    
+    return NextResponse.json({ success: false, message: 'Invalid request' }, { status: 400 });
+  } catch (error) {
+    return NextResponse.json({ success: false, message: error.message }, { status: 400 });
   }
 }

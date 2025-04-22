@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 const ESIM_ACCESS_CODE = process.env.ESIM_ACCESS_CODE;
 const ESIM_API_BASE_URL = process.env.ESIM_API_BASE_URL || 'https://api.esimaccess.com/api/v1';
 const DISABLE_FILTERS = process.env.DISABLE_ESIM_FILTERS === 'true'; // Set in .env file
+const MARKUP_AMOUNT = 10000; // $1.00 markup in Stripe's format (cents * 100)
 
 // Filter parameters (ignored if DISABLE_FILTERS is true)
 const ALLOWED_DATA_SIZES = [
@@ -98,16 +99,25 @@ export async function GET(request) {
 
     console.log(`Filtered packages: ${filteredPackages.length} out of ${packages.length}`);
 
-    // Format response
+    // Format response with price markup
     const formattedPackages = filteredPackages.map((pkg, index) => {
       const locationArray = pkg.location?.split(',') || [];
+      
+      // Store the original provider price
+      const originalPrice = pkg.price || 0;
+      
+      // Add $1 markup to the price - this is what the customer will pay
+      const markedUpPrice = originalPrice + MARKUP_AMOUNT;
+      
       return {
         id: pkg.packageCode || `pkg-${index}`,
         packageCode: pkg.packageCode || `pkg-${index}`,
         slug: pkg.slug || '',
         name: pkg.name || 'Unknown Plan',
-        price: pkg.price + 10000, // Add 10000 to initial price for frontend
-        retailPrice: pkg.retailPrice ? pkg.retailPrice + 10000 : null, // Adjust retailPrice if exists
+        originalPrice: originalPrice, // Store original price (hidden from customer)
+        price: markedUpPrice,         // Price with markup (what customer pays)
+        retailPrice: pkg.retailPrice ? pkg.retailPrice + MARKUP_AMOUNT : markedUpPrice, 
+        markupAmount: MARKUP_AMOUNT,  // Store the markup amount for reference
         currency: pkg.currencyCode || 'USD',
         dataAmount: pkg.volume ? `${(pkg.volume / 1073741824).toFixed(1)}GB` : 'N/A',
         duration: pkg.duration ? `${pkg.duration} ${pkg.durationUnit || 'Days'}` : 'N/A',
@@ -121,9 +131,18 @@ export async function GET(request) {
         favorite: pkg.favorite || false,
         smsStatus: pkg.smsStatus || 0,
         dataType: pkg.dataType || 1,
-        unusedValidTime: pkg.unusedValidTime || 30
+        unusedValidTime: pkg.unusedValidTime || 30,
+        supportTopUpType: pkg.supportTopUpType || 0
       };
     });
+
+    // Log a few examples of pricing for debugging
+    if (formattedPackages.length > 0) {
+      console.log('Example pricing (first 3 packages):');
+      formattedPackages.slice(0, 3).forEach(pkg => {
+        console.log(`Package ${pkg.packageCode}: Original: ${pkg.originalPrice/10000}$, Markup: ${pkg.markupAmount/10000}$, Final: ${pkg.price/10000}$`);
+      });
+    }
 
     return NextResponse.json({
       success: true,
