@@ -112,7 +112,6 @@ export default function Navbar() {
 
   const navLinks = [
     { href: '/how-it-works', label: 'How it works' },
-    
     { href: '/support', label: 'Support' },
     { href: '/faq', label: 'FAQ' },
     { href: '/blog', label: 'Blog' },
@@ -132,19 +131,21 @@ export default function Navbar() {
   if (isCheckoutPage) {
     return (
       <>
-        <nav className="fixed min-w-[300px]  w-full top-0 z-50 bg-white border-b border-gray-200">
+        <nav className="fixed min-w-[300px] w-full top-0 z-50 bg-white border-b border-gray-200">
           <div className="max-w-[1440px] mx-auto px-4 lg:px-8">
             <div className="flex justify-start items-center h-16">
               {/* Logo centered for checkout page */}
               <div className="flex-shrink-0">
                 <Link href="/" className="flex items-center">
-                  <Image
-                    width={100}
-                    height={100}
-                    src="/logo.png"
-                    alt="Company Logo"
-                    priority
-                  />
+                  <div className="relative h-10 w-24"> {/* Fixed dimensions logo container */}
+                    <Image
+                      src="/logo.png"
+                      alt="Company Logo"
+                      fill
+                      className="object-contain"
+                      priority
+                    />
+                  </div>
                 </Link>
               </div>
             </div>
@@ -160,23 +161,26 @@ export default function Navbar() {
   return (
     <>
       <nav
-        className={`fixed  max-h-48 w-full top-0 z-50 transition-all duration-300 border-b ${isScrolled
-          ? 'bg-white border-gray-200'
-          : 'bg-transparent border-transparent'
-          }`}
+        className={`fixed max-h-16 w-full top-0 z-50 transition-colors duration-300 border-b ${
+          isScrolled
+            ? 'bg-white border-gray-200'
+            : 'bg-transparent border-transparent'
+        }`}
       >
         <div className="max-w-[1440px] mx-auto px-4 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo */}
             <div className="flex-shrink-0">
               <Link href="/" className="flex items-center">
-                <Image
-                  width={100}
-                  height={100}
-                  src="/logo.png"
-                  alt="Company Logo"
-                  priority
-                />
+                <div className="relative h-10 w-24"> {/* Fixed dimensions logo container */}
+                  <Image
+                    src="/logo.png"
+                    alt="Company Logo"
+                    fill
+                    className="object-contain"
+                    priority
+                  />
+                </div>
               </Link>
             </div>
 
@@ -186,27 +190,29 @@ export default function Navbar() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`font-medium text-[.875rem] transition-colors ${isActiveLink(link.href)
-                    ? 'text-[#F15A25]'
-                    : 'text-black hover:text-[#F15A25]'
-                    }`}
+                  className={`font-medium text-[.875rem] transition-colors ${
+                    isActiveLink(link.href)
+                      ? 'text-[#F15A25]'
+                      : 'text-black hover:text-[#F15A25]'
+                  }`}
                 >
                   {link.label}
                 </Link>
               ))}
               <Link
                 href="/destinations"
-                className={`rounded-[30px] px-6 py-2 border font-medium text-[.875rem] hover:bg-gray-100 transition-colors ${isActiveLink('/destinations')
-                  ? 'text-[#F15A25] border-[#F15A25]'
-                  : 'text-black border-black hover:text-[#F15A25] hover:border-[#F15A25]'
-                  }`}
+                className={`rounded-[30px] px-6 py-2 border font-medium text-[.875rem] hover:bg-gray-100 transition-colors ${
+                  isActiveLink('/destinations')
+                    ? 'text-[#F15A25] border-[#F15A25]'
+                    : 'text-black border-black hover:text-[#F15A25] hover:border-[#F15A25]'
+                }`}
               >
                 View Destinations
               </Link>
               {!isAuthenticated && (
                 <Link
                   href="/auth/signin"
-                  className="font-medium text-[.875rem] px-4 py-2 bg-[#F15A25] text-white rounded-[30px] text-center hover:bg-[#E04E1A] mx-4 transition-colors"
+                  className="font-medium text-[.875rem] px-4 py-2 bg-[#F15A25] text-white rounded-[30px] text-center hover:bg-[#E04E1A] transition-colors"
                 >
                   Sign In
                 </Link>
@@ -468,10 +474,11 @@ export default function Navbar() {
                   <Link
                     key={link.href}
                     href={link.href}
-                    className={`font-medium text-[.875rem] px-4 py-2 hover:bg-gray-100 rounded-md transition-colors ${isActiveLink(link.href)
-                      ? 'text-[#F15A25]'
-                      : 'text-black'
-                      }`}
+                    className={`font-medium text-[.875rem] px-4 py-2 hover:bg-gray-100 rounded-md transition-colors ${
+                      isActiveLink(link.href)
+                        ? 'text-[#F15A25]'
+                        : 'text-black'
+                    }`}
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     {link.label}
@@ -479,10 +486,11 @@ export default function Navbar() {
                 ))}
                 <Link
                   href="/destinations"
-                  className={`font-medium text-[.875rem] px-4 py-2 border rounded-[30px] text-center hover:bg-gray-100 mx-4 transition-colors ${isActiveLink('/destinations')
-                    ? 'text-[#F15A25] border-[#F15A25]'
-                    : 'text-black border-black'
-                    }`}
+                  className={`font-medium text-[.875rem] px-4 py-2 border rounded-[30px] text-center hover:bg-gray-100 mx-4 transition-colors ${
+                    isActiveLink('/destinations')
+                      ? 'text-[#F15A25] border-[#F15A25]'
+                      : 'text-black border-black'
+                  }`}
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   View Destinations
@@ -503,8 +511,6 @@ export default function Navbar() {
           )}
         </div>
       </nav>
-
-       
     </>
   );
 }

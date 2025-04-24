@@ -15,12 +15,80 @@ export default function PopularDestinations() {
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
 
+    // Static country data
+    const staticCountries = [
+        {
+            id: 'tr',
+            name: 'Turkey',
+            code: 'tr',
+            type: 'country',
+            price: '3.99',
+        },
+        {
+            id: 'us',
+            name: 'United States',
+            code: 'us',
+            type: 'country',
+            price: '3.99',
+        },
+        {
+            id: 'th',
+            name: 'Thailand',
+            code: 'th',
+            type: 'country',
+            price: '3.99',
+        },
+        {
+            id: 'my',
+            name: 'Malaysia',
+            code: 'my',
+            type: 'country',
+            price: '3.99',
+        },
+        {
+            id: 'ma',
+            name: 'Morocco',
+            code: 'ma',
+            type: 'country',
+            price: '3.99',
+        },
+        {
+            id: 'it',
+            name: 'Italy',
+            code: 'it',
+            type: 'country',
+            price: '3.99',
+        },
+        {
+            id: 'es',
+            name: 'Spain',
+            code: 'es',
+            type: 'country',
+            price: '3.99',
+        },
+        {
+            id: 'id',
+            name: 'Indonesia',
+            code: 'id',
+            type: 'country',
+            price: '3.99',
+        },
+        {
+            id: 'de',
+            name: 'Germany',
+            code: 'de',
+            type: 'country',
+            price: '3.99',
+        },
+    ];
+
     // Function to apply filtering logic
     const applyFilter = (countriesList, regionsList, filter) => {
         let results = [];
 
         if (filter === 'Country') {
-            results = countriesList.filter(dest => !dest.name.toLowerCase().startsWith('global'));
+            // For Country tab, use static countries
+            return staticCountries;
         } else if (filter === 'Region') {
             results = regionsList.filter(dest => !dest.name.toLowerCase().startsWith('global'));
         } else if (filter === 'Global') {
@@ -37,7 +105,7 @@ export default function PopularDestinations() {
         return results;
     };
 
-    // Fetch destinations dynamically
+    // Fetch destinations dynamically (only for Regions and Global)
     useEffect(() => {
         const fetchDestinations = async () => {
             try {
@@ -54,6 +122,7 @@ export default function PopularDestinations() {
                     throw new Error(data.message || 'Failed to fetch destinations');
                 }
 
+                // We'll still keep this for other tabs
                 const formattedCountries = (data.data.countries || []).map((country, index) => ({
                     id: country.id || country.code || `country-${index}`,
                     name: country.name || 'Unknown',
@@ -81,19 +150,38 @@ export default function PopularDestinations() {
             } catch (err) {
                 console.error('Error fetching destinations:', err);
                 setError(`Failed to load popular destinations: ${err.message}. Please try again.`);
-                setCountries([]);
-                setRegions([]);
-                setFilteredDestinations([]);
+                
+                // If we have an error loading dynamic content but we're on the Country tab,
+                // we can still show the static countries
+                if (filterType === 'Country') {
+                    setFilteredDestinations(staticCountries);
+                    setError(null);
+                } else {
+                    setRegions([]);
+                    setFilteredDestinations([]);
+                }
             } finally {
                 setIsLoading(false);
             }
         };
 
-        fetchDestinations();
-    }, []);
+        // If we're on the Country tab, just use static data immediately
+        if (filterType === 'Country') {
+            setFilteredDestinations(staticCountries);
+            setIsLoading(false);
+        } else {
+            fetchDestinations();
+        }
+    }, [filterType]);
 
     // Update filtered destinations when filterType changes
     useEffect(() => {
+        if (filterType === 'Country') {
+            setFilteredDestinations(staticCountries);
+            setIsLoading(false);
+            return;
+        }
+        
         if (countries.length === 0 && regions.length === 0) return;
 
         const results = applyFilter(countries, regions, filterType);
@@ -277,7 +365,7 @@ export default function PopularDestinations() {
                                 onTouchEnd={handleTouchEnd}
                             >
                                 <div className="flex items-center ">
-                                    <div className="rounded-full   flex items-center justify-center text-white mr-3 overflow-hidden">
+                                    <div className="rounded-full flex items-center justify-center text-white mr-3 overflow-hidden">
                                         <div className="w-[36px] h-[36px] relative overflow-hidden shrink-0 rounded-full">
                                             {renderDestinationIcon(dest)}
                                            

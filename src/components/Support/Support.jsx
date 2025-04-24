@@ -1,13 +1,133 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Search, MessageCircle, Mail, Phone, HelpCircle, FileText, Globe, Clock } from 'lucide-react';
+import { Search, MessageCircle, Mail, HelpCircle } from 'lucide-react';
+import BenefitsSection from '../Home/BenefitsSection';
+import SetupProcess from '../Home/SetupProcess';
+
+// Tawk.to Chat Component
+function TawkToChat({ user }) {
+  useEffect(() => {
+    // Create Tawk_API if it doesn't exist
+    window.Tawk_API = window.Tawk_API || {};
+    window.Tawk_LoadStart = new Date();
+    
+    // Load Tawk.to script with your specific embed ID
+    (function(){
+      var s1 = document.createElement("script");
+      var s0 = document.getElementsByTagName("script")[0];
+      s1.async = true;
+      s1.src = 'https://embed.tawk.to/680abb847161c519104da692/1ipkuovom';
+      s1.charset = 'UTF-8';
+      s1.setAttribute('crossorigin', '*');
+      s0.parentNode.insertBefore(s1, s0);
+    })();
+
+    // Set up event handlers when Tawk is ready
+    const handleTawkReady = () => {
+      // Set visitor information if available
+      if (user && user.email) {
+        window.Tawk_API.setAttributes({
+          name: user.name || 'Visitor',
+          email: user.email,
+          // You can add other attributes as needed
+          userType: user.type || 'Customer',
+          plan: user.plan || 'Standard'
+        }, function(error) {
+          if (error) {
+            console.error('Error setting Tawk.to visitor attributes:', error);
+          }
+        });
+      }
+
+      // Add eSIM-related tags to the conversation
+      window.Tawk_API.addTags(['eSIM', 'support'], function(error) {
+        if (error) {
+          console.error('Error adding tags:', error);
+        }
+      });
+
+      // Example of adding custom event
+      window.Tawk_API.addEvent('visited_support_page', {
+        timestamp: new Date().toISOString()
+      }, function(error) {
+        if (error) {
+          console.error('Error adding event:', error);
+        }
+      });
+
+      // Set up event handlers for chat
+      window.Tawk_API.onChatMaximized = function() {
+        console.log('Chat window opened');
+        // You could trigger analytics here
+      };
+
+      window.Tawk_API.onChatMinimized = function() {
+        console.log('Chat window closed');
+        // You could trigger analytics here
+      };
+
+      window.Tawk_API.onChatStarted = function() {
+        console.log('Chat started');
+        // You could trigger analytics here
+      };
+
+      window.Tawk_API.onChatEnded = function() {
+        console.log('Chat ended');
+        // You could save feedback or trigger survey
+      };
+    };
+
+    // Set up onLoad callback if Tawk_API is already available
+    if (window.Tawk_API) {
+      window.Tawk_API.onLoad = handleTawkReady;
+    } else {
+      // Otherwise set it up to be available when script loads
+      window.addEventListener('tawkLoad', handleTawkReady);
+    }
+
+    // Clean up event listener on unmount
+    return () => {
+      window.removeEventListener('tawkLoad', handleTawkReady);
+    };
+  }, [user]);
+
+  // This component doesn't render anything visible
+  return null;
+}
 
 export default function Support() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
+  
+  // Simulated user info - in a real app, this would come from your auth system
+  const [user, setUser] = useState({
+    name: '',
+    email: '',
+    type: 'Customer',
+    plan: 'Standard'
+  });
+
+  // Load user info from localStorage if available
+  useEffect(() => {
+    const savedUserInfo = localStorage.getItem('userInfo');
+    if (savedUserInfo) {
+      try {
+        setUser(JSON.parse(savedUserInfo));
+      } catch (e) {
+        console.error('Error parsing user info from localStorage');
+      }
+    }
+  }, []);
+  
+  // Save user info to localStorage when it changes
+  useEffect(() => {
+    if (user.email) {
+      localStorage.setItem('userInfo', JSON.stringify(user));
+    }
+  }, [user]);
 
   // Support categories
   const categories = ['All', 'Purchasing', 'Activation', 'Connectivity', 'Billing', 'Technical'];
@@ -17,52 +137,52 @@ export default function Support() {
     {
       question: "How do I install my eSIM?",
       category: "Activation",
-      url: "/support/how-to-install-esim"
+      url: "/faq"
     },
     {
       question: "My eSIM isn't connecting, what should I do?",
       category: "Connectivity",
-      url: "/support/connectivity-issues"
+      url: "/faq"
     },
     {
       question: "How can I check my data usage?",
       category: "Technical",
-      url: "/support/check-data-usage"
+      url: "/faq"
     },
     {
       question: "Can I use my eSIM on multiple devices?",
       category: "Technical",
-      url: "/support/multiple-devices"
+      url: "/faq"
     },
     {
       question: "How do I add more data to my existing eSIM?",
       category: "Purchasing",
-      url: "/support/add-more-data"
+      url: "/faq"
     },
     {
       question: "Is my device compatible with eSIM?",
       category: "Technical",
-      url: "/support/device-compatibility"
+      url: "/faq"
     },
     {
       question: "How do I activate my eSIM when I arrive?",
       category: "Activation",
-      url: "/support/activation-guide"
+      url: "/faq"
     },
     {
       question: "I haven't received my eSIM QR code, what now?",
       category: "Purchasing",
-      url: "/support/missing-qr-code"
+      url: "/faq"
     },
     {
       question: "How do I request a refund?",
       category: "Billing",
-      url: "/support/refund-process"
+      url: "/faq"
     },
     {
       question: "My data speed is slow, how can I improve it?",
       category: "Connectivity",
-      url: "/support/improve-data-speed"
+      url: "/faq"
     }
   ];
 
@@ -73,6 +193,21 @@ export default function Support() {
     return matchesSearch && matchesCategory;
   });
 
+  // Open the chat widget
+  const openChat = () => {
+    if (window.Tawk_API && window.Tawk_API.maximize) {
+      window.Tawk_API.maximize();
+      
+      // Optional: You can also trigger a specific department or send an initial message
+      if (window.Tawk_API.setAttributes) {
+        window.Tawk_API.setAttributes({
+          // This will help route the chat to the right department
+          issue: 'Support Request from Website'
+        }, function(error) {});
+      }
+    }
+  };
+
   // Contact methods
   const contactMethods = [
     {
@@ -80,7 +215,7 @@ export default function Support() {
       description: "Get instant help from our support team",
       icon: <MessageCircle className="w-6 h-6 text-[#F15A25]" />,
       action: "Chat Now",
-      url: "#chat"
+      onClick: openChat
     },
     {
       title: "Email Support",
@@ -91,36 +226,11 @@ export default function Support() {
     }
   ];
 
-  // Self-help resources
-  const resources = [
-    {
-      title: "Help Center",
-      description: "Browse our comprehensive knowledge base",
-      icon: <HelpCircle className="w-6 h-6 text-[#F15A25]" />,
-      url: "/help-center"
-    },
-    {
-      title: "User Guides",
-      description: "Step-by-step instructions for every device",
-      icon: <FileText className="w-6 h-6 text-[#F15A25]" />,
-      url: "/guides"
-    },
-    {
-      title: "Coverage Map",
-      description: "Check network availability in your destination",
-      icon: <Globe className="w-6 h-6 text-[#F15A25]" />,
-      url: "/coverage"
-    },
-    {
-      title: "Status Updates",
-      description: "View current service status and updates",
-      icon: <Clock className="w-6 h-6 text-[#F15A25]" />,
-      url: "/status"
-    }
-  ];
-
   return (
-    <div className="max-w-[1440px] mx-auto px-4 pt-24  lg:pt-20 ">
+    <div className="max-w-[1220px] mx-auto px-4 pt-24 lg:pt-20">
+      {/* Include TawkToChat component */}
+      <TawkToChat user={user} />
+
       {/* Hero Section */}
       <div className="lg:text-center lg:mb-16 mb-5">
         <h1 className="lg:text-[40px] text-[28px] font-medium lg:mb-6">How can we help you?</h1>
@@ -145,7 +255,7 @@ export default function Support() {
 
       {/* Common Questions Section */}
       <div className="lg:mb-16 mb-5">
-        <h2 className="lg:text-[40px] text-[28px]   text-left font-medium mb-6">Common Questions</h2>
+        <h2 className="lg:text-[40px] text-[28px] text-left font-medium mb-6">Common Questions</h2>
 
         {/* Categories filter */}
         <div className="flex flex-wrap justify-center lg:justify-start gap-2 mb-6">
@@ -153,10 +263,11 @@ export default function Support() {
             <button
               key={category}
               onClick={() => setSelectedCategory(category)}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${selectedCategory === category
+              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+                selectedCategory === category
                   ? 'bg-[#F15A25] text-white'
                   : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
+              }`}
             >
               {category}
             </button>
@@ -177,7 +288,7 @@ export default function Support() {
                     <HelpCircle size={16} className="text-[#F15A25]" />
                   </div>
                   <div>
-                    <h3 className="font-medium ">{item.question}</h3>
+                    <h3 className="font-medium">{item.question}</h3>
                     <span className="text-xs text-gray-500 mt-1 inline-block">{item.category}</span>
                   </div>
                 </div>
@@ -193,7 +304,7 @@ export default function Support() {
 
       {/* Contact Methods Section */}
       <div className="lg:mb-16 mb-5">
-        <h2 className="lg:text-[40px]  text-[28px]  text-left font-medium mb-6">Contact Our Support Team</h2>
+        <h2 className="lg:text-[40px] text-[28px] text-left font-medium mb-6">Contact Our Support Team</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {contactMethods.map((method, index) => (
             <div key={index} className="bg-white border border-gray-200 rounded-xl p-6 hover:shadow-md transition-all">
@@ -204,54 +315,28 @@ export default function Support() {
                 <h3 className="text-xl font-medium">{method.title}</h3>
               </div>
               <p className="text-gray-600 mb-6">{method.description}</p>
-              <a
-                href={method.url}
-                className="inline-block bg-[#F15A25] text-white px-6 py-2 rounded-full font-medium hover:bg-[#e04e1a] transition-colors"
-              >
-                {method.action}
-              </a>
+              {method.url ? (
+                <a
+                  href={method.url}
+                  className="inline-block bg-[#F15A25] text-white px-6 py-2 rounded-full font-medium hover:bg-[#e04e1a] transition-colors"
+                >
+                  {method.action}
+                </a>
+              ) : (
+                <button
+                  onClick={method.onClick}
+                  className="inline-block bg-[#F15A25] text-white px-6 py-2 rounded-full font-medium hover:bg-[#e04e1a] transition-colors"
+                >
+                  {method.action}
+                </button>
+              )}
             </div>
           ))}
         </div>
       </div>
-
-      {/* Self-Help Resources Section */}
-      <div>
-        <h2 className="lg:text-[40px] text-[28px] text-left font-medium mb-6">Self-Help Resources</h2>
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          {resources.map((resource, index) => (
-            <Link
-              key={index}
-              href={resource.url}
-              className="bg-gray-50 p-6 rounded-xl hover:bg-[#FFF0EC] transition-all"
-            >
-              <div className="flex flex-col h-full">
-                <div className="mb-4">
-                  {resource.icon}
-                </div>
-                <h3 className="text-lg font-medium mb-2">{resource.title}</h3>
-                <p className="text-gray-600 text-sm">{resource.description}</p>
-              </div>
-            </Link>
-          ))}
-        </div>
-      </div>
-
-      {/* Help Prompt Section */}
-      <div className="bg-[#FFF3EE] rounded-lg p-8 mt-16 flex flex-col md:flex-row justify-between items-center">
-        <div>
-          <h2 className="lg:text-[40px]  text-[20px]  text-center lg:text-left font-medium mb-2">Still can't find an answer to your question?</h2>
-          <p className="text-gray-600 lg:text-left text-center">Our team is here to help you out—just reach out!</p>
-        </div>
-        <div className="mt-6 md:mt-0">
-          <a
-            href="mailto:support@fliday.com"
-            className="inline-block px-8 py-3 bg-[#F15A25] text-white rounded-full font-medium hover:bg-[#e04e1a] transition-colors"
-          >
-            Contact Us
-          </a>
-        </div>
-      </div>
+          
+      <SetupProcess/>
+      <BenefitsSection/>
     </div>
   );
 }

@@ -28,12 +28,22 @@ export default function ESIMProfilePage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [refreshing, setRefreshing] = useState(false);
+    const [initialLoad, setInitialLoad] = useState(true);
 
     useEffect(() => {
         if (orderId) {
             fetchOrderDetails();
         }
     }, [orderId]);
+
+    // Effect to automatically refresh usage data after initial order data is loaded
+    useEffect(() => {
+        if (order && initialLoad) {
+            // Automatically refresh usage data on initial load
+            refreshUsageData();
+            setInitialLoad(false);
+        }
+    }, [order, initialLoad]);
 
     const fetchOrderDetails = async () => {
         try {
@@ -52,6 +62,7 @@ export default function ESIMProfilePage() {
                 // Process the order data to ensure correct data amounts
                 const processedOrder = processOrderData(data.order);
                 setOrder(processedOrder);
+                console.log('Order details loaded successfully');
             } else {
                 throw new Error(data.error || 'Failed to fetch order details');
             }
@@ -150,8 +161,11 @@ export default function ESIMProfilePage() {
     };
 
     const refreshUsageData = async () => {
+        if (refreshing) return; // Prevent multiple simultaneous refresh requests
+
         try {
             setRefreshing(true);
+            console.log('Refreshing usage data...');
 
             const response = await fetch(`/api/esim/refresh-usage?orderId=${orderId}`, {
                 method: 'POST'
@@ -218,8 +232,11 @@ export default function ESIMProfilePage() {
                 throw new Error(data.error || 'Failed to refresh usage data');
             }
         } catch (err) {
-            setError(err.message || 'An error occurred while refreshing usage data');
             console.error('Error refreshing usage data:', err);
+            // Only set error if it's not an initial automatic refresh
+            if (!initialLoad) {
+                setError(err.message || 'An error occurred while refreshing usage data');
+            }
         } finally {
             setRefreshing(false);
         }

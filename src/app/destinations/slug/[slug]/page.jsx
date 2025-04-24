@@ -8,6 +8,7 @@ import BenefitsSection from '@/components/Home/BenefitsSection';
 import SetupProcess from '@/components/Home/SetupProcess';
 import Link from 'next/link';
 import RegionImage from './RegionImage';
+import CheckDeviceModal from '@/components/CheckDeviceModal';
 
 const countryCodeToName = {
     AF: 'Afghanistan',
@@ -320,12 +321,14 @@ export default function RegionSlugPage() {
     const [packages, setPackages] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [isDeviceModalOpen, setIsDeviceModalOpen] = useState(false);
 
     // State to track selected plan and active tab
     const [selectedPlanId, setSelectedPlanId] = useState(null);
     const [activeTab, setActiveTab] = useState('features');
 
     const [showCountriesModal, setShowCountriesModal] = useState(false);
+    const [expandedLocations, setExpandedLocations] = useState({});
 
     // Fetch region data and packages
     useEffect(() => {
@@ -508,7 +511,7 @@ export default function RegionSlugPage() {
                 <div>
                     {/* Title for desktop */}
                     <div className="hidden lg:flex items-center mb-3">
-                        <div className="w-8 h-8 bg-[#F15A25] rounded-full flex items-center justify-center text-white mr-3">
+                        <div className=" w-32 bg-[#F15A25] rounded-full flex items-center justify-center text-white mr-3">
                             <img
                                 src={getRegionSvgFlag(regionName)}
                                 alt={regionName}
@@ -595,7 +598,7 @@ export default function RegionSlugPage() {
                                                 : plan.dataAmount}
                                         </h3>
                                     </div>
-                                    <div className="text-[.875rem] font-medium text-gray-500 mb-1"><span>{plan.duration}S</span></div>
+                                    <div className="text-[.875rem] font-medium text-gray-500 mb-1"><span>{plan.duration} DAYS</span></div>
                                     <div className="text-sm font-medium">
                                         {plan.currency} {typeof plan.price === 'number' ? (plan.price / 10000).toFixed(2) : plan.price}
                                     </div>
@@ -614,7 +617,7 @@ export default function RegionSlugPage() {
                                         <span className="text-gray-500">Data:</span> {selectedPlan.dataAmount}
                                     </div>
                                     <div>
-                                        <span className="text-gray-500">Duration:</span> {selectedPlan.duration}
+                                        <span className="text-gray-500">Duration:</span> {selectedPlan.duration} Days
                                     </div>
                                     <div>
                                         <span className="text-gray-500">Speed:</span> {selectedPlan.speed}
@@ -646,7 +649,10 @@ export default function RegionSlugPage() {
                                 >
                                     Buy Now - {selectedPlan.currency} {formatPrice(selectedPlan.price)}
                                 </Link>
-                                <button className="block w-full border border-gray-300 text-gray-700 font-medium py-3 rounded-lg text-center hover:bg-gray-50 transition-colors">
+                                <button
+                                    onClick={() => setIsDeviceModalOpen(true)}
+                                    className="block w-full border border-gray-300 text-gray-700 font-medium py-3 rounded-lg text-center hover:bg-gray-50 transition-colors"
+                                >
                                     Check Device Compatibility
                                 </button>
                             </div>
@@ -707,7 +713,7 @@ export default function RegionSlugPage() {
                                 <li className="flex items-start">
                                     <span className="text-gray-400 mr-2">•</span>
                                     <span>Affordable data from just {packages.length > 0
-                                        ? `${packages[0].currency} ${formatPrice(packages[0].retailPrice) / 10000}`
+                                        ? `${packages[0].currency} $${formatPrice(packages[0].price) }`
                                         : '$3.00'}</span>
                                 </li>
                                 <li className="flex items-start">
@@ -777,36 +783,86 @@ export default function RegionSlugPage() {
 
                     {/* Network Coverage section */}
                     {selectedPlan && selectedPlan.locationNetworkList && selectedPlan.locationNetworkList.length > 0 && (
-                        <div className="mt-8 bg-gray-50 p-6 rounded-lg">
-                            <h3 className="text-xl font-medium mb-4">Network Coverage</h3>
-                            <div className="space-y-6">
-                                {selectedPlan.locationNetworkList.map((location, index) => (
-                                    <div key={index} className="border-b pb-4 last:border-b-0 last:pb-0">
-                                        <div className="flex items-center mb-2">
-                                            <div className="w-6 h-6 relative mr-2">
-                                                <img
-                                                    src={`/flags/${location.locationCode.toLowerCase()}_flag.jpeg`}
-                                                    alt={location.locationName}
-                                                    className="w-6 h-6 rounded-full object-cover"
-                                                    onError={(e) => {
-                                                        e.target.onerror = null;
-                                                        e.target.src = '/flags/default.jpg';
-                                                    }}
-                                                />
-                                            </div>
-                                            <h4 className="font-medium">{location.locationName}</h4>
-                                        </div>
-                                        <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                                            {location.operatorList.map((operator, opIndex) => (
-                                                <div key={opIndex} className="bg-white p-2 rounded border text-sm">
-                                                    <span className="font-medium">{operator.operatorName}</span>
-                                                    <span className="text-xs text-gray-500 ml-1">({operator.networkType})</span>
+                        <div className="mt-8 bg-gray-50 rounded-lg overflow-hidden">
+                            <button
+                                onClick={() => setExpandedLocations(prev => ({
+                                    ...prev,
+                                    all: !prev.all
+                                }))}
+                                className="w-full p-6 text-left cursor-pointer flex justify-between items-center border-b border-gray-200 focus:outline-none"
+                            >
+                                <h3 className="text-xl font-medium">Network Coverage</h3>
+                                <svg
+                                    xmlns="http://www.w3.org/2000/svg"
+                                    width="24"
+                                    height="24"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="2"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    className={`transition-transform ${expandedLocations.all ? 'rotate-180' : ''}`}
+                                >
+                                    <polyline points="6 9 12 15 18 9"></polyline>
+                                </svg>
+                            </button>
+
+                            {expandedLocations.all && (
+                                <div className="p-6 space-y-6">
+                                    {selectedPlan.locationNetworkList.map((location, index) => (
+                                        <div key={index} className="border-b pb-4 last:border-b-0 last:pb-0">
+                                            <button
+                                                onClick={() => setExpandedLocations(prev => ({
+                                                    ...prev,
+                                                    [location.locationCode]: !prev[location.locationCode]
+                                                }))}
+                                                className="flex cursor-pointer items-center justify-between w-full mb-2 focus:outline-none"
+                                            >
+                                                <div className="flex items-center">
+                                                    <div className="w-6 h-6 relative mr-2">
+                                                        <img
+                                                            src={`/flags/${location.locationCode.toLowerCase()}_flag.jpeg`}
+                                                            alt={location.locationName}
+                                                            className="w-6 h-6 rounded-full object-cover"
+                                                            onError={(e) => {
+                                                                e.target.onerror = null;
+                                                                e.target.src = '/flags/default.jpg';
+                                                            }}
+                                                        />
+                                                    </div>
+                                                    <h4 className="font-medium">{location.locationName}</h4>
                                                 </div>
-                                            ))}
+                                                <svg
+                                                    xmlns="http://www.w3.org/2000/svg"
+                                                    width="18"
+                                                    height="18"
+                                                    viewBox="0 0 24 24"
+                                                    fill="none"
+                                                    stroke="currentColor"
+                                                    strokeWidth="2"
+                                                    strokeLinecap="round"
+                                                    strokeLinejoin="round"
+                                                    className={`transition-transform ${expandedLocations[location.locationCode] ? 'rotate-180' : ''}`}
+                                                >
+                                                    <polyline points="6 9 12 15 18 9"></polyline>
+                                                </svg>
+                                            </button>
+
+                                            {expandedLocations[location.locationCode] && (
+                                                <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-3 pl-8">
+                                                    {location.operatorList.map((operator, opIndex) => (
+                                                        <div key={opIndex} className="bg-white p-2 rounded border text-sm">
+                                                            <span className="font-medium">{operator.operatorName}</span>
+                                                            <span className="text-xs text-gray-500 ml-1">({operator.networkType})</span>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            )}
                                         </div>
-                                    </div>
-                                ))}
-                            </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
                     )}
                 </div>
@@ -864,7 +920,10 @@ export default function RegionSlugPage() {
                     </div>
                 </div>
             )}
-
+            <CheckDeviceModal
+                isOpen={isDeviceModalOpen}
+                onClose={() => setIsDeviceModalOpen(false)}
+            />
         </div>
     );
 }

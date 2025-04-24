@@ -428,7 +428,7 @@ function ConfirmationContent() {
 
   // Normal successful state - with enhanced ICCID display
   return (
-    <div className=" max-w-[1220px] mx-auto px-4 py-12 bg-gray-50">
+    <div className=" max-w-[1220px] mx-auto px-4 my-20 bg-gray-50">
       <div className="bg-white p-8 rounded-lg shadow-sm mb-8 text-center">
         <div className="bg-green-100 h-16 w-16 rounded-full flex items-center justify-center mx-auto mb-4">
           <Check className="h-8 w-8 text-green-600" />
@@ -624,7 +624,7 @@ function ConfirmationContent() {
           <div className="flex flex-col items-center justify-center p-6 bg-gray-50 rounded-lg">
             {orderData.esimDetails?.esimStatus === 'CANCEL' ? (
               <a
-                href="mailto:support@esim.com"
+                href="mailto:support@fliday.com"
                 className="text-[#F15A25] hover:underline font-medium"
               >
                 Contact Support

@@ -17,6 +17,7 @@ export default function MyOrdersPage() {
     const [error, setError] = useState(null);
     const [searchTerm, setSearchTerm] = useState('');
     const [filteredOrders, setFilteredOrders] = useState([]);
+    const [completedOrders, setCompletedOrders] = useState([]);
 
     useEffect(() => {
         if (status === 'authenticated') {
@@ -28,15 +29,15 @@ export default function MyOrdersPage() {
 
     // Filter orders when search term changes
     useEffect(() => {
-        if (orders.length > 0) {
-            const filtered = orders.filter(order =>
+        if (completedOrders.length > 0) {
+            const filtered = completedOrders.filter(order =>
                 order.orderId.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 order.location.toLowerCase().includes(searchTerm.toLowerCase()) ||
                 order.packageName.toLowerCase().includes(searchTerm.toLowerCase())
             );
             setFilteredOrders(filtered);
         }
-    }, [searchTerm, orders]);
+    }, [searchTerm, completedOrders]);
 
     const fetchOrders = async () => {
         try {
@@ -52,8 +53,15 @@ export default function MyOrdersPage() {
             const data = await response.json();
 
             if (data.success) {
+                // Store all orders
                 setOrders(data.orders);
-                setFilteredOrders(data.orders);
+                
+                // Filter only completed orders
+                const onlyCompleted = data.orders.filter(order => order.orderStatus === 'completed');
+                setCompletedOrders(onlyCompleted);
+                setFilteredOrders(onlyCompleted);
+                
+                console.log(`Filtered ${onlyCompleted.length} completed orders out of ${data.orders.length} total orders`);
             } else {
                 throw new Error(data.error || 'Failed to fetch orders');
             }
@@ -122,9 +130,9 @@ export default function MyOrdersPage() {
     return (
         <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
             <div className="mb-8">
-                <h1 className="text-3xl font-bold text-gray-900">My Orders</h1>
+                <h1 className="text-3xl font-bold text-gray-900">My eSIMs</h1>
                 <p className="mt-2 text-sm text-gray-500">
-                    View and manage all your eSIM orders
+                    View and manage all your active eSIM packages
                 </p>
             </div>
 
@@ -137,7 +145,7 @@ export default function MyOrdersPage() {
                     <input
                         type="text"
                         className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-[#F15A25] focus:border-[#F15A25] sm:text-sm"
-                        placeholder="Search orders by ID, location, or package"
+                        placeholder="Search eSIMs by ID, location, or package"
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                     />
@@ -165,20 +173,20 @@ export default function MyOrdersPage() {
             {loading ? (
                 <div className="flex justify-center items-center py-12">
                     <Loader2 className="w-8 h-8 text-[#F15A25] animate-spin" />
-                    <span className="ml-2">Loading your orders...</span>
+                    <span className="ml-2">Loading your eSIMs...</span>
                 </div>
             ) : (
                 <>
                     {filteredOrders.length === 0 ? (
                         <div className="bg-white shadow rounded-lg p-6 text-center">
                             <div className="mx-auto h-12 w-12 text-gray-400">
-                                <Search className="h-full w-full" />
+                                <Smartphone className="h-full w-full" />
                             </div>
-                            <h3 className="mt-2 text-sm font-medium text-gray-900">No orders found</h3>
+                            <h3 className="mt-2 text-sm font-medium text-gray-900">No active eSIMs found</h3>
                             <p className="mt-1 text-sm text-gray-500">
                                 {searchTerm
-                                    ? "No orders match your search criteria. Try a different search term."
-                                    : "You haven't placed any orders yet."}
+                                    ? "No eSIMs match your search criteria. Try a different search term."
+                                    : "You don't have any active eSIMs yet."}
                             </p>
                             <div className="mt-6">
                                 <Link
@@ -203,6 +211,10 @@ export default function MyOrdersPage() {
                                                     className="h-full w-full object-cover rounded-full"
                                                     src={`/flags/${order.location.substring(0, 2)}_flag.jpeg`}
                                                     alt="flag"
+                                                    onError={(e) => {
+                                                        e.target.onerror = null;
+                                                        e.target.src = '/flags/placeholder_flag.jpeg'; // Fallback image
+                                                    }}
                                                 />
                                             </div>
                                             <p className="text-sm text-gray-500">Location: {order.location}</p>
@@ -210,13 +222,13 @@ export default function MyOrdersPage() {
                                         <p className="text-sm text-gray-500 mb-2">Package: {order.dataAmount} - {order.duration}</p>
                                         <p className="text-sm text-gray-500 mb-2">Date: {formatDate(order.createdAt)}</p>
                                         <p className="text-sm font-medium text-gray-900 mb-3">
-                                            Price: {order.currency} {formatPrice(order.finalPrice)/100}
+                                            Price: {order.currency} {formatPrice(order.finalPrice/100)}
                                         </p>
                                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(order.orderStatus)} mb-3`}>
                                             {getStatusIcon(order.orderStatus)}
-                                            <span className="ml-1 capitalize">{order.orderStatus.replace('_', ' ')}</span>
+                                            <span className="ml-1 capitalize">Active</span>
                                         </span>
-                                        <div className="flex justify-between mt-5  space-x-2">
+                                        <div className="flex justify-between mt-5 space-x-2">
                                             <Link
                                                 href={`/checkout/confirmation?orderId=${order.orderId}`}
                                                 className="text-[#F15A25] hover:text-[#E04E1A] inline-flex items-center"
@@ -225,7 +237,7 @@ export default function MyOrdersPage() {
                                                 <span className="hidden sm:inline ml-1">View</span>
                                             </Link>
 
-                                            {order.orderStatus === 'completed' && order.esimDetails?.qrCodeUrl && (
+                                            {order.esimDetails?.qrCodeUrl && (
                                                 <a
                                                     href={order.esimDetails.qrCodeUrl}
                                                     target='_blank'
@@ -237,24 +249,21 @@ export default function MyOrdersPage() {
                                                 </a>
                                             )}
 
-                                            {order.orderStatus === 'completed' && (
-                                                <Link
-                                                    href={`/esim/${order.orderId}`}
-                                                    className="text-green-600 hover:text-green-800 inline-flex items-center"
-                                                >
-                                                    <Smartphone size={18} />
-                                                    <span className="hidden sm:inline ml-1">Install</span>
-                                                </Link>
-                                            )}
-                                            {order.orderStatus === 'completed' && (
-                                                <Link
-                                                    href={`/esim/profile/${order.orderId}`}
-                                                    className="text-green-600 hover:text-green-800 inline-flex items-center"
-                                                >
-                                                   <HouseWifi size={18} />
-                                                    <span className="hidden sm:inline ml-1">Check Use</span>
-                                                </Link>
-                                            )}
+                                            <Link
+                                                href={`/esim/${order.orderId}`}
+                                                className="text-green-600 hover:text-green-800 inline-flex items-center"
+                                            >
+                                                <Smartphone size={18} />
+                                                <span className="hidden sm:inline ml-1">Install</span>
+                                            </Link>
+                                            
+                                            <Link
+                                                href={`/esim/profile/${order.orderId}`}
+                                                className="text-green-600 hover:text-green-800 inline-flex items-center"
+                                            >
+                                                <HouseWifi size={18} />
+                                                <span className="hidden sm:inline ml-1">Check Use</span>
+                                            </Link>
                                         </div>
                                     </div>
                                 </div>

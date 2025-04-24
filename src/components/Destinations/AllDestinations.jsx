@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Search } from 'lucide-react';
@@ -36,6 +36,9 @@ const AllDestinations = () => {
   const [activeFilter, setActiveFilter] = useState('Countries');
   const [activeFilterButton, setActiveFilterButton] = useState(null);
   const [activeDestination, setActiveDestination] = useState(null);
+
+  // Refs to maintain focus
+  const searchInputRef = useRef(null);
   
   // Debounce search to prevent excessive filtering
   const debouncedSearchQuery = useDebounce(searchInput, 300);
@@ -70,7 +73,13 @@ const AllDestinations = () => {
     setVisibleCount(prev => prev + 24);
   };
 
-  // Fetch locations with memoized API call
+  // Handle search input change
+  const handleSearchInputChange = (e) => {
+    const value = e.target.value;
+    setSearchInput(value);
+  };
+
+  // Fetch locations initially - separate from filter effect
   useEffect(() => {
     const controller = new AbortController();
     const signal = controller.signal;
@@ -116,10 +125,6 @@ const AllDestinations = () => {
         // Store data in state
         setCountries(formattedCountries);
         setRegions(formattedRegions);
-
-        // Apply initial filtering
-        const initialFiltered = applyFilter(formattedCountries, formattedRegions, activeFilter, debouncedSearchQuery);
-        setFilteredDestinations(initialFiltered);
         setError(null);
       } catch (err) {
         if (err.name !== 'AbortError') {
@@ -143,9 +148,9 @@ const AllDestinations = () => {
 
     // Cleanup function to abort fetch on unmount
     return () => controller.abort();
-  }, [applyFilter, debouncedSearchQuery, activeFilter]);
+  }, []); // Only run on mount
 
-  // Update filtered destinations when filter or search changes
+  // Update filtered destinations when filter or search changes - in a separate effect
   useEffect(() => {
     if (countries.length === 0 && regions.length === 0) return;
     
@@ -308,9 +313,10 @@ const AllDestinations = () => {
           type="text"
           placeholder="Enter your destination"
           value={searchInput}
-          onChange={(e) => setSearchInput(e.target.value)}
+          onChange={handleSearchInputChange}
           className="w-full px-4 py-3 pr-12 rounded-full border border-[#F15A25] focus:outline-none focus:ring-2 focus:ring-[#F15A25]"
           disabled={isLoading}
+          ref={searchInputRef}
         />
         <div className="absolute right-3 top-1/2 transform -translate-y-1/2 bg-[#F15A25] p-2 rounded-full text-white">
           <Search size={18} />

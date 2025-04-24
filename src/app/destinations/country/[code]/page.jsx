@@ -1,6 +1,6 @@
 'use client';
 // src\app\destinations\country\[code]\page.jsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { CheckCircle, Info, ChevronLeft } from 'lucide-react';
 import FAQSection from '@/components/Home/FAQSection';
@@ -8,6 +8,10 @@ import BenefitsSection from '@/components/Home/BenefitsSection';
 import SetupProcess from '@/components/Home/SetupProcess';
 import Link from 'next/link';
 import DestinationSection from './DestinationImage';
+import CheckDeviceModal from '@/components/CheckDeviceModal';
+
+// Global cache for country data
+const countryDataCache = new Map();
 
 export default function DestinationCountryPage() {
   const params = useParams();
@@ -20,76 +24,17 @@ export default function DestinationCountryPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Progressive loading states
+  const [initialLoading, setInitialLoading] = useState(true);
+  const [packagesLoading, setPackagesLoading] = useState(true);
+
   // State to track selected plan and active tab
   const [selectedPlanId, setSelectedPlanId] = useState(null);
   const [activeTab, setActiveTab] = useState('features');
+  const [isDeviceModalOpen, setIsDeviceModalOpen] = useState(false);
 
-  // Fetch country data and packages
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // Format country name from code
-        const formattedName = formatCode(code);
-        setCountryName(formattedName);
-
-        // Fetch packages from API
-        const packagesResponse = await fetch(`/api/esim/packages?locationCode=${code.toUpperCase()}`);
-
-        if (!packagesResponse.ok) {
-          throw new Error(`Failed to fetch packages: ${packagesResponse.status}`);
-        }
-
-        const packagesData = await packagesResponse.json();
-
-        if (!packagesData.success) {
-          throw new Error(packagesData.message || 'Failed to fetch packages');
-        }
-
-        // Process packages and sort by data amount
-        const formattedPackages = packagesData.data
-          .map(pkg => ({
-            id: pkg.packageCode,
-            packageCode: pkg.packageCode,
-            name: pkg.name,
-            dataAmount: pkg.dataAmount,
-            duration: pkg.duration,
-            price: pkg.price,
-            retailPrice: pkg.retailPrice,
-            currency: pkg.currency,
-            description: pkg.description,
-            speed: pkg.speed || '4G/5G',
-            networkInfo: pkg.networkInfo || []
-          }))
-          .sort((a, b) => {
-            // Parse data amount for sorting (remove "GB" and convert to number)
-            const aGB = parseFloat(a.dataAmount.replace('GB', '').trim());
-            const bGB = parseFloat(b.dataAmount.replace('GB', '').trim());
-            return aGB - bGB;
-          });
-
-        setPackages(formattedPackages);
-
-        // Select the default plan (either a mid-range plan or the first one)
-        if (formattedPackages.length > 0) {
-          const midIndex = Math.floor(formattedPackages.length / 2);
-          setSelectedPlanId(formattedPackages[midIndex]?.id || formattedPackages[0].id);
-        }
-      } catch (err) {
-        console.error('Error fetching destination data:', err);
-        setError(err.message || 'Failed to load destination data');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (code) {
-      fetchData();
-    }
-  }, [code]);
-  console.log(packages);
-
-  // Helper function to format country code to title case
-  const formatCode = (code) => {
+  // Helper function to format country code to title case - memoized
+  const formatCode = useCallback((code) => {
     const countryNames = {
       "ad": "Andorra", "ae": "United Arab Emirates", "af": "Afghanistan", "ag": "Antigua and Barbuda",
       "ai": "Anguilla", "al": "Albania", "am": "Armenia", "ao": "Angola", "aq": "Antarctica",
@@ -145,15 +90,115 @@ export default function DestinationCountryPage() {
       "za": "South Africa", "zm": "Zambia", "zw": "Zimbabwe"
     };
     return countryNames[code.toLowerCase()] || code.toUpperCase();
-  };
+  }, []);
+
+  // Fetch country data and packages
+  useEffect(() => {
+    if (!code) return;
+
+    const fetchData = async () => {
+      setInitialLoading(true);
+      setPackagesLoading(true);
+
+      try {
+        // Set country name immediately - this doesn't require API
+        const formattedName = formatCode(code);
+        setCountryName(formattedName);
+        setInitialLoading(false);
+
+        // Check if we have cached data
+        if (countryDataCache.has(code)) {
+          const cachedData = countryDataCache.get(code);
+          setPackages(cachedData.packages);
+          
+          // Select the default plan
+          if (cachedData.packages.length > 0) {
+            const midIndex = Math.floor(cachedData.packages.length / 2);
+            setSelectedPlanId(cachedData.packages[midIndex]?.id || cachedData.packages[0].id);
+          }
+          
+          setPackagesLoading(false);
+          setLoading(false);
+          return;
+        }
+
+        // Fetch packages with timeout
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 8000); // 8-second timeout
+
+        const packagesResponse = await fetch(
+          `/api/esim/packages?locationCode=${code.toUpperCase()}`,
+          { signal: controller.signal }
+        );
+        
+        clearTimeout(timeoutId);
+
+        if (!packagesResponse.ok) {
+          throw new Error(`Failed to fetch packages: ${packagesResponse.status}`);
+        }
+
+        const packagesData = await packagesResponse.json();
+
+        if (!packagesData.success) {
+          throw new Error(packagesData.message || 'Failed to fetch packages');
+        }
+
+        // Process packages and sort by data amount - using more efficient sorting method
+        const formattedPackages = packagesData.data
+          .map(pkg => ({
+            id: pkg.packageCode,
+            packageCode: pkg.packageCode,
+            name: pkg.name,
+            dataAmount: pkg.dataAmount,
+            duration: pkg.duration,
+            price: pkg.price,
+            retailPrice: pkg.retailPrice,
+            currency: pkg.currency,
+            description: pkg.description,
+            speed: pkg.speed || '4G/5G',
+            networkInfo: pkg.networkInfo || []
+          }))
+          .sort((a, b) => {
+            // Parse data amount for sorting (convert to number)
+            const aGB = parseFloat(a.dataAmount.replace('GB', '').trim());
+            const bGB = parseFloat(b.dataAmount.replace('GB', '').trim());
+            return aGB - bGB;
+          });
+
+        // Cache the data
+        countryDataCache.set(code, { packages: formattedPackages });
+        
+        setPackages(formattedPackages);
+
+        // Select the default plan (midpoint)
+        if (formattedPackages.length > 0) {
+          const midIndex = Math.floor(formattedPackages.length / 2);
+          setSelectedPlanId(formattedPackages[midIndex]?.id || formattedPackages[0].id);
+        }
+      } catch (err) {
+        if (err.name === 'AbortError') {
+          setError('Request timed out. Please try again.');
+        } else {
+          console.error('Error fetching destination data:', err);
+          setError(err.message || 'Failed to load destination data');
+        }
+        
+        // Even with an error, we can show the basic UI
+        setInitialLoading(false);
+      } finally {
+        setPackagesLoading(false);
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [code, formatCode]);
 
   // Get the selected plan details
   const selectedPlan = packages.find(pkg => pkg.id === selectedPlanId) || packages[0];
 
-  const imageUrl = `https://source.unsplash.com/800x600/?${encodeURIComponent(countryName)},landmark`;
-
-  // Loading state
-  if (loading) {
+  // Initial loading state (for country name and basic UI)
+  if (initialLoading) {
     return (
       <div className="max-w-[1220px] mx-auto pt-32 px-4 lg:px-0">
         <div className="flex items-center mb-6">
@@ -163,19 +208,9 @@ export default function DestinationCountryPage() {
 
         <div className="grid lg:grid-cols-2 gap-8">
           <div className="hidden lg:block rounded-lg overflow-hidden h-[624px] bg-gray-200 animate-pulse"></div>
-
           <div className="animate-pulse">
             <div className="h-10 bg-gray-200 rounded w-full mb-4"></div>
             <div className="h-20 bg-gray-200 rounded w-full mb-6"></div>
-
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
-              {[1, 2, 3, 4, 5].map((i) => (
-                <div key={i} className="  rounded-lg p-3 h-24 bg-gray-100"></div>
-              ))}
-            </div>
-
-            <div className="h-12 bg-gray-200 rounded w-full mb-6"></div>
-            <div className="h-12 bg-gray-200 rounded w-full mb-6"></div>
           </div>
         </div>
       </div>
@@ -183,7 +218,7 @@ export default function DestinationCountryPage() {
   }
 
   // Error state
-  if (error && !selectedPlan) {
+  if (error && !selectedPlan && !packages.length) {
     return (
       <div className="max-w-[1220px] mx-auto px-4 pt-24">
         <div className="flex items-center mb-6">
@@ -228,7 +263,6 @@ export default function DestinationCountryPage() {
         <div className="hidden lg:block rounded-lg overflow-hidden h-[624px] bg-gray-100 border border-gray-200">
           <div className="w-full h-full flex items-center justify-center">
             <DestinationSection countryName={countryName} />
-
           </div>
         </div>
 
@@ -255,47 +289,58 @@ export default function DestinationCountryPage() {
           <h2 className="font-medium mb-4 text-lg">Choose your data plan</h2>
 
           {/* Data plans grid */}
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
-            {packages.map((plan) => (
-              <button
-                key={plan.id}
-                onClick={() => setSelectedPlanId(plan.id)}
-                className={`relative border rounded-lg p-3 text-left transition-all ${selectedPlanId === plan.id
-                  ? 'border-[#F15A25] bg-[#FFF8F6]'
-                  : 'border-gray-200 hover:border-[#F15A25]'
-                  }`}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
-                  <circle
-                    cx="8"
-                    cy="8"
-                    r="6"
-                    strokeWidth={`${selectedPlanId === plan.id ? '4' : '2'}`}
-                    stroke={`${selectedPlanId === plan.id ? '#F15A25' : '#C9C9C9'}`}
-                  />
-                </svg>
-                <div className="flex items-center mt-2 mb-1">
-                  <h3 className="font-medium text-base truncate">
-                    {plan.dataAmount.includes('GB')
-                      ? `${parseFloat(plan.dataAmount)} GB`.replace('.0 GB', ' GB')
-                      : plan.dataAmount}
-                  </h3>
+          {packagesLoading ? (
+            // Skeleton UI for packages while loading
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div key={i} className="  rounded-lg p-3 h-[100px] bg-gray-50 animate-pulse">
+                  <div className="h-4 w-4 rounded-full bg-gray-200 mb-2"></div>
+                  <div className="h-6 w-16 bg-gray-200 rounded mb-2"></div>
+                  <div className="h-4 w-20 bg-gray-200 rounded mb-2"></div>
+                  <div className="h-4 w-12 bg-gray-200 rounded"></div>
                 </div>
-                <div className="text-[.875rem] font-medium text-gray-500 mb-1"><span>{plan.duration}S</span></div>
-                <div className="text-sm font-medium">
-                  {plan.currency} {typeof plan.price === 'number' ? (plan.price / 10000).toFixed(2) : plan.price}
-
-                </div>
-
-              </button>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
+              {packages.map((plan) => (
+                <button
+                  key={plan.id}
+                  onClick={() => setSelectedPlanId(plan.id)}
+                  className={`relative border rounded-lg p-3 text-left transition-all ${selectedPlanId === plan.id
+                    ? 'border-[#F15A25] bg-[#FFF8F6]'
+                    : 'border-gray-200 hover:border-[#F15A25]'
+                    }`}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <circle
+                      cx="8"
+                      cy="8"
+                      r="6"
+                      strokeWidth={`${selectedPlanId === plan.id ? '4' : '2'}`}
+                      stroke={`${selectedPlanId === plan.id ? '#F15A25' : '#C9C9C9'}`}
+                    />
+                  </svg>
+                  <div className="flex items-center mt-2 mb-1">
+                    <h3 className="font-medium text-base truncate">
+                      {plan.dataAmount.includes('GB')
+                        ? `${parseFloat(plan.dataAmount)} GB`.replace('.0 GB', ' GB')
+                        : plan.dataAmount}
+                    </h3>
+                  </div>
+                  <div className="text-[.875rem] font-medium text-gray-500 mb-1"><span>{plan.duration} days</span></div>
+                  <div className="text-sm font-medium">
+                    {plan.currency} {typeof plan.price === 'number' ? (plan.price / 10000).toFixed(2) : plan.price}
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
 
           {/* Plan details */}
-          {selectedPlan && (
+          {!packagesLoading && selectedPlan && (
             <div className="mb-6">
               <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                <h3 className="font-medium mb-2">{selectedPlan.name}</h3>
                 <div className="grid grid-cols-2 gap-2 text-sm">
                   <div>
                     <span className="text-gray-500">Data:</span> {selectedPlan.dataAmount}
@@ -306,7 +351,6 @@ export default function DestinationCountryPage() {
                   <div>
                     <span className="text-gray-500">Speed:</span> {selectedPlan.speed}
                   </div>
-
                 </div>
               </div>
 
@@ -331,10 +375,23 @@ export default function DestinationCountryPage() {
                 >
                   Buy Now - {selectedPlan.currency} {typeof selectedPlan.price === 'number' ? (selectedPlan.price / 10000).toFixed(2) : selectedPlan.price}
                 </Link>
-                <button className="block w-full border border-gray-300 text-gray-700 font-medium py-3 rounded-lg text-center hover:bg-gray-50 transition-colors">
+                <button
+                  onClick={() => setIsDeviceModalOpen(true)}
+                  className="block w-full border border-gray-300 text-gray-700 font-medium py-3 rounded-lg text-center hover:bg-gray-50 transition-colors"
+                >
                   Check Device Compatibility
                 </button>
               </div>
+            </div>
+          )}
+
+          {/* Show placeholder UI when packages are still loading */}
+          {packagesLoading && (
+            <div className="space-y-4 mb-6">
+              <div className="bg-gray-50 rounded-lg p-4 h-[80px] animate-pulse"></div>
+              <div className="bg-gray-50 rounded-lg p-4 h-[80px] animate-pulse"></div>
+              <div className="h-12 bg-gray-200 rounded w-full"></div>
+              <div className="h-12 bg-gray-100 border border-gray-200 rounded w-full"></div>
             </div>
           )}
 
@@ -384,7 +441,7 @@ export default function DestinationCountryPage() {
                 <li className="flex items-start">
                   <span className="text-gray-400 mr-2">•</span>
                   <span>Affordable data from just {packages.length > 0
-                    ? `${packages[0].currency} ${Math.min(...packages.map(p => typeof p.price === 'number' ? p.price : 999)).toFixed(2)/10000}`
+                    ? `${packages[0].currency} ${Math.min(...packages.map(p => typeof p.price === 'number' ? p.price : 999)).toFixed(2) / 10000}`
                     : '$3.00'}</span>
                 </li>
                 <li className="flex items-start">
@@ -454,10 +511,14 @@ export default function DestinationCountryPage() {
         </div>
       </div>
 
-      {/* Additional sections */}
+      {/* Additional sections - Use React.lazy for these components if needed */}
       <SetupProcess />
       <BenefitsSection />
       <FAQSection />
+      <CheckDeviceModal
+        isOpen={isDeviceModalOpen}
+        onClose={() => setIsDeviceModalOpen(false)}
+      />
     </div>
   );
 }

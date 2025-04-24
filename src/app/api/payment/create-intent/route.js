@@ -30,16 +30,20 @@ export async function POST(request) {
       // Implement coupon logic if needed
     }
 
-    console.log(`Creating payment intent for order: ${orderId}, amount: ${amount}`);
+    // Convert from your custom format to Stripe's format (cents)
+    // Your format: 10000 = $1.00
+    // Stripe format: 100 = $1.00
+    const stripeAmount = Math.round(amount / 100);
+    
+    console.log(`Creating payment intent for order: ${orderId}, amount: ${amount}, stripeAmount: ${stripeAmount}`);
 
     const paymentIntent = await stripe.paymentIntents.create({
-      amount,
+      amount: stripeAmount,
       currency: order.currency || 'usd',
       payment_method: paymentMethod,
-      confirmation_method: 'automatic', // Changed to automatic
+      confirmation_method: 'automatic',
       confirm: false,
       metadata: { orderId, packageCode },
-      // Attach payment method but don't confirm yet
       setup_future_usage: 'off_session', // Optional: adjust based on needs
     });
 
