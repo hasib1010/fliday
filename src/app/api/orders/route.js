@@ -6,6 +6,7 @@ import dbConnect from '@/lib/mongodb';
 import Order from '@/models/Order';
 import User from '@/models/User';
 import { v4 as uuidv4 } from 'uuid';
+import mongoose from 'mongoose';
 
 const MARKUP_AMOUNT = 10000; // $1.00 markup in Stripe's format (cents * 100)
 
@@ -27,10 +28,7 @@ export async function GET(request) {
 
     // Get user ID
     const user = await User.findOne({
-      $or: [
-        { _id: session.user.id },
-        { email: session.user.email }
-      ]
+      email: session.user.email
     });
 
     if (!user) {
@@ -116,13 +114,8 @@ export async function POST(request) {
 
     await dbConnect();
 
-    // Get user ID
-    const user = await User.findOne({
-      $or: [
-        { _id: session.user.id },
-        { email: session.user.email }
-      ]
-    });
+    // Get user by email rather than trying ID conversion
+    const user = await User.findOne({ email: session.user.email });
 
     if (!user) {
       return NextResponse.json({

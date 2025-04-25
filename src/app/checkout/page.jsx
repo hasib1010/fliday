@@ -42,20 +42,24 @@ function CheckoutForm({ packageData, selectedPaymentMethod, taxCountry, couponCo
     if (stripe && packageData && stripeLoaded) {
       console.log('Setting up payment request for wallet payments');
       try {
-        const formattedAmount = packageData.price ? Math.round(parseInt(packageData.price) / 100) : 0;
-        console.log('Payment amount in cents:', formattedAmount);
+        // Make sure we're using the correct price format for Stripe
+        // The price from packageData is in your custom format (10000 = $1.00)
+        // But Stripe expects cents (100 = $1.00)
+        const priceInCents = Math.round(parseInt(packageData.price) / 100);
+        console.log('Payment amount in cents:', priceInCents);
 
         const pr = stripe.paymentRequest({
           country: 'US',
           currency: 'usd',
           total: {
             label: packageData?.name || 'eSIM Package',
-            amount: formattedAmount,
+            amount: priceInCents,
           },
           requestPayerName: true,
           requestPayerEmail: true,
         });
 
+        // Check if the browser supports payment request
         pr.canMakePayment().then((result) => {
           if (result) {
             console.log('Browser supports payment request', result);
@@ -84,7 +88,6 @@ function CheckoutForm({ packageData, selectedPaymentMethod, taxCountry, couponCo
                 price: packageData.price,
                 currency: packageData.currency,
                 paymentMethod: selectedPaymentMethod === 'applepay' ? 'applepay' : 'googlepay',
-                taxCountry: taxCountry,
                 couponCode: couponCode || null,
                 status: 'pending_payment',
               }),
@@ -106,7 +109,6 @@ function CheckoutForm({ packageData, selectedPaymentMethod, taxCountry, couponCo
                 packageCode: packageData.packageCode,
                 paymentMethod: e.paymentMethod.id,
                 couponCode: couponCode || null,
-                taxCountry: taxCountry,
               }),
             });
 
@@ -153,7 +155,7 @@ function CheckoutForm({ packageData, selectedPaymentMethod, taxCountry, couponCo
         console.error('Error setting up payment request:', error);
       }
     }
-  }, [stripe, packageData, couponCode, taxCountry, selectedPaymentMethod, stripeLoaded, onSuccess, onError]);
+  }, [stripe, packageData, couponCode, selectedPaymentMethod, stripeLoaded, onSuccess, onError]);
 
   const handleCardSubmit = async (event) => {
     event.preventDefault();
