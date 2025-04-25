@@ -120,6 +120,6 @@ function generateInstallationInstructions(esimDetails) {
 - Expiry: ${esimDetails.expiredTime ? new Date(esimDetails.expiredTime).toLocaleDateString() : 'N/A'}
 
 ## Need help?
-Contact our support team at support@esim.com if you need assistance.
+Contact our support team at support@fliday.com if you need assistance.
   `;
 }

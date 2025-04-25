@@ -510,8 +510,8 @@ export default function RegionSlugPage() {
                 {/* Right column - eSIM details and plans */}
                 <div>
                     {/* Title for desktop */}
-                    <div className="hidden lg:flex items-center mb-3">
-                        <div className=" w-32 bg-[#F15A25] rounded-full flex items-center justify-center text-white mr-3">
+                    <div className="hidden lg:flex items-start mb-3">
+                        <div className=" w-16 bg-[#F15A25] mt-5 rounded-full flex items-center justify-center text-white mr-3">
                             <img
                                 src={getRegionSvgFlag(regionName)}
                                 alt={regionName}
@@ -610,8 +610,7 @@ export default function RegionSlugPage() {
                     {/* Plan details */}
                     {selectedPlan && (
                         <div className="mb-6">
-                            <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                                <h3 className="font-medium mb-2">{selectedPlan.name}</h3>
+                            <div className="bg-gray-50 rounded-lg p-4 mb-4"> 
                                 <div className="grid grid-cols-2 gap-2 text-sm">
                                     <div>
                                         <span className="text-gray-500">Data:</span> {selectedPlan.dataAmount}

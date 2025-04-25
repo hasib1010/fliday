@@ -151,8 +151,6 @@ export default function Navbar() {
             </div>
           </div>
         </nav>
-        {/* Spacer div for checkout page */}
-        <div className="h-20"></div>
       </>
     );
   }
@@ -161,11 +159,10 @@ export default function Navbar() {
   return (
     <>
       <nav
-        className={`fixed max-h-16 w-full top-0 z-50 transition-colors duration-300 border-b ${
-          isScrolled
+        className={`fixed max-h-16 w-full top-0 z-50 transition-colors duration-300 border-b ${isScrolled
             ? 'bg-white border-gray-200'
             : 'bg-transparent border-transparent'
-        }`}
+          }`}
       >
         <div className="max-w-[1440px] mx-auto px-4 lg:px-8">
           <div className="flex justify-between items-center h-16">
@@ -190,22 +187,20 @@ export default function Navbar() {
                 <Link
                   key={link.href}
                   href={link.href}
-                  className={`font-medium text-[.875rem] transition-colors ${
-                    isActiveLink(link.href)
+                  className={`font-medium text-[.875rem] transition-colors ${isActiveLink(link.href)
                       ? 'text-[#F15A25]'
                       : 'text-black hover:text-[#F15A25]'
-                  }`}
+                    }`}
                 >
                   {link.label}
                 </Link>
               ))}
               <Link
                 href="/destinations"
-                className={`rounded-[30px] px-6 py-2 border font-medium text-[.875rem] hover:bg-gray-100 transition-colors ${
-                  isActiveLink('/destinations')
+                className={`rounded-[30px] px-6 py-2 border font-medium text-[.875rem] hover:bg-gray-100 transition-colors ${isActiveLink('/destinations')
                     ? 'text-[#F15A25] border-[#F15A25]'
                     : 'text-black border-black hover:text-[#F15A25] hover:border-[#F15A25]'
-                }`}
+                  }`}
               >
                 View Destinations
               </Link>
@@ -225,9 +220,9 @@ export default function Navbar() {
                     id="profile-button"
                     ref={profileButtonRef}
                     onClick={toggleProfileMenu}
-                    className="flex items-center gap-2 rounded-full hover:bg-gray-100 px-3 py-1.5 transition-colors"
+                    className="flex items-center gap-2 rounded-full px-3 py-1.5 transition-all duration-200 hover:bg-gray-100 cursor-pointer hover:shadow-sm"
                   >
-                    <div className="relative h-8 w-8 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center border border-gray-200">
+                    <div className="relative h-8 w-8 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center border border-gray-200 hover:border-gray-300 transition-colors duration-200">
                       {session.user.image ? (
                         <Image
                           src={session.user.image}
@@ -241,7 +236,7 @@ export default function Navbar() {
                     </div>
                     <ChevronDown
                       size={16}
-                      className={`text-gray-500 transition-transform ${isProfileMenuOpen ? 'rotate-180' : ''}`}
+                      className={`text-gray-500 transition-all duration-200 ${isProfileMenuOpen ? 'rotate-180' : ''}`}
                     />
                   </button>
 
@@ -250,8 +245,8 @@ export default function Navbar() {
                     <div
                       id="profile-menu"
                       ref={profileMenuRef}
-                      className="absolute right-0 mt-2 w-60 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200"
-                      onClick={(e) => e.stopPropagation()} // Prevent clicks inside menu from closing it
+                      className="absolute right-0 mt-2 w-60  bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200 transition-all duration-200 origin-top-right transform opacity-0 scale-95 animate-fade-in"
+                      onClick={(e) => e.stopPropagation()}
                     >
                       <div className="px-4 py-3 border-b border-gray-100">
                         <p className="text-sm font-medium text-gray-900 truncate">
@@ -267,7 +262,7 @@ export default function Navbar() {
                         <div className="py-1">
                           <Link
                             href="/admin/dashboard"
-                            className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150"
                             onClick={handleMenuItemClick}
                           >
                             <LayoutDashboard size={16} className="mr-3 text-gray-500" />
@@ -275,7 +270,7 @@ export default function Navbar() {
                           </Link>
                           <Link
                             href="/admin/orders"
-                            className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150"
                             onClick={handleMenuItemClick}
                           >
                             <ShoppingBag size={16} className="mr-3 text-gray-500" />
@@ -283,7 +278,7 @@ export default function Navbar() {
                           </Link>
                           <Link
                             href="/admin/users"
-                            className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150"
                             onClick={handleMenuItemClick}
                           >
                             <Users size={16} className="mr-3 text-gray-500" />
@@ -291,7 +286,7 @@ export default function Navbar() {
                           </Link>
                           <Link
                             href="/admin/settings"
-                            className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150"
                             onClick={handleMenuItemClick}
                           >
                             <Settings size={16} className="mr-3 text-gray-500" />
@@ -303,7 +298,7 @@ export default function Navbar() {
                         <div className="py-1">
                           <Link
                             href="/orders"
-                            className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                            className="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors duration-150"
                             onClick={handleMenuItemClick}
                           >
                             <ShoppingBag size={16} className="mr-3 text-gray-500" />
@@ -316,7 +311,7 @@ export default function Navbar() {
                       <div className="py-1 border-t border-gray-100">
                         <button
                           onClick={handleSignOut}
-                          className="flex items-center px-4 py-2 text-sm text-red-600 hover:bg-gray-100 w-full text-left"
+                          className="flex items-center px-4 py-2 text-sm text-red-600 hover:bg-gray-50 w-full text-left transition-colors duration-150"
                         >
                           <LogOut size={16} className="mr-3 text-red-500" />
                           Sign Out
@@ -474,11 +469,10 @@ export default function Navbar() {
                   <Link
                     key={link.href}
                     href={link.href}
-                    className={`font-medium text-[.875rem] px-4 py-2 hover:bg-gray-100 rounded-md transition-colors ${
-                      isActiveLink(link.href)
+                    className={`font-medium text-[.875rem] px-4 py-2 hover:bg-gray-100 rounded-md transition-colors ${isActiveLink(link.href)
                         ? 'text-[#F15A25]'
                         : 'text-black'
-                    }`}
+                      }`}
                     onClick={() => setIsMobileMenuOpen(false)}
                   >
                     {link.label}
@@ -486,11 +480,10 @@ export default function Navbar() {
                 ))}
                 <Link
                   href="/destinations"
-                  className={`font-medium text-[.875rem] px-4 py-2 border rounded-[30px] text-center hover:bg-gray-100 mx-4 transition-colors ${
-                    isActiveLink('/destinations')
+                  className={`font-medium text-[.875rem] px-4 py-2 border rounded-[30px] text-center hover:bg-gray-100 mx-4 transition-colors ${isActiveLink('/destinations')
                       ? 'text-[#F15A25] border-[#F15A25]'
                       : 'text-black border-black'
-                  }`}
+                    }`}
                   onClick={() => setIsMobileMenuOpen(false)}
                 >
                   View Destinations

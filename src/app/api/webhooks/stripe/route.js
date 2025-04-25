@@ -225,7 +225,7 @@ async function handleSuccessfulPayment(paymentIntent) {
           <div style="text-align: center; margin-top: 30px;">
             <p style="font-size: 14px; color: #888; line-height: 1.5;">
               If you need any assistance, please contact our support team at
-              <a href="mailto:support@esim.com" style="color: #F15A25; text-decoration: none;">support@esim.com</a>
+              <a href="mailto:support@fliday.com" style="color: #F15A25; text-decoration: none;">support@fliday.com</a>
             </p>
             
             <div style="margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee; font-size: 12px; color: #888;">

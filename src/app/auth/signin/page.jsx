@@ -201,14 +201,7 @@ export default function LoginPage() {
         </Suspense>
       </div>
 
-      <div className="mt-8 text-center text-sm">
-        <p className="text-gray-600">
-          Don't have an account?{' '}
-          <span className="font-medium text-[#F15A25] hover:text-[#E04E1A] cursor-default">
-            No worries! You'll create one automatically when you sign in.
-          </span>
-        </p>
-      </div>
+      
     </div>
   );
 }

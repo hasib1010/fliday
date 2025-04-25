@@ -397,7 +397,7 @@ function ConfirmationContent() {
               Retry
             </button>
             <a
-              href="mailto:support@esim.com"
+              href="mailto:support@fliday.com"
               className="bg-gray-200 hover:bg-gray-300 text-gray-800 px-4 py-2 rounded transition-colors"
             >
               Contact Support
@@ -739,7 +739,7 @@ function ConfirmationContent() {
                 Our support team is available 24/7 to assist you with any questions.
               </p>
               <a
-                href="mailto:support@esim.com"
+                href="mailto:support@fliday.com"
                 className="text-sm text-[#F15A25] font-medium inline-block mt-1"
               >
                 Contact Support
