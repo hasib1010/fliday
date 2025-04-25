@@ -206,17 +206,7 @@ export default function MyOrdersPage() {
                                             Order ID: <span className="font-mono">{order.orderId.substring(0, 8)}...</span>
                                         </h3>
                                         <div className="flex items-center mb-2">
-                                            <div className="h-8 w-8 rounded-full flex items-center justify-center text-white text-xs font-bold mr-2">
-                                                <img
-                                                    className="h-full w-full object-cover rounded-full"
-                                                    src={`/flags/${order.location.substring(0, 2)}_flag.jpeg`}
-                                                    alt="flag"
-                                                    onError={(e) => {
-                                                        e.target.onerror = null;
-                                                        e.target.src = '/flags/placeholder_flag.jpeg'; // Fallback image
-                                                    }}
-                                                />
-                                            </div>
+                                             
                                             <p className="text-sm text-gray-500">Location: {order.location}</p>
                                         </div>
                                         <p className="text-sm text-gray-500 mb-2">Package: {order.dataAmount} - {order.duration}</p>

@@ -5,23 +5,39 @@ import dbConnect from '@/lib/mongodb';
 import Order from '@/models/Order';
 import User from '@/models/User';
 import { sendEmail } from '@/lib/email-config'; // Use your working email config
-
+console.log('Webhook handler loaded');
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
 const ESIM_API_BASE_URL = process.env.ESIM_API_BASE_URL || 'https://api.esimaccess.com/api/v1';
 const ESIM_ACCESS_CODE = process.env.ESIM_ACCESS_CODE;
 
 export async function POST(request) {
+  console.log('⚡⚡⚡ WEBHOOK TRIGGERED ⚡⚡⚡');
   try {
     const body = await request.text();
     const signature = request.headers.get('stripe-signature');
+
+    console.log('Webhook signature available:', !!signature);
+
     let event;
     try {
       event = stripe.webhooks.constructEvent(body, signature, endpointSecret);
+      console.log('Event constructed successfully:', event.type);
     } catch (err) {
       console.error(`Webhook signature verification failed: ${err.message}`);
       return NextResponse.json({ error: 'Webhook signature verification failed' }, { status: 400 });
     }
+    const paymentIntent = event.data.object;
+    const metadata = paymentIntent.metadata || {};
+    const orderId = metadata.orderId;
+    const type = metadata.type || 'order'; // Provide fallback
+
+    console.log(`Processing ${event.type} for orderID: ${orderId}, type: ${type}`);
 
     await dbConnect();
     console.log(`Received Stripe webhook: ${event.type}`);
@@ -174,7 +190,7 @@ async function handleSuccessfulPayment(paymentIntent) {
 
     // Fetch the updated order to ensure we have latest details
     const updatedOrder = await Order.findOne({ orderId });
-    
+
     // Check if we have a QR code before sending the email
     if (updatedOrder.esimDetails && updatedOrder.esimDetails.qrCodeUrl) {
       // Format the HTML email body - similar to your resend-esim template
@@ -237,7 +253,7 @@ async function handleSuccessfulPayment(paymentIntent) {
 
       try {
         console.log(`Attempting to send eSIM email to ${user.email}`);
-        
+
         // Send the email using your working email configuration
         const emailSent = await sendEmail({
           to: user.email,
@@ -312,7 +328,7 @@ async function orderESIM(order, txnId) {
     if (!process.env.ESIM_ACCESS_CODE || !process.env.ESIM_API_BASE_URL) {
       throw new Error('Missing eSIM API configuration');
     }
-    
+
     // IMPORTANT: Use originalPrice (provider's price without markup) for the API call
     const apiAmount = order.originalPrice; // Price without markup
 

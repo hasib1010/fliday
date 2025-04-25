@@ -1,4 +1,4 @@
-// src\app\api\payment\create-intent\route.js
+// src/app/api/payment/create-intent/route.js
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import dbConnect from '@/lib/mongodb';
@@ -30,23 +30,28 @@ export async function POST(request) {
       // Implement coupon logic if needed
     }
 
-    // Convert from your custom format to Stripe's format (cents)
-    // Your format: 10000 = $1.00
+    // Convert from API format to Stripe's format
+    // API format: 10000 = $1.00
     // Stripe format: 100 = $1.00
+    // Divide by 100 to get the correct amount in cents for Stripe
     const stripeAmount = Math.round(amount / 100);
-    
-    console.log(`Creating payment intent for order: ${orderId}, amount: ${amount}, stripeAmount: ${stripeAmount}`);
+
+    console.log(`Creating payment intent for order: ${orderId}, amount: ${amount}, stripeAmount: ${stripeAmount}, taxCountry: ${taxCountry}`);
 
     const paymentIntent = await stripe.paymentIntents.create({
       amount: stripeAmount,
-      currency: order.currency || 'usd',
+      currency: order.currency?.toLowerCase() || 'usd',
       payment_method: paymentMethod,
       confirmation_method: 'automatic',
       confirm: false,
-      metadata: { orderId, packageCode },
-      setup_future_usage: 'off_session', // Optional: adjust based on needs
+      metadata: {
+        orderId,
+        packageCode,
+        type: 'order' // Add type explicitly
+      },
+      setup_future_usage: 'off_session',
     });
-
+    
     console.log(`Payment intent created: ${paymentIntent.id}`);
 
     return NextResponse.json({

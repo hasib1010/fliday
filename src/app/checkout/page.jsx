@@ -186,8 +186,7 @@ function CheckoutForm({ packageData, selectedPaymentMethod, taxCountry, couponCo
           location: packageData.location,
           price: packageData.price,
           currency: packageData.currency,
-          paymentMethod: 'credit',
-          taxCountry: taxCountry,
+          paymentMethod: selectedPaymentMethod === 'applepay' ? 'applepay' : 'googlepay',
           couponCode: couponCode || null,
           status: 'pending_payment',
         }),
@@ -661,7 +660,6 @@ function CheckoutContent() {
                 <CheckoutForm
                   packageData={packageData}
                   selectedPaymentMethod={selectedPaymentMethod}
-                  taxCountry={taxCountry}
                   couponCode={couponCode}
                   onSuccess={handlePaymentSuccess}
                   onError={handlePaymentError}

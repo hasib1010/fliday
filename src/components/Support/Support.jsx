@@ -7,91 +7,72 @@ import { Search, MessageCircle, Mail, HelpCircle } from 'lucide-react';
 import BenefitsSection from '../Home/BenefitsSection';
 import SetupProcess from '../Home/SetupProcess';
 
-// Tawk.to Chat Component
-function TawkToChat({ user }) {
+// Crisp Chat Component
+function CrispChat({ user }) {
   useEffect(() => {
-    // Create Tawk_API if it doesn't exist
-    window.Tawk_API = window.Tawk_API || {};
-    window.Tawk_LoadStart = new Date();
+    // Initialize Crisp
+    window.$crisp = [];
+    window.CRISP_WEBSITE_ID = "7ad040de-33b2-4d83-a708-77ef357e5005";
     
-    // Load Tawk.to script with your specific embed ID
-    (function(){
-      var s1 = document.createElement("script");
-      var s0 = document.getElementsByTagName("script")[0];
-      s1.async = true;
-      s1.src = 'https://embed.tawk.to/680abb847161c519104da692/1ipkuovom';
-      s1.charset = 'UTF-8';
-      s1.setAttribute('crossorigin', '*');
-      s0.parentNode.insertBefore(s1, s0);
+    // Load Crisp script
+    (function() {
+      const d = document;
+      const s = d.createElement("script");
+      s.src = "https://client.crisp.chat/l.js";
+      s.async = 1;
+      d.getElementsByTagName("head")[0].appendChild(s);
     })();
 
-    // Set up event handlers when Tawk is ready
-    const handleTawkReady = () => {
+    // Set up event handlers when Crisp is ready
+    window.$crisp.push(["on", "session:loaded", function() {
+      console.log("Crisp loaded");
+      
       // Set visitor information if available
       if (user && user.email) {
-        window.Tawk_API.setAttributes({
-          name: user.name || 'Visitor',
-          email: user.email,
-          // You can add other attributes as needed
-          userType: user.type || 'Customer',
-          plan: user.plan || 'Standard'
-        }, function(error) {
-          if (error) {
-            console.error('Error setting Tawk.to visitor attributes:', error);
-          }
-        });
+        window.$crisp.push(["set", "user:email", user.email]);
+        
+        if (user.name) {
+          window.$crisp.push(["set", "user:nickname", user.name]);
+        }
+        
+        // Add custom user data
+        window.$crisp.push(["set", "session:data", [
+          ["userType", user.type || 'Customer'],
+          ["plan", user.plan || 'Standard']
+        ]]);
       }
 
       // Add eSIM-related tags to the conversation
-      window.Tawk_API.addTags(['eSIM', 'support'], function(error) {
-        if (error) {
-          console.error('Error adding tags:', error);
-        }
-      });
+      window.$crisp.push(["set", "session:tags", ["eSIM", "support"]]);
+      
+      // Example of logging a custom event
+      window.$crisp.push(["set", "session:event", [
+        ["visited_support_page", { timestamp: new Date().toISOString() }]
+      ]]);
+    }]);
 
-      // Example of adding custom event
-      window.Tawk_API.addEvent('visited_support_page', {
-        timestamp: new Date().toISOString()
-      }, function(error) {
-        if (error) {
-          console.error('Error adding event:', error);
-        }
-      });
+    // Set up other Crisp event handlers
+    window.$crisp.push(["on", "chat:opened", function() {
+      console.log("Chat window opened");
+      // You could trigger analytics here
+    }]);
 
-      // Set up event handlers for chat
-      window.Tawk_API.onChatMaximized = function() {
-        console.log('Chat window opened');
-        // You could trigger analytics here
-      };
+    window.$crisp.push(["on", "chat:closed", function() {
+      console.log("Chat window closed");
+      // You could trigger analytics here
+    }]);
 
-      window.Tawk_API.onChatMinimized = function() {
-        console.log('Chat window closed');
-        // You could trigger analytics here
-      };
+    window.$crisp.push(["on", "message:sent", function() {
+      console.log("Chat started");
+      // You could trigger analytics here
+    }]);
 
-      window.Tawk_API.onChatStarted = function() {
-        console.log('Chat started');
-        // You could trigger analytics here
-      };
+    window.$crisp.push(["on", "chat:unread", function() {
+      console.log("Unread messages");
+      // You could trigger a notification
+    }]);
 
-      window.Tawk_API.onChatEnded = function() {
-        console.log('Chat ended');
-        // You could save feedback or trigger survey
-      };
-    };
-
-    // Set up onLoad callback if Tawk_API is already available
-    if (window.Tawk_API) {
-      window.Tawk_API.onLoad = handleTawkReady;
-    } else {
-      // Otherwise set it up to be available when script loads
-      window.addEventListener('tawkLoad', handleTawkReady);
-    }
-
-    // Clean up event listener on unmount
-    return () => {
-      window.removeEventListener('tawkLoad', handleTawkReady);
-    };
+    // No explicit cleanup needed for Crisp
   }, [user]);
 
   // This component doesn't render anything visible
@@ -195,16 +176,13 @@ export default function Support() {
 
   // Open the chat widget
   const openChat = () => {
-    if (window.Tawk_API && window.Tawk_API.maximize) {
-      window.Tawk_API.maximize();
+    if (window.$crisp) {
+      window.$crisp.push(["do", "chat:open"]);
       
-      // Optional: You can also trigger a specific department or send an initial message
-      if (window.Tawk_API.setAttributes) {
-        window.Tawk_API.setAttributes({
-          // This will help route the chat to the right department
-          issue: 'Support Request from Website'
-        }, function(error) {});
-      }
+      // Optional: You can also set a specific message or data before opening
+      window.$crisp.push(["set", "session:data", [
+        ["issue", "Support Request from Website"]
+      ]]);
     }
   };
 
@@ -228,8 +206,8 @@ export default function Support() {
 
   return (
     <div className="max-w-[1220px] mx-auto px-4 pt-24 lg:pt-20">
-      {/* Include TawkToChat component */}
-      <TawkToChat user={user} />
+      {/* Include CrispChat component */}
+      <CrispChat user={user} />
 
       {/* Hero Section */}
       <div className="lg:text-center lg:mb-16 mb-5">
