@@ -148,9 +148,8 @@ export default function BlogDetail({ params, initialBlog, initialError }) {
             <li key={section.id}>
               <button
                 onClick={() => scrollToSection(section.id)}
-                className={`text-left text-sm hover:text-[#F15A25] transition-colors ${
-                  activeSection === section.id ? 'text-[#F15A25] font-medium' : 'text-gray-700'
-                }`}
+                className={`text-left text-sm hover:text-[#F15A25] transition-colors ${activeSection === section.id ? 'text-[#F15A25] font-medium' : 'text-gray-700'
+                  }`}
               >
                 {section.heading}
               </button>
@@ -247,12 +246,11 @@ export default function BlogDetail({ params, initialBlog, initialError }) {
         {/* Main Content - 2/3 width on desktop */}
         <div className="lg:col-span-2">
           {/* Featured Image */}
-          <div className="relative rounded-xl overflow-hidden mb-6">
+          <div className="relative max-w-[1220px] md:min-h-[400px] min-h-60 max-h-[400px] rounded-xl overflow-hidden mb-6">
             <Image
               src={blog.featuredImage.replace('/upload/', '/upload/q_auto/') || '/fallback-image.jpg'}
               alt={blog.title}
-              width={1220}
-              height={400}
+              fill
               className="object-cover"
               priority
             />
@@ -264,13 +262,14 @@ export default function BlogDetail({ params, initialBlog, initialError }) {
           {/* Article Meta */}
           <div className="flex flex-col-reverse gap-1.5 mb-8">
             <div className="flex items-center mt-3 mr-4">
-              <Image
-                src={blog.author.image || '/fallback-author.jpg'}
-                alt={blog.author.name}
-                width={32}
-                height={32}
-                className="rounded-full mr-2"
-              />
+              <div className="relative w-8 h-8 mr-4">
+                <Image
+                  src={blog.author.image || '/fallback-author.jpg'}
+                  alt={blog.author.name}
+                  fill
+                  className="rounded-full object-cover"
+                />
+              </div>
               <span className="text-sm">{blog.author.name}</span>
             </div>
 

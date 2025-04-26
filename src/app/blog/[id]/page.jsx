@@ -1,24 +1,59 @@
 import BlogDetail from '@/components/Blog/BlogDetail';
+import { notFound } from 'next/navigation';
+
+// Utility to validate slug
+const isValidSlug = (slug) => {
+  // Enforce lowercase, alphanumeric, hyphens only, non-empty
+  return typeof slug === 'string' && /^[a-z0-9-]+$/i.test(slug) && slug.trim().length > 0;
+};
+
+// Fetch blog data
+async function fetchBlog(slug) {
+  try {
+    // Normalize slug to lowercase to match BlogSchema
+    const normalizedSlug = slug.toLowerCase();
+    const response = await fetch(
+      `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/blogs/${encodeURIComponent(normalizedSlug)}`,
+      {
+        next: { revalidate: 60 }, // Leverage ISR with 60-second revalidation
+      }
+    );
+    if (!response.ok) {
+      throw new Error('Failed to fetch blog');
+    }
+    const { data } = await response.json(); // Extract data from { data: blog }
+    if (!data) {
+      throw new Error('Blog not found');
+    }
+    return data;
+  } catch (error) {
+    console.error('fetchBlog: Error:', error.message);
+    throw error;
+  }
+}
 
 export async function generateMetadata({ params }) {
-  console.log('generateMetadata: params.id:', params.id);
+  const { id } = await params; // Await params to resolve id
+  if (!id || !isValidSlug(id)) {
+    return {
+      title: 'Blog Post Not Found | Fliday Blog',
+      description: 'The requested blog post could not be found.',
+    };
+  }
+
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/blogs/${params.id}`, {
-      cache: 'no-store',
-    });
-    if (!response.ok) throw new Error('Failed to fetch blog');
-    const blog = await response.json();
+    const blog = await fetchBlog(id);
     return {
       title: `${blog.title} | Fliday Blog`,
       description: blog.excerpt || 'Read the latest insights and tips from Fliday.',
       openGraph: {
         title: blog.title,
         description: blog.excerpt,
-        url: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/blog/${params.id}`,
+        url: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/blog/${blog.slug}`,
         images: [blog.featuredImage],
         type: 'article',
         publishedTime: blog.date,
-        authors: [blog.author.name],
+        authors: [blog.author?.name || 'Unknown Author'],
       },
       twitter: {
         card: 'summary_large_image',
@@ -28,39 +63,34 @@ export async function generateMetadata({ params }) {
       },
     };
   } catch (error) {
-    console.error('generateMetadata: Error:', error);
     return {
-      title: 'Blog Post | Fliday Blog',
-      description: 'Learn how to save on mobile data when traveling with these expert tips from Fliday.',
+      title: 'Blog Post Not Found | Fliday Blog',
+      description: 'The requested blog post could not be found.',
     };
   }
 }
 
-// Optional: Enable ISR for better performance
+// Enable ISR for better performance
 export const revalidate = 60; // Revalidate every 60 seconds
 
 export default async function BlogDetailPage({ params }) {
-  console.log('BlogDetailPage: params:', params);
-  if (!params || !params.id) {
-    console.error('BlogDetailPage: Invalid params');
-    return <div>Invalid blog ID</div>;
+  const { id } = await params; // Await params to resolve id
+  if (!id || !isValidSlug(id)) {
+    notFound(); // Redirect to 404 page
   }
 
   let blog = null;
   let error = null;
 
   try {
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/blogs/${params.id}`, {
-      cache: 'no-store',
-    });
-    if (!response.ok) {
-      throw new Error('Failed to fetch blog');
-    }
-    blog = await response.json();
+    blog = await fetchBlog(id);
   } catch (err) {
-    console.error('BlogDetailPage: Fetch error:', err.message);
     error = err.message;
   }
 
-  return <BlogDetail params={params} initialBlog={blog} initialError={error} />;
+  if (!blog) {
+    notFound(); // Redirect to 404 page if blog is not found
+  }
+
+  return <BlogDetail initialBlog={blog} initialError={error} />;
 }

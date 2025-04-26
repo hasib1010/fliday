@@ -48,7 +48,10 @@ export default function Blog() {
   }
 
   if (loading) {
-    return <div className="max-w-[1220px] mx-auto px-4 py-12">Loading...</div>;
+    return (
+      <div className="flex items-center justify-center w-full h-screen bg-black">
+        <div className="w-16 h-16 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+      </div>)
   }
 
   if (error) {
@@ -126,11 +129,10 @@ export default function Blog() {
             <button
               key={category}
               onClick={() => setActiveCategory(category)}
-              className={`px-6 py-3 rounded-full text-sm font-medium transition-colors ${
-                activeCategory === category
+              className={`px-6 py-3 rounded-full text-sm font-medium transition-colors ${activeCategory === category
                   ? 'bg-black text-white'
                   : 'bg-white text-black border border-gray-200 hover:bg-gray-50'
-              }`}
+                }`}
             >
               {category}
             </button>
@@ -217,11 +219,10 @@ export default function Blog() {
             <button
               key={number}
               onClick={() => setCurrentPage(number)}
-              className={`w-8 h-8 flex items-center justify-center rounded-full ${
-                currentPage === number
+              className={`w-8 h-8 flex items-center justify-center rounded-full ${currentPage === number
                   ? 'bg-black text-white'
                   : 'bg-white text-black border border-gray-200 hover:bg-gray-50'
-              }`}
+                }`}
             >
               {number}
             </button>

@@ -64,7 +64,11 @@ export default function AdminBlogPage() {
     };
 
     if (status === 'loading' || loading) {
-        return <div className="p-6">Loading...</div>;
+        return( <AdminLayout>
+            <div className="flex justify-center items-center h-full">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#F15A25]"></div>
+            </div>
+        </AdminLayout>)
     }
 
     if (error) {
