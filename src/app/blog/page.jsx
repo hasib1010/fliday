@@ -85,7 +85,7 @@ export default function Blog() {
 
   const FeaturedPost = ({ post }) => (
     <Link href={`/blog/${post.slug}`} className="block">
-      <div className="relative rounded-xl overflow-hidden flex flex-col lg:flex-row transition-shadow justify-between">
+      <div className="relative rounded-xl overflow-hidden flex flex-col lg:flex-row transition-shadow lg:items-center justify-between">
         <div className="max-w-[440px] lg:p-8 py-4 lg:pr-0 flex flex-col justify-center">
           <div className="inline-block w-fit px-3 py-1 bg-gray-100 rounded-full text-sm text-gray-600 mb-4">
             {post.category}
@@ -130,7 +130,7 @@ export default function Blog() {
             <span className="text-sm text-black">{post.author?.name || 'Unknown Author'}</span>
           </div>
         </div>
-        <div className="lg:w-[705px] relative h-[300px] lg:h-auto">
+        <div className=" lg:w-[705px] relative h-[300px] ">
           <Image
             src={post.featuredImage || '/fallback-image.jpg'}
             alt={post.title}
@@ -219,7 +219,7 @@ export default function Blog() {
                 />
               </div>
               <div className="p-6 flex-1 flex flex-col">
-                <div className="flex-1">
+                <div className=" ">
                   <div className="inline-block px-2 py-1 bg-gray-100 rounded-full text-xs text-gray-600 mb-3">
                     {post.category}
                   </div>

@@ -12,26 +12,23 @@ export default function Footer() {
   const currentYear = new Date().getFullYear();
   
   const popularDestinations = [
-    { name: 'Spain', href: '/destinations/spain' },
-    { name: 'Greece', href: '/destinations/greece' },
-    { name: 'Italy', href: '/destinations/italy' },
-    { name: 'Turkey', href: '/destinations/turkey' },
-    { name: 'United Kingdom', href: '/destinations/united-kingdom' },
-    { name: 'Portugal', href: '/destinations/portugal' },
-    { name: 'France', href: '/destinations/france' },
-    { name: 'Morocco', href: '/destinations/morocco' },
+    { name: 'Spain', href: '/destinations/country/es' },
+    { name: 'Greece', href: '/destinations/country/gr' },
+    { name: 'Italy', href: '/destinations/country/it' },
+    { name: 'Turkey', href: '/destinations/country/tr' },
+    { name: 'United Kingdom', href: '/destinations/country/gb' },
+    { name: 'Portugal', href: '/destinations/country/pt' },
+    { name: 'France', href: '/destinations/country/fr' },
+    { name: 'Morocco', href: '/destinations/country/ma' },
   ];
   
-  const resources = [
-    { name: 'What is an eSIM?', href: '/resources/what-is-esim' },
-    { name: 'Supported devices', href: '/resources/supported-devices' },
+  const resources = [ 
+    { name: 'Supported devices', href: '/compatibility' },
     { name: 'Blog', href: '/blog' },
   ];
   
-  const helpLinks = [
-    { name: 'Help Center', href: '/help' },
-    { name: 'Getting Started', href: '/help/getting-started' },
-    { name: 'Plans', href: '/plans' },
+  const helpLinks = [  
+    { name: 'Plans', href: '/destinations' },
     { name: 'FAQ', href: '/faq' },
     { name: 'Support', href: '/support' },
   ];

@@ -1,4 +1,4 @@
-// app/api/payment/webhook/route.js
+// app/api/webhooks/stripe/route.js
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import dbConnect from '@/lib/mongodb';
