@@ -5,10 +5,11 @@ import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import dbConnect from '@/lib/mongodb';
 import Order from '@/models/Order';
 import User from '@/models/User';
+import PackagePricing from '@/models/PackagePricing'; // Import the pricing model
 import { v4 as uuidv4 } from 'uuid';
-import mongoose from 'mongoose';
 
-const MARKUP_AMOUNT = 10000; // $1.00 markup in Stripe's format (cents * 100)
+// Default markup if no custom pricing is found
+const DEFAULT_MARKUP_AMOUNT = 10000; // $1.00 markup in Stripe's format (cents * 100)
 
 export async function GET(request) {
   try {
@@ -96,8 +97,7 @@ export async function POST(request) {
       dataAmount,
       duration,
       location,
-      price,           // This should be the final price with markup
-      originalPrice,   // The provider's original price without markup
+      price,           // This is the price from the eSIM API (may include frontend markup)
       currency = 'USD',
       paymentMethod,
       taxCountry,
@@ -124,23 +124,59 @@ export async function POST(request) {
       }, { status: 404 });
     }
 
-    // Verify/calculate prices correctly
-    let providerPrice = originalPrice;
-    const markupAmount = MARKUP_AMOUNT;
-    
-    // If originalPrice wasn't provided, calculate it from the price
-    if (providerPrice === undefined) {
-      providerPrice = price - markupAmount;
-      
-      // Sanity check to ensure we don't have negative provider price
-      if (providerPrice < 0) {
-        console.warn(`Calculated negative provider price: ${providerPrice}. Using price as fallback.`);
-        providerPrice = price;
-      }
+    // Look up custom pricing if available
+    let customPricing = null;
+    try {
+      customPricing = await PackagePricing.findOne({ packageCode });
+    } catch (error) {
+      console.warn('Error fetching custom pricing:', error);
+      // Continue with default pricing if there's an error
     }
-    
-    // Final price should include the markup
-    const finalPrice = price;
+
+    // Calculate pricing based on custom settings if available
+    let originalPrice; // Provider's price without markup
+    let markupAmount; // Our markup
+    let finalPrice; // Price customer pays
+
+    if (customPricing) {
+      // Use custom pricing from database
+      originalPrice = customPricing.originalPrice;
+      finalPrice = customPricing.retailPrice;
+      markupAmount = finalPrice - originalPrice;
+      
+      console.log(`Using custom pricing for ${packageCode}: Original: ${originalPrice/10000}, Retail: ${finalPrice/10000}, Markup: ${markupAmount/10000}`);
+    } else {
+      // Use default markup
+      // The price passed from frontend may already include markup, so we need to be careful
+      
+      // Check if originalPrice was provided in the request (from frontend)
+      if (body.originalPrice !== undefined) {
+        originalPrice = body.originalPrice;
+        finalPrice = price; // Keep the price as-is from the request
+        markupAmount = finalPrice - originalPrice;
+      } else {
+        // Calculate originalPrice by removing default markup from price
+        markupAmount = DEFAULT_MARKUP_AMOUNT;
+        originalPrice = price - markupAmount;
+        finalPrice = price;
+        
+        // Ensure we don't have negative provider price (sanity check)
+        if (originalPrice < 0) {
+          console.warn(`Calculated negative provider price: ${originalPrice}. Using price as fallback.`);
+          originalPrice = Math.round(price * 0.9); // Assume 90% of price is original
+          markupAmount = price - originalPrice;
+        }
+      }
+      
+      console.log(`Using default pricing for ${packageCode}: Original: ${originalPrice/10000}, Final: ${finalPrice/10000}, Markup: ${markupAmount/10000}`);
+    }
+
+    // Apply coupon discount if available
+    let discountAmount = 0;
+    if (couponCode) {
+      // Here you could implement coupon validation and discount calculation
+      // For now, assuming no discount
+    }
 
     // Create a unique orderId
     const orderId = uuidv4();
@@ -154,10 +190,10 @@ export async function POST(request) {
       dataAmount,
       duration,
       location,
-      originalPrice: providerPrice,    // Provider's price without markup
-      markupAmount: markupAmount,      // $1.00 markup
-      discountAmount: 0,               // Handle coupons here if needed
-      finalPrice: finalPrice,          // Price with markup (customer pays this)
+      originalPrice: originalPrice,     // Provider's price without markup
+      markupAmount: markupAmount,       // Our markup
+      discountAmount: discountAmount,   // Handle coupons here if needed
+      finalPrice: finalPrice,           // Price with markup (customer pays this)
       currency,
       taxCountry,
       couponCode,
@@ -169,7 +205,7 @@ export async function POST(request) {
 
     await order.save();
     
-    console.log(`Order created: ${orderId}, Original price: ${providerPrice/10000}$, Markup: ${markupAmount/10000}$, Final price: ${finalPrice/10000}$`);
+    console.log(`Order created: ${orderId}, Original price: ${originalPrice/10000}$, Markup: ${markupAmount/10000}$, Final price: ${finalPrice/10000}$`);
     
     return NextResponse.json({
       success: true,

@@ -1,3 +1,4 @@
+// models/Order.js
 import mongoose from 'mongoose';
 
 const OrderSchema = new mongoose.Schema({
@@ -8,10 +9,14 @@ const OrderSchema = new mongoose.Schema({
   dataAmount: { type: String, required: true },
   duration: { type: String, required: true },
   location: { type: String, required: true },
-  originalPrice: { type: Number, required: true },  // Provider's price without markup
-  markupAmount: { type: Number, default: 10000 },   // $1.00 markup (10000 in cents)
+  // Provider's price without markup
+  originalPrice: { type: Number, required: true },
+  // Our markup amount (retailPrice - originalPrice)  
+  markupAmount: { type: Number, required: true },
+  // Any discount applied
   discountAmount: { type: Number, default: 0 },
-  finalPrice: { type: Number, required: true },     // Price with markup (what customer pays)
+  // Price the customer pays (originalPrice + markupAmount - discountAmount)
+  finalPrice: { type: Number, required: true },
   currency: { type: String, default: 'USD' },
   taxCountry: { type: String },
   couponCode: { type: String },
@@ -67,8 +72,30 @@ const OrderSchema = new mongoose.Schema({
         createTime: { type: String },
       },
     ],
-    lastUpdateTime: { type: Date }
+    instructions: { type: String },
+    lastUpdateTime: { type: Date, default: Date.now }
   },
 });
+
+// Add a virtual property for markup percentage
+OrderSchema.virtual('markupPercentage').get(function() {
+  if (!this.originalPrice) return 0;
+  return Math.round((this.markupAmount / this.originalPrice) * 100);
+});
+
+// Pre-save middleware to calculate finalPrice
+OrderSchema.pre('save', function(next) {
+  if (this.isModified('originalPrice') || this.isModified('markupAmount') || this.isModified('discountAmount')) {
+    this.finalPrice = this.originalPrice + this.markupAmount - this.discountAmount;
+  }
+  
+  // Add updatedAt timestamp
+  this.updatedAt = new Date();
+  next();
+});
+
+// Set toJSON to include virtuals
+OrderSchema.set('toJSON', { virtuals: true });
+OrderSchema.set('toObject', { virtuals: true });
 
 export default mongoose.models.Order || mongoose.model('Order', OrderSchema);

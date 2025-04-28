@@ -550,7 +550,7 @@ function CheckoutContent() {
             ) : (
               <div className="mb-8 ">
                 <h2 className="text-xl font-semibold mb-6">Sign up or log in</h2>
-                <div className="flex md:flex-row flex-col gap-5 mb-6 p-8">
+                <div className="flex md:flex-row flex-col gap-2 mb-6 lg:p-8">
                   <button
                     onClick={handleGoogleSignIn}
                     className="flex items-center justify-center gap-2 w-full py-2.5 px-4 border border-gray-300 rounded-full hover:bg-gray-50 transition-colors"

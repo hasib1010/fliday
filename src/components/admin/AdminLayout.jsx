@@ -22,7 +22,8 @@ import {
   RefreshCw,
   DollarSign,
   Tag,
-  Edit
+  Edit,
+  DollarSignIcon
 } from 'lucide-react';
 
 export default function AdminLayout({ children }) {
@@ -80,6 +81,7 @@ export default function AdminLayout({ children }) {
       ],
     },
     { name: 'Users', href: '/admin/users', icon: Users },
+    { name: 'Pricing', href: '/admin/pricing', icon: DollarSignIcon },
     { name: 'Blog', href: '/admin/blog', icon: Edit }, // Add Blog route
     {
       name: 'Settings',
