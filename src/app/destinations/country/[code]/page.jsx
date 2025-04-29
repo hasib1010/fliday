@@ -1,6 +1,6 @@
 'use client';
 // src\app\destinations\country\[code]\page.jsx
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { CheckCircle, Info, ChevronLeft } from 'lucide-react';
 import FAQSection from '@/components/Home/FAQSection';
@@ -17,6 +17,7 @@ export default function DestinationCountryPage() {
   const params = useParams();
   const router = useRouter();
   const code = params?.code || '';
+  const pageTopRef = useRef(null); // Reference to the top of the page
 
   // State for API data
   const [countryName, setCountryName] = useState('');
@@ -25,13 +26,26 @@ export default function DestinationCountryPage() {
   const [error, setError] = useState(null);
 
   // Progressive loading states
-  const [initialLoading, setInitialLoading] = useState(true);
+  const [initialLoading, setInitialLoading] = useState(false);
   const [packagesLoading, setPackagesLoading] = useState(true);
 
   // State to track selected plan and active tab
   const [selectedPlanId, setSelectedPlanId] = useState(null);
   const [activeTab, setActiveTab] = useState('features');
   const [isDeviceModalOpen, setIsDeviceModalOpen] = useState(false);
+
+  // Flag to track if we should scroll to top on mount
+  const [shouldScrollToTop, setShouldScrollToTop] = useState(true);
+
+  // Scroll to top on initial load - fix for mobile navigation issue
+  useEffect(() => {
+    if (shouldScrollToTop && pageTopRef.current) {
+      // Use scrollIntoView to scroll to the top of the page
+      pageTopRef.current.scrollIntoView({ behavior: 'smooth' });
+      window.scrollTo(0, 0);
+      setShouldScrollToTop(true);
+    }
+  }, [shouldScrollToTop, initialLoading]);
 
   // Helper function to format country code to title case - memoized
   const formatCode = useCallback((code) => {
@@ -92,6 +106,25 @@ export default function DestinationCountryPage() {
     return countryNames[code.toLowerCase()] || code.toUpperCase();
   }, []);
 
+  // Track navigation state with a visibilitychange event
+  useEffect(() => {
+    // Function to handle when the page becomes visible again (after return from checkout)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        // When returning to the page, scroll to top
+        window.scrollTo(0, 0);
+      }
+    };
+
+    // Add event listener for visibility changes
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // Clean up
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
+
   // Fetch country data and packages
   useEffect(() => {
     if (!code) return;
@@ -110,13 +143,13 @@ export default function DestinationCountryPage() {
         if (countryDataCache.has(code)) {
           const cachedData = countryDataCache.get(code);
           setPackages(cachedData.packages);
-          
+
           // Select the default plan
           if (cachedData.packages.length > 0) {
             const midIndex = Math.floor(cachedData.packages.length / 2);
             setSelectedPlanId(cachedData.packages[midIndex]?.id || cachedData.packages[0].id);
           }
-          
+
           setPackagesLoading(false);
           setLoading(false);
           return;
@@ -130,7 +163,7 @@ export default function DestinationCountryPage() {
           `/api/esim/packages?locationCode=${code.toUpperCase()}`,
           { signal: controller.signal }
         );
-        
+
         clearTimeout(timeoutId);
 
         if (!packagesResponse.ok) {
@@ -167,7 +200,7 @@ export default function DestinationCountryPage() {
 
         // Cache the data
         countryDataCache.set(code, { packages: formattedPackages });
-        
+
         setPackages(formattedPackages);
 
         // Select the default plan (midpoint)
@@ -182,7 +215,7 @@ export default function DestinationCountryPage() {
           console.error('Error fetching destination data:', err);
           setError(err.message || 'Failed to load destination data');
         }
-        
+
         // Even with an error, we can show the basic UI
         setInitialLoading(false);
       } finally {
@@ -200,7 +233,7 @@ export default function DestinationCountryPage() {
   // Initial loading state (for country name and basic UI)
   if (initialLoading) {
     return (
-      <div className="max-w-[1220px] mx-auto pt-32 px-4 lg:px-0">
+      <div ref={pageTopRef} className="max-w-[1220px] mx-auto pt-32 px-4 lg:px-0">
         <div className="flex items-center mb-6">
           <div className="w-8 h-8 bg-gray-200 rounded-full mr-3 animate-pulse"></div>
           <div className="h-8 bg-gray-200 w-72 rounded animate-pulse"></div>
@@ -220,7 +253,7 @@ export default function DestinationCountryPage() {
   // Error state
   if (error && !selectedPlan && !packages.length) {
     return (
-      <div className="max-w-[1220px] mx-auto px-4 pt-24">
+      <div ref={pageTopRef} className="max-w-[1220px] mx-auto px-4 pt-24">
         <div className="flex items-center mb-6">
           <button
             onClick={() => router.back()}
@@ -246,7 +279,7 @@ export default function DestinationCountryPage() {
   }
 
   return (
-    <div className="max-w-[1220px] mx-auto px-4 pt-24">
+    <div ref={pageTopRef} className="max-w-[1220px] mx-auto px-4 pt-24">
       {/* Back button and title for mobile */}
       <div className="lg:hidden flex items-center mb-6">
         <button
