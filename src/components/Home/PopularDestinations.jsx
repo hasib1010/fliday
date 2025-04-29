@@ -14,10 +14,9 @@ export default function PopularDestinations() {
     const [filteredDestinations, setFilteredDestinations] = useState([]);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [lastUpdated, setLastUpdated] = useState(null);
 
-    // Static country data as fallback
-    const staticCountriesBackup = [
+    // Static country data
+    const staticCountries = [
         {
             id: 'tr',
             name: 'Turkey',
@@ -83,42 +82,13 @@ export default function PopularDestinations() {
         },
     ];
 
-    // Preferred country codes to display (in priority order)
-    const preferredCountryCodes = [
-        'tr', 'us', 'th', 'my', 'ma', 'it', 'es', 'id', 'de', 
-        'gb', 'fr', 'au', 'nz', 'ca', 'jp', 'sg', 'ae', 'sa'
-    ];
-
     // Function to apply filtering logic
     const applyFilter = (countriesList, regionsList, filter) => {
         let results = [];
 
         if (filter === 'Country') {
-            // Find our preferred countries from the API data
-            const preferredCountries = [];
-            
-            // First pass: Try to find all preferred countries in our priority order
-            for (const code of preferredCountryCodes) {
-                const found = countriesList.find(
-                    country => country.code.toLowerCase() === code.toLowerCase()
-                );
-                if (found) {
-                    preferredCountries.push(found);
-                    if (preferredCountries.length >= 9) break; // Limit to 9 countries
-                }
-            }
-            
-            // If we don't have enough preferred countries, add more countries sorted by price
-            if (preferredCountries.length < 9) {
-                const otherCountries = countriesList
-                    .filter(country => !preferredCountryCodes.includes(country.code.toLowerCase()))
-                    .sort((a, b) => parseFloat(a.price) - parseFloat(b.price))
-                    .slice(0, 9 - preferredCountries.length);
-                
-                return [...preferredCountries, ...otherCountries];
-            }
-            
-            return preferredCountries;
+            // For Country tab, use static countries
+            return staticCountries;
         } else if (filter === 'Region') {
             results = regionsList.filter(dest => !dest.name.toLowerCase().startsWith('global'));
         } else if (filter === 'Global') {
@@ -135,20 +105,12 @@ export default function PopularDestinations() {
         return results;
     };
 
-    // Fetch destinations dynamically for all tabs
+    // Fetch destinations dynamically (only for Regions and Global)
     useEffect(() => {
         const fetchDestinations = async () => {
             try {
                 setIsLoading(true);
-                
-                // Use skipCache parameter to bypass server cache and no-store to bypass browser cache
-                const response = await fetch('/api/esim/locations?skipCache=true', {
-                    cache: 'no-store', // Don't use cached version
-                    headers: {
-                        'Cache-Control': 'no-cache, no-store, must-revalidate',
-                        'Pragma': 'no-cache'
-                    }
-                });
+                const response = await fetch('/api/esim/locations');
 
                 if (!response.ok) {
                     throw new Error(`Failed to fetch destinations: ${response.status} ${response.statusText}`);
@@ -160,17 +122,15 @@ export default function PopularDestinations() {
                     throw new Error(data.message || 'Failed to fetch destinations');
                 }
 
-                // Format countries data
+                // We'll still keep this for other tabs
                 const formattedCountries = (data.data.countries || []).map((country, index) => ({
                     id: country.id || country.code || `country-${index}`,
                     name: country.name || 'Unknown',
                     code: (country.code || country.countryCode || '').toLowerCase(),
                     type: 'country',
                     price: parseFloat(country.price || 3.99).toFixed(2),
-                    packageCode: country.packageCode || '', // Include packageCode reference
                 }));
 
-                // Format regions data
                 const formattedRegions = (data.data.regions || []).map((region, index) => ({
                     id: region.id || region.code || `region-${index}`,
                     name: region.name || 'Unknown',
@@ -178,21 +138,12 @@ export default function PopularDestinations() {
                     slug: region.slug || '',
                     type: 'region',
                     price: parseFloat(region.price || 7.99).toFixed(2),
-                    packageCode: region.packageCode || '', // Include packageCode reference
                 }));
 
                 setCountries(formattedCountries);
                 setRegions(formattedRegions);
-                
-                // Store last updated timestamp
-                if (data.data.cachedAt) {
-                    const date = new Date(data.data.cachedAt);
-                    setLastUpdated(date.toLocaleTimeString());
-                } else {
-                    setLastUpdated(new Date().toLocaleTimeString());
-                }
 
-                // Apply filter based on current tab
+                // Apply initial filter
                 const initialFiltered = applyFilter(formattedCountries, formattedRegions, filterType);
                 setFilteredDestinations(initialFiltered);
                 setError(null);
@@ -200,9 +151,10 @@ export default function PopularDestinations() {
                 console.error('Error fetching destinations:', err);
                 setError(`Failed to load popular destinations: ${err.message}. Please try again.`);
                 
-                // If we have an error loading dynamic content, use static data as fallback
+                // If we have an error loading dynamic content but we're on the Country tab,
+                // we can still show the static countries
                 if (filterType === 'Country') {
-                    setFilteredDestinations(staticCountriesBackup);
+                    setFilteredDestinations(staticCountries);
                     setError(null);
                 } else {
                     setRegions([]);
@@ -213,87 +165,28 @@ export default function PopularDestinations() {
             }
         };
 
-        fetchDestinations();
+        // If we're on the Country tab, just use static data immediately
+        if (filterType === 'Country') {
+            setFilteredDestinations(staticCountries);
+            setIsLoading(false);
+        } else {
+            fetchDestinations();
+        }
     }, [filterType]);
 
     // Update filtered destinations when filterType changes
     useEffect(() => {
-        if (countries.length === 0 && regions.length === 0 && !isLoading) {
-            // If data is empty and not loading, use static data for Country tab
-            if (filterType === 'Country') {
-                setFilteredDestinations(staticCountriesBackup);
-            }
+        if (filterType === 'Country') {
+            setFilteredDestinations(staticCountries);
+            setIsLoading(false);
             return;
         }
+        
+        if (countries.length === 0 && regions.length === 0) return;
 
         const results = applyFilter(countries, regions, filterType);
         setFilteredDestinations(results);
-    }, [filterType, countries, regions, isLoading]);
-
-    // Function to refresh data
-    const refreshData = async () => {
-        setIsLoading(true);
-        try {
-            // Force a fresh fetch by adding a timestamp to the URL
-            const response = await fetch(`/api/esim/locations?skipCache=true&t=${Date.now()}`, {
-                cache: 'no-store',
-                headers: {
-                    'Cache-Control': 'no-cache, no-store, must-revalidate',
-                    'Pragma': 'no-cache'
-                }
-            });
-            
-            if (!response.ok) {
-                throw new Error(`Failed to refresh: ${response.status}`);
-            }
-            
-            const data = await response.json();
-            
-            if (!data.success) {
-                throw new Error(data.message || 'Failed to refresh data');
-            }
-            
-            const formattedCountries = (data.data.countries || []).map((country, index) => ({
-                id: country.id || country.code || `country-${index}`,
-                name: country.name || 'Unknown',
-                code: (country.code || country.countryCode || '').toLowerCase(),
-                type: 'country',
-                price: parseFloat(country.price || 3.99).toFixed(2),
-                packageCode: country.packageCode || '',
-            }));
-
-            const formattedRegions = (data.data.regions || []).map((region, index) => ({
-                id: region.id || region.code || `region-${index}`,
-                name: region.name || 'Unknown',
-                code: (region.code || region.regionCode || '').toLowerCase(),
-                slug: region.slug || '',
-                type: 'region',
-                price: parseFloat(region.price || 7.99).toFixed(2),
-                packageCode: region.packageCode || '',
-            }));
-            
-            setCountries(formattedCountries);
-            setRegions(formattedRegions);
-            
-            // Update last updated timestamp
-            setLastUpdated(new Date().toLocaleTimeString());
-            
-            const results = applyFilter(formattedCountries, formattedRegions, filterType);
-            setFilteredDestinations(results);
-            setError(null);
-        } catch (err) {
-            console.error('Error refreshing data:', err);
-            setError(`Failed to refresh: ${err.message}`);
-            
-            // Use static data as fallback for Country tab
-            if (filterType === 'Country') {
-                setFilteredDestinations(staticCountriesBackup);
-                setError(null);
-            }
-        } finally {
-            setIsLoading(false);
-        }
-    };
+    }, [filterType, countries, regions]);
 
     // Handle touch start for mobile devices
     const handleTouchStart = (id) => {
@@ -423,22 +316,18 @@ export default function PopularDestinations() {
                         <p className="text-gray-600 my-1.5">Explore eSIM plans in 100+ countries.</p>
                     </div>
 
-                    <div className="flex items-center space-x-3">
-                         
-                        
-                        <Link
-                            href="/destinations"
-                            className={`bg-[#F15A25] hidden lg:block text-white text-center px-[28px] py-[11px] rounded-full text-base font-medium hover:bg-[#e04e1a] active:bg-[#e04e1a] ${activeViewAllButton ? 'bg-[#e04e1a]' : ''} transition-colors`}
-                            onTouchStart={handleViewAllTouchStart}
-                            onTouchEnd={handleViewAllTouchEnd}
-                        >
-                            View All Destinations
-                        </Link>
-                    </div>
+                    <Link
+                        href="/destinations"
+                        className={`bg-[#F15A25] hidden lg:block text-white text-center px-[28px] py-[11px] rounded-full text-base font-medium hover:bg-[#e04e1a] active:bg-[#e04e1a] ${activeViewAllButton ? 'bg-[#e04e1a]' : ''} transition-colors`}
+                        onTouchStart={handleViewAllTouchStart}
+                        onTouchEnd={handleViewAllTouchEnd}
+                    >
+                        View All Destinations
+                    </Link>
                 </div>
 
                 {/* Filter tabs */}
-                <div className="flex gap-2 mb-4">
+                <div className="flex gap-2 mb-8">
                     {['Country', 'Region', 'Global'].map(type => (
                         <button
                             key={type}
@@ -455,8 +344,6 @@ export default function PopularDestinations() {
                         </button>
                     ))}
                 </div>
-                
-               
 
                 {/* Destinations grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 p-2 gap-4 lg:p-0">
