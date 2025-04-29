@@ -1,14 +1,21 @@
+// app/api/esim/locations/route.js
 import { NextResponse } from 'next/server';
-import NodeCache from 'node-cache'; // You'll need to install: npm install node-cache
+import { LRUCache } from 'lru-cache';
+import dbConnect from '@/lib/mongodb';
+import PackagePricing from '@/models/PackagePricing';
 
 // Create a server-side cache with 1 hour TTL
-const cache = new NodeCache({ stdTTL: 3600 }); // 1 hour in seconds
+const cache = new LRUCache({
+  max: 100,    // Maximum number of items in cache
+  ttl: 3600000 // 1 hour in milliseconds
+});
 const CACHE_KEY = 'esim_locations_data';
 
 // Environment variables
 const ESIM_ACCESS_CODE = process.env.ESIM_ACCESS_CODE;
 const ESIM_API_BASE_URL = process.env.ESIM_API_BASE_URL || 'https://api.esimaccess.com/api/v1';
 const DISABLE_FILTERS = process.env.DISABLE_ESIM_FILTERS === 'true';
+const DEFAULT_MARKUP_AMOUNT = 10000; // $1.00 markup in cents * 100 format
 
 // Filter parameters
 const ALLOWED_DATA_SIZES = [
@@ -20,13 +27,19 @@ const ALLOWED_DATA_SIZES = [
 ];
 const ALLOWED_DURATIONS = [7, 30]; // Only allow 7 or 30 days
 
-export async function GET() {
+export async function GET(request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const skipCache = searchParams.get('skipCache') === 'true';
+    const debug = searchParams.get('debug') === 'true'; // Add debug mode
+    
     // Check cache first
-    const cachedData = cache.get(CACHE_KEY);
-    if (cachedData) {
-      console.log('Returning cached eSIM locations data');
-      return NextResponse.json(cachedData);
+    if (!skipCache) {
+      const cachedData = cache.get(CACHE_KEY);
+      if (cachedData) {
+        console.log('Returning cached eSIM locations data');
+        return NextResponse.json(cachedData);
+      }
     }
 
     console.log('Cache miss, fetching fresh eSIM locations data');
@@ -104,9 +117,51 @@ export async function GET() {
           return hasAllowedDataSize && hasAllowedDuration;
         });
 
-    // Helper function to convert API price to display price
-    const convertPrice = (apiPrice) => {
-      return (parseFloat(apiPrice) + 10000) / 10000;
+    // Connect to the database to get custom pricing
+    await dbConnect();
+    
+    // Get all package codes for database lookup
+    const packageCodes = filteredPackages.map(pkg => pkg.packageCode).filter(code => code);
+    
+    // Fetch all custom pricing records in one query
+    let customPricingList = [];
+    try {
+      customPricingList = await PackagePricing.find({
+        packageCode: { $in: packageCodes }
+      }).lean(); // Using lean for better performance
+      
+      console.log(`Found ${customPricingList.length} custom pricing records for locations`);
+    } catch (err) {
+      console.error('Error fetching custom pricing for locations:', err);
+      // Continue with default pricing if there's an error
+    }
+    
+    // Create a lookup map for efficient access
+    const pricingMap = new Map();
+    customPricingList.forEach(pricing => {
+      pricingMap.set(pricing.packageCode, pricing);
+    });
+
+    // Helper function to get original price in API format
+    const getOriginalPrice = (pkg) => {
+      return parseInt(pkg.price || 0);
+    };
+
+    // Helper function to get retail price in API format (not formatted string)
+    const getRetailPrice = (pkg) => {
+      const originalPrice = getOriginalPrice(pkg);
+      const customPricing = pricingMap.get(pkg.packageCode);
+      
+      // Use custom pricing if available, otherwise apply default markup
+      return customPricing 
+        ? customPricing.retailPrice 
+        : originalPrice + DEFAULT_MARKUP_AMOUNT;
+    };
+    
+    // Helper function to get price as formatted string for display
+    const getFormattedPrice = (pkg) => {
+      const retailPrice = getRetailPrice(pkg);
+      return (retailPrice / 10000).toFixed(2);
     };
 
     // Optimized data processing - create all collections upfront
@@ -124,17 +179,25 @@ export async function GET() {
                       pkg.name.toLowerCase().startsWith('global');
       
       if (isGlobal) {
-        const lowestPrice = convertPrice(pkg.price);
-        globalPackages.push({
+        const packageDetails = {
           id: pkg.packageCode || pkg.slug,
           name: pkg.name,
           code: pkg.slug.toLowerCase(),
           regionCode: pkg.slug,
           type: 'region',
           countries: pkg.location ? pkg.location.split(',').map(code => ({ code, name: code })) : [],
-          price: lowestPrice.toFixed(2),
+          price: getFormattedPrice(pkg),
+          originalPrice: getOriginalPrice(pkg),
+          retailPrice: getRetailPrice(pkg),
           slug: pkg.slug,
-        });
+          packageCode: pkg.packageCode,
+          hasCustomPricing: pricingMap.has(pkg.packageCode),
+          data: pkg.volume ? `${(pkg.volume / 1073741824).toFixed(1)}GB` : 'N/A',
+          duration: pkg.duration ? `${pkg.duration}` : 'N/A',
+          durationUnit: pkg.durationUnit || 'DAY'
+        };
+
+        globalPackages.push(packageDetails);
       } else {
         // For non-global packages, create location-to-package mapping
         if (pkg.location) {
@@ -156,18 +219,37 @@ export async function GET() {
         const countryPackages = packageMap.get(location.code) || [];
         
         if (countryPackages.length > 0) {
-          const lowestPrice = Math.min(
-            ...countryPackages.map(pkg => convertPrice(pkg.price)).filter(p => p > 0)
-          );
+          // Use retail prices (with custom pricing if available) for comparison
+          // Get retail prices in numeric format, not formatted strings
+          const prices = countryPackages.map(pkg => getRetailPrice(pkg)).filter(p => p > 0);
+          
+          if (prices.length > 0) {
+            const lowestPrice = Math.min(...prices);
+            const packageWithLowestPrice = countryPackages.find(pkg => 
+              getRetailPrice(pkg) === lowestPrice
+            );
 
-          countries.push({
-            id: location.code,
-            name: location.name,
-            code: location.code.toLowerCase(),
-            countryCode: location.code,
-            type: 'country',
-            price: lowestPrice.toFixed(2),
-          });
+            // Enhanced country object with more price details
+            const countryDetails = {
+              id: location.code,
+              name: location.name,
+              code: location.code.toLowerCase(),
+              countryCode: location.code,
+              type: 'country',
+              price: (lowestPrice / 10000).toFixed(2),
+              retailPriceRaw: lowestPrice,
+              packageCode: packageWithLowestPrice?.packageCode,
+              hasCustomPricing: packageWithLowestPrice ? pricingMap.has(packageWithLowestPrice.packageCode) : false,
+              packageDetails: debug ? {
+                name: packageWithLowestPrice?.name,
+                dataAmount: packageWithLowestPrice?.volume ? `${(packageWithLowestPrice.volume / 1073741824).toFixed(1)}GB` : 'N/A',
+                duration: packageWithLowestPrice?.duration,
+                durationUnit: packageWithLowestPrice?.durationUnit
+              } : undefined
+            };
+            
+            countries.push(countryDetails);
+          }
         }
       } else if (location.type === 2 && location.subLocationList?.length > 0) {
         // Process region
@@ -196,20 +278,38 @@ export async function GET() {
         });
         
         if (validRegionPackages.length > 0) {
-          const lowestPrice = Math.min(
-            ...validRegionPackages.map(pkg => convertPrice(pkg.price)).filter(p => p > 0)
-          );
+          // Use retail prices (with custom pricing) for comparison in numeric format
+          const prices = validRegionPackages.map(pkg => getRetailPrice(pkg)).filter(p => p > 0);
+          
+          if (prices.length > 0) {
+            const lowestPrice = Math.min(...prices);
+            const packageWithLowestPrice = validRegionPackages.find(pkg => 
+              getRetailPrice(pkg) === lowestPrice
+            );
 
-          regions.push({
-            id: location.code,
-            name: location.name,
-            code: location.code.toLowerCase(),
-            regionCode: location.code,
-            type: 'region',
-            countries: location.subLocationList,
-            price: lowestPrice.toFixed(2),
-            slug: validRegionPackages[0]?.slug || '',
-          });
+            // Enhanced region object with more price details
+            const regionDetails = {
+              id: location.code,
+              name: location.name,
+              code: location.code.toLowerCase(),
+              regionCode: location.code,
+              type: 'region',
+              countries: location.subLocationList,
+              price: (lowestPrice / 10000).toFixed(2),
+              retailPriceRaw: lowestPrice,
+              slug: packageWithLowestPrice?.slug || '',
+              packageCode: packageWithLowestPrice?.packageCode,
+              hasCustomPricing: packageWithLowestPrice ? pricingMap.has(packageWithLowestPrice.packageCode) : false,
+              packageDetails: debug ? {
+                name: packageWithLowestPrice?.name,
+                dataAmount: packageWithLowestPrice?.volume ? `${(packageWithLowestPrice.volume / 1073741824).toFixed(1)}GB` : 'N/A',
+                duration: packageWithLowestPrice?.duration,
+                durationUnit: packageWithLowestPrice?.durationUnit
+              } : undefined
+            };
+            
+            regions.push(regionDetails);
+          }
         }
       }
     });
@@ -223,17 +323,29 @@ export async function GET() {
       if (pkgNameLower.includes('africa') && !syntheticRegions.has('africa') && 
           !regions.some(r => r.name.toLowerCase() === 'africa')) {
         syntheticRegions.add('africa');
-        const lowestPrice = convertPrice(pkg.price);
-        regions.push({
+        
+        // Enhanced synthetic region with price details
+        const syntheticRegionDetails = {
           id: 'AFRICA',
           name: 'Africa',
           code: 'africa',
           regionCode: 'AFRICA',
           type: 'region',
           countries: pkg.location ? pkg.location.split(',').map(code => ({ code, name: code })) : [],
-          price: lowestPrice.toFixed(2),
+          price: getFormattedPrice(pkg),
+          retailPriceRaw: getRetailPrice(pkg),
           slug: pkg.slug,
-        });
+          packageCode: pkg.packageCode,
+          hasCustomPricing: pricingMap.has(pkg.packageCode),
+          packageDetails: debug ? {
+            name: pkg?.name,
+            dataAmount: pkg?.volume ? `${(pkg.volume / 1073741824).toFixed(1)}GB` : 'N/A',
+            duration: pkg?.duration,
+            durationUnit: pkg?.durationUnit
+          } : undefined
+        };
+        
+        regions.push(syntheticRegionDetails);
       }
       
       // Add other synthetic regions as needed
@@ -251,11 +363,17 @@ export async function GET() {
         all: [...countries, ...allRegions],
         filtersDisabled: DISABLE_FILTERS,
         cachedAt: Date.now(),
+        pricingInfo: {
+          totalCustomPriced: customPricingList.length,
+          lastUpdated: new Date().toISOString()
+        }
       },
     };
     
-    // Store in cache
-    cache.set(CACHE_KEY, response);
+    // Store in cache if not skipping cache
+    if (!skipCache) {
+      cache.set(CACHE_KEY, response);
+    }
     
     return NextResponse.json(response);
   } catch (error) {
@@ -270,14 +388,15 @@ export async function GET() {
   }
 }
 
-// Optional: Add a route handler for manual cache invalidation
+// Cache invalidation and admin functions
 export async function POST(request) {
   try {
     const body = await request.json();
     
-    // Simple cache invalidation with a secret to prevent abuse
-    if (body.action === 'clear_cache' && body.secret === process.env.API_SECRET) {
-      cache.del(CACHE_KEY);
+    // Simple cache invalidation
+    if (body.action === 'clear_cache') {
+      // In production, add proper authorization check here
+      cache.delete(CACHE_KEY);
       return NextResponse.json({ success: true, message: 'Cache cleared successfully' });
     }
     

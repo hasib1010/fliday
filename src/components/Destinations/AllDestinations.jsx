@@ -88,10 +88,10 @@ const AllDestinations = () => {
       try {
         setIsLoading(true);
         
-        // Use cache-control headers for browser caching
-        const response = await fetch('/api/esim/locations', { 
-          cache: 'force-cache', // Use cached version if available
-          next: { revalidate: 3600 }, // Revalidate cache every hour
+        // FIXED: Changed cache strategy to ensure we always get fresh data
+        // Use cache: 'no-store' to bypass browser cache, ensuring we get updated prices
+        const response = await fetch('/api/esim/locations?skipCache=true', { 
+          cache: 'no-store', // Don't use cached version
           signal 
         });
 
@@ -111,6 +111,7 @@ const AllDestinations = () => {
           code: (country.code || country.countryCode || '').toLowerCase(),
           type: 'country',
           price: parseFloat(country.price || 3.99).toFixed(2),
+          packageCode: country.packageCode || '',  // Include packageCode reference
         }));
 
         const formattedRegions = (data.data.regions || []).map((region, index) => ({
@@ -120,6 +121,7 @@ const AllDestinations = () => {
           slug: region.slug || '',
           type: 'region',
           price: parseFloat(region.price || 7.99).toFixed(2),
+          packageCode: region.packageCode || '',  // Include packageCode reference
         }));
 
         // Store data in state
@@ -173,6 +175,55 @@ const AllDestinations = () => {
 
   const handleDestinationTouchEnd = () => {
     setActiveDestination(null);
+  };
+
+  // Function to refresh data (for testing)
+  const refreshData = async () => {
+    setIsLoading(true);
+    try {
+      // Force a fresh fetch by adding a timestamp to the URL
+      const response = await fetch(`/api/esim/locations?skipCache=true&t=${Date.now()}`, {
+        cache: 'no-store'
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to refresh: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      
+      if (!data.success) {
+        throw new Error(data.message || 'Failed to refresh data');
+      }
+      
+      const formattedCountries = (data.data.countries || []).map((country, index) => ({
+        id: country.id || country.code || `country-${index}`,
+        name: country.name || 'Unknown',
+        code: (country.code || country.countryCode || '').toLowerCase(),
+        type: 'country',
+        price: parseFloat(country.price || 3.99).toFixed(2),
+        packageCode: country.packageCode || '',
+      }));
+
+      const formattedRegions = (data.data.regions || []).map((region, index) => ({
+        id: region.id || region.code || `region-${index}`,
+        name: region.name || 'Unknown',
+        code: (region.code || region.regionCode || '').toLowerCase(),
+        slug: region.slug || '',
+        type: 'region',
+        price: parseFloat(region.price || 7.99).toFixed(2),
+        packageCode: region.packageCode || '',
+      }));
+      
+      setCountries(formattedCountries);
+      setRegions(formattedRegions);
+      setError(null);
+    } catch (err) {
+      console.error('Error refreshing data:', err);
+      setError(`Failed to refresh: ${err.message}`);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Render flag/icon with optimized image loading
@@ -305,6 +356,8 @@ const AllDestinations = () => {
             {filter}
           </button>
         ))}
+        
+         
       </div>
 
       {/* Search box with debounced input */}

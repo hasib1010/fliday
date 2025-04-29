@@ -4,13 +4,15 @@ import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Check, Search, Loader2 } from 'lucide-react';
+import { Check, Search, Loader2, AlertCircle } from 'lucide-react';
 
 export default function Hero() {
     const [searchInput, setSearchInput] = useState('');
     const [searchResults, setSearchResults] = useState([]);
     const [showResults, setShowResults] = useState(false);
     const [loading, setLoading] = useState(false);
+    const [error, setError] = useState(null);
+    const [lastUpdated, setLastUpdated] = useState(null);
     const searchRef = useRef(null);
     const router = useRouter();
 
@@ -28,6 +30,17 @@ export default function Hero() {
         };
     }, []);
 
+    // Function to format destination prices
+    const formatDestinationPrice = (destination) => {
+        // Use the price from API if it has a packageCode (meaning it's from the API's lowest price calculation)
+        if (destination.packageCode) {
+            return destination.price;
+        }
+        
+        // Default fallback
+        return parseFloat(destination.price || 3.99).toFixed(2);
+    };
+
     // Handle search input changes
     const handleSearchChange = async (e) => {
         const value = e.target.value;
@@ -36,24 +49,87 @@ export default function Hero() {
         if (value.length >= 2) {
             setLoading(true);
             setShowResults(true);
+            setError(null);
             
             try {
-                const response = await fetch('/api/esim/locations');
+                // Use skipCache to ensure fresh data, especially after admin price updates
+                const response = await fetch('/api/esim/locations?skipCache=true', {
+                    cache: 'no-store', 
+                    headers: {
+                        'Cache-Control': 'no-cache, no-store, must-revalidate',
+                        'Pragma': 'no-cache'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`Failed to fetch destinations: ${response.status}`);
+                }
+                
                 const data = await response.json();
                 
                 if (data.success) {
+                    // Store last updated time if available
+                    if (data.data.pricingInfo?.lastUpdated) {
+                        setLastUpdated(new Date(data.data.pricingInfo.lastUpdated).toLocaleString());
+                    } else if (data.data.cachedAt) {
+                        setLastUpdated(new Date(data.data.cachedAt).toLocaleString());
+                    }
+                    
+                    // Format the destinations with enhanced price data
+                    const formattedCountries = (data.data.countries || []).map(country => ({
+                        id: country.id || country.code,
+                        name: country.name || 'Unknown',
+                        code: (country.code || country.countryCode || '').toLowerCase(),
+                        type: 'country',
+                        price: country.price || '3.99', 
+                        retailPriceRaw: country.retailPriceRaw,
+                        packageCode: country.packageCode || '',
+                        hasCustomPricing: country.hasCustomPricing || false
+                    }));
+                    
+                    const formattedRegions = (data.data.regions || []).map(region => ({
+                        id: region.id || region.code,
+                        name: region.name || 'Unknown',
+                        code: (region.code || region.regionCode || '').toLowerCase(),
+                        type: 'region',
+                        price: region.price || '7.99',
+                        retailPriceRaw: region.retailPriceRaw,
+                        packageCode: region.packageCode || '',
+                        slug: region.slug || '',
+                        hasCustomPricing: region.hasCustomPricing || false
+                    }));
+                    
                     // Combine countries and regions
-                    const allDestinations = [...data.data.countries, ...data.data.regions];
+                    const allDestinations = [...formattedCountries, ...formattedRegions];
                     
                     // Filter based on search input
-                    const filteredResults = allDestinations.filter(dest => 
-                        dest.name.toLowerCase().includes(value.toLowerCase())
-                    ).slice(0, 6); // Limit to 6 results for dropdown
+                    const filteredResults = allDestinations
+                        .filter(dest => dest.name.toLowerCase().includes(value.toLowerCase()))
+                        .sort((a, b) => {
+                            // Sort by relevance (exact matches first)
+                            const aExact = a.name.toLowerCase() === value.toLowerCase();
+                            const bExact = b.name.toLowerCase() === value.toLowerCase();
+                            if (aExact && !bExact) return -1;
+                            if (!aExact && bExact) return 1;
+                            
+                            // Then sort by starts with
+                            const aStartsWith = a.name.toLowerCase().startsWith(value.toLowerCase());
+                            const bStartsWith = b.name.toLowerCase().startsWith(value.toLowerCase());
+                            if (aStartsWith && !bStartsWith) return -1;
+                            if (!aStartsWith && bStartsWith) return 1;
+                            
+                            // Finally sort by price (lowest first)
+                            return parseFloat(a.price) - parseFloat(b.price);
+                        })
+                        .slice(0, 6); // Limit to 6 results for dropdown
                     
                     setSearchResults(filteredResults);
+                } else {
+                    setError(data.message || 'Failed to fetch destinations');
                 }
             } catch (error) {
                 console.error('Error searching destinations:', error);
+                setError('Failed to search destinations. Please try again.');
             } finally {
                 setLoading(false);
             }
@@ -85,6 +161,35 @@ export default function Hero() {
         }
         
         router.push(url);
+    };
+
+    // Function to get region flag
+    const getRegionFlag = (destination) => {
+        const name = destination.name.toLowerCase();
+        
+        if (name.includes('north america')) {
+            return 'north_america_flag.svg';
+        } else if (name.includes('middle east')) {
+            return 'middle_east_flag.svg';
+        } else if (name.includes('global')) {
+            return 'global_flag.svg';
+        } else if (name.includes('south america')) {
+            return 'south_america_flag.svg';
+        } else if (name.includes('europe')) {
+            return 'europe_flag.svg';
+        } else if (name.includes('africa')) {
+            return 'africa_flag.svg';
+        } else if (name.includes('asia')) {
+            return 'asia_flag.svg';
+        } else if (name.includes('caribbean')) {
+            return 'caribbean_flag.svg';
+        } else if (name.includes('gulf')) {
+            return 'middle_east_flag.svg';
+        } else if (name.includes('china') || name.includes('singapore') || name.includes('thailand')) {
+            return 'asia_flag.svg';
+        }
+        
+        return `${destination.code.split('-')[0]}_flag.svg`;
     };
 
     return (
@@ -218,6 +323,11 @@ export default function Hero() {
                                     <div className="flex justify-center items-center py-4">
                                         <Loader2 size={24} className="animate-spin text-[#F15A25]" />
                                     </div>
+                                ) : error ? (
+                                    <div className="flex items-center justify-center gap-2 py-3 text-center text-yellow-700">
+                                        <AlertCircle size={16} />
+                                        <span>{error}</span>
+                                    </div>
                                 ) : searchResults.length > 0 ? (
                                     <ul>
                                         {searchResults.map((destination) => (
@@ -241,22 +351,33 @@ export default function Hero() {
                                                                 }}
                                                             />
                                                         ) : (
-                                                            <div className="w-full h-full bg-gray-200 flex items-center justify-center">
-                                                                <span className="text-xs font-bold text-gray-500">
-                                                                    {destination.name.substring(0, 2)}
-                                                                </span>
-                                                            </div>
+                                                            <Image
+                                                                src={`/flags/${getRegionFlag(destination)}`}
+                                                                alt={destination.name}
+                                                                fill
+                                                                sizes="32px"
+                                                                className="object-cover"
+                                                                onError={(e) => {
+                                                                    e.target.onerror = null;
+                                                                    e.target.src = '/flags/default.jpg';
+                                                                }}
+                                                            />
                                                         )}
                                                     </div>
-                                                    <div>
+                                                    <div className="flex-1">
                                                         <p className="font-medium">{destination.name}</p>
-                                                        <p className="text-sm text-gray-500">
-                                                            {destination.type === 'country' ? 'Country' : 'Region'} • From ${destination.price}
-                                                        </p>
+                                                        <div className="flex items-center justify-between">
+                                                            <p className="text-sm text-gray-500">
+                                                                {destination.type === 'country' ? 'Country' : 'Region'} • From ${formatDestinationPrice(destination)}
+                                                            </p>
+                                                            
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </li>
                                         ))}
+                                        
+                                        
                                     </ul>
                                 ) : (
                                     <p className="text-center py-3 text-gray-500">No destinations found</p>
