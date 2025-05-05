@@ -164,6 +164,17 @@ export async function GET(request) {
       return (retailPrice / 10000).toFixed(2);
     };
 
+    // Helper function to determine if a package is country-specific or regional
+    const isCountrySpecificPackage = (pkg, countryCode) => {
+      if (!pkg.location) return false;
+      
+      // Split the location string into an array of country codes
+      const locationCodes = pkg.location.split(',');
+      
+      // If there's only one location AND it matches the countryCode, it's a country-specific package
+      return locationCodes.length === 1 && locationCodes[0] === countryCode;
+    };
+
     // Optimized data processing - create all collections upfront
     const countries = [];
     const regions = [];
@@ -175,14 +186,14 @@ export async function GET(request) {
     // Create a map for faster lookups by location
     filteredPackages.forEach(pkg => {
       // Check if it's a global package
-      const isGlobal = pkg.slug.toLowerCase().startsWith('gl-') || 
-                      pkg.name.toLowerCase().startsWith('global');
+      const isGlobal = pkg.slug?.toLowerCase().startsWith('gl-') || 
+                      pkg.name?.toLowerCase().startsWith('global');
       
       if (isGlobal) {
         const packageDetails = {
           id: pkg.packageCode || pkg.slug,
           name: pkg.name,
-          code: pkg.slug.toLowerCase(),
+          code: pkg.slug?.toLowerCase(),
           regionCode: pkg.slug,
           type: 'region',
           countries: pkg.location ? pkg.location.split(',').map(code => ({ code, name: code })) : [],
@@ -219,36 +230,64 @@ export async function GET(request) {
         const countryPackages = packageMap.get(location.code) || [];
         
         if (countryPackages.length > 0) {
-          // Use retail prices (with custom pricing if available) for comparison
-          // Get retail prices in numeric format, not formatted strings
-          const prices = countryPackages.map(pkg => getRetailPrice(pkg)).filter(p => p > 0);
+          // First filter packages by allowed data sizes and durations
+          let validPackages = countryPackages;
           
-          if (prices.length > 0) {
-            const lowestPrice = Math.min(...prices);
-            const packageWithLowestPrice = countryPackages.find(pkg => 
-              getRetailPrice(pkg) === lowestPrice
+          if (!DISABLE_FILTERS) {
+            validPackages = countryPackages.filter(pkg => {
+              const hasAllowedDataSize = ALLOWED_DATA_SIZES.includes(pkg.volume);
+              const hasAllowedDuration = 
+                ALLOWED_DURATIONS.includes(pkg.duration) && 
+                (pkg.durationUnit?.toUpperCase() === 'DAY' || pkg.durationUnit?.toUpperCase() === 'DAYS');
+              
+              return hasAllowedDataSize && hasAllowedDuration;
+            });
+          }
+          
+          // If we have valid packages after filtering
+          if (validPackages.length > 0) {
+            // IMPORTANT: First check if there are any country-specific packages
+            const countrySpecificPackages = validPackages.filter(pkg => 
+              isCountrySpecificPackage(pkg, location.code)
             );
-
-            // Enhanced country object with more price details
-            const countryDetails = {
-              id: location.code,
-              name: location.name,
-              code: location.code.toLowerCase(),
-              countryCode: location.code,
-              type: 'country',
-              price: (lowestPrice / 10000).toFixed(2),
-              retailPriceRaw: lowestPrice,
-              packageCode: packageWithLowestPrice?.packageCode,
-              hasCustomPricing: packageWithLowestPrice ? pricingMap.has(packageWithLowestPrice.packageCode) : false,
-              packageDetails: debug ? {
-                name: packageWithLowestPrice?.name,
-                dataAmount: packageWithLowestPrice?.volume ? `${(packageWithLowestPrice.volume / 1073741824).toFixed(1)}GB` : 'N/A',
-                duration: packageWithLowestPrice?.duration,
-                durationUnit: packageWithLowestPrice?.durationUnit
-              } : undefined
-            };
             
-            countries.push(countryDetails);
+            // Use country-specific packages if available, otherwise use all valid packages
+            const packagesToConsider = countrySpecificPackages.length > 0 
+              ? countrySpecificPackages 
+              : validPackages;
+            
+            // Get retail prices in numeric format for comparison
+            const prices = packagesToConsider.map(pkg => getRetailPrice(pkg)).filter(p => p > 0);
+            
+            if (prices.length > 0) {
+              const lowestPrice = Math.min(...prices);
+              const packageWithLowestPrice = packagesToConsider.find(pkg => 
+                getRetailPrice(pkg) === lowestPrice
+              );
+
+              // Enhanced country object with more price details
+              const countryDetails = {
+                id: location.code,
+                name: location.name,
+                code: location.code.toLowerCase(),
+                countryCode: location.code,
+                type: 'country',
+                price: (lowestPrice / 10000).toFixed(2),
+                retailPriceRaw: lowestPrice,
+                packageCode: packageWithLowestPrice?.packageCode,
+                hasCustomPricing: packageWithLowestPrice ? pricingMap.has(packageWithLowestPrice.packageCode) : false,
+                isCountrySpecific: isCountrySpecificPackage(packageWithLowestPrice, location.code),
+                packageDetails: debug ? {
+                  name: packageWithLowestPrice?.name,
+                  dataAmount: packageWithLowestPrice?.volume ? `${(packageWithLowestPrice.volume / 1073741824).toFixed(1)}GB` : 'N/A',
+                  duration: packageWithLowestPrice?.duration,
+                  durationUnit: packageWithLowestPrice?.durationUnit,
+                  locations: packageWithLowestPrice?.location ? packageWithLowestPrice.location.split(',') : []
+                } : undefined
+              };
+              
+              countries.push(countryDetails);
+            }
           }
         }
       } else if (location.type === 2 && location.subLocationList?.length > 0) {
@@ -264,18 +303,42 @@ export async function GET(request) {
         
         const regionPackages = Array.from(regionPackagesSet);
         
-        // Filter to packages that cover at least 70% of countries
-        const validRegionPackages = regionPackages.filter(pkg => {
-          if (!pkg.location) return false;
-          
-          const pkgLocations = pkg.location.split(',');
-          const countriesCovered = regionCountryCodes.filter(code => 
-            pkgLocations.includes(code)
-          ).length;
-          
-          const coverageRatio = countriesCovered / regionCountryCodes.length;
-          return coverageRatio >= 0.7 || pkg.name.toLowerCase().includes(location.name.toLowerCase());
-        });
+        // Apply filtering here too
+        let validRegionPackages = regionPackages;
+        
+        if (!DISABLE_FILTERS) {
+          validRegionPackages = regionPackages.filter(pkg => {
+            const hasAllowedDataSize = ALLOWED_DATA_SIZES.includes(pkg.volume);
+            const hasAllowedDuration = 
+              ALLOWED_DURATIONS.includes(pkg.duration) && 
+              (pkg.durationUnit?.toUpperCase() === 'DAY' || pkg.durationUnit?.toUpperCase() === 'DAYS');
+            
+            // Filter packages that cover at least 70% of countries
+            if (hasAllowedDataSize && hasAllowedDuration && pkg.location) {
+              const pkgLocations = pkg.location.split(',');
+              const countriesCovered = regionCountryCodes.filter(code => 
+                pkgLocations.includes(code)
+              ).length;
+              
+              const coverageRatio = countriesCovered / regionCountryCodes.length;
+              return coverageRatio >= 0.7 || pkg.name.toLowerCase().includes(location.name.toLowerCase());
+            }
+            return false;
+          });
+        } else {
+          // If filters disabled, still filter on country coverage
+          validRegionPackages = regionPackages.filter(pkg => {
+            if (!pkg.location) return false;
+            
+            const pkgLocations = pkg.location.split(',');
+            const countriesCovered = regionCountryCodes.filter(code => 
+              pkgLocations.includes(code)
+            ).length;
+            
+            const coverageRatio = countriesCovered / regionCountryCodes.length;
+            return coverageRatio >= 0.7 || pkg.name.toLowerCase().includes(location.name.toLowerCase());
+          });
+        }
         
         if (validRegionPackages.length > 0) {
           // Use retail prices (with custom pricing) for comparison in numeric format
@@ -304,7 +367,8 @@ export async function GET(request) {
                 name: packageWithLowestPrice?.name,
                 dataAmount: packageWithLowestPrice?.volume ? `${(packageWithLowestPrice.volume / 1073741824).toFixed(1)}GB` : 'N/A',
                 duration: packageWithLowestPrice?.duration,
-                durationUnit: packageWithLowestPrice?.durationUnit
+                durationUnit: packageWithLowestPrice?.durationUnit,
+                locations: packageWithLowestPrice?.location ? packageWithLowestPrice.location.split(',') : []
               } : undefined
             };
             
@@ -317,7 +381,7 @@ export async function GET(request) {
     // Add synthetic regions (e.g., Africa) from packages
     const syntheticRegions = new Set();
     filteredPackages.forEach(pkg => {
-      const pkgNameLower = pkg.name.toLowerCase();
+      const pkgNameLower = pkg.name?.toLowerCase() || '';
       
       // Africa region
       if (pkgNameLower.includes('africa') && !syntheticRegions.has('africa') && 
@@ -341,7 +405,8 @@ export async function GET(request) {
             name: pkg?.name,
             dataAmount: pkg?.volume ? `${(pkg.volume / 1073741824).toFixed(1)}GB` : 'N/A',
             duration: pkg?.duration,
-            durationUnit: pkg?.durationUnit
+            durationUnit: pkg?.durationUnit,
+            locations: pkg?.location ? pkg.location.split(',') : []
           } : undefined
         };
         

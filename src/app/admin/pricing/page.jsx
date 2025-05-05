@@ -2,9 +2,8 @@
 // app/admin/pricing/page.jsx
 import React, { useState, useEffect, useCallback } from 'react';
 import {
-    Search, RefreshCw, Save, Percent,
-    DollarSign, Edit2, Trash2, X, Check, Filter,
-    ArrowUp, ArrowDown, AlertTriangle, Info, Loader2
+    Search, RefreshCw, Edit2, X, Check, Filter,
+    AlertTriangle, Info, Loader2, ArrowUp, ArrowDown
 } from 'lucide-react';
 import AdminLayout from '@/components/admin/AdminLayout';
 
@@ -13,126 +12,62 @@ export default function PricingManagement() {
     const [packages, setPackages] = useState([]);
     const [filteredPackages, setFilteredPackages] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
     const [syncLoading, setSyncLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
     const [editMode, setEditMode] = useState({});
     const [editPrices, setEditPrices] = useState({});
-    const [bulkMarkup, setBulkMarkup] = useState('10');
     const [selectedFilter, setSelectedFilter] = useState('all');
     const [selectedCountry, setSelectedCountry] = useState('');
     const [countries, setCountries] = useState([]);
     const [notification, setNotification] = useState(null);
     const [sortConfig, setSortConfig] = useState({ key: 'name', direction: 'asc' });
-    const [pagination, setPagination] = useState({
-        currentPage: 1,
-        totalPages: 1,
-        totalItems: 0
-    });
 
-    // Debounce function
-    const useDebounce = (value, delay) => {
-        const [debouncedValue, setDebouncedValue] = useState(value);
+    // Constants
+    const DEFAULT_MARKUP_AMOUNT = 10000; // $1.00 in cents * 100 format
 
-        useEffect(() => {
-            const handler = setTimeout(() => {
-                setDebouncedValue(value);
-            }, delay);
+    // Helper functions
 
-            return () => {
-                clearTimeout(handler);
-            };
-        }, [value, delay]);
-
-        return debouncedValue;
+    // Check if a package has default markup ($1.00 markup)
+    const hasDefaultMarkup = (pkg) => {
+        return pkg.markupAmount === DEFAULT_MARKUP_AMOUNT;
     };
 
-    // Apply debounce to search
-    const debouncedSearch = useDebounce(searchQuery, 300);
+    // Check if a package has custom pricing (not $1.00 markup)
+    const hasCustomPricing = (pkg) => {
+        return pkg.markupAmount !== DEFAULT_MARKUP_AMOUNT;
+    };
 
-    // Fetch packages using the admin-specific API
-    const fetchPackages = useCallback(async () => {
-        try {
-            setLoading(true);
-            setNotification(null);
-
-            // Use the admin packages API which returns all packages without filtering
-            const response = await fetch('/api/admin/packages');
-
-            if (!response.ok) {
-                throw new Error('Failed to fetch packages');
-            }
-
-            const data = await response.json();
-
-            if (!data.success) {
-                throw new Error(data.message || 'Failed to fetch packages');
-            }
-
-            // Process packages data
-            const packagesData = data.data;
-
-            // Extract unique countries for filtering
-            const uniqueCountries = new Set();
-            packagesData.forEach(pkg => {
-                if (pkg.locations && pkg.locations.length) {
-                    pkg.locations.forEach(loc => uniqueCountries.add(loc));
-                }
-            });
-
-            setCountries(Array.from(uniqueCountries).sort());
-            setPackages(packagesData);
-
-            // Initialize edit prices
-            const initialEditPrices = {};
-            packagesData.forEach(pkg => {
-                initialEditPrices[pkg.packageCode] = (pkg.price / 10000).toFixed(2);
-            });
-            setEditPrices(initialEditPrices);
-
-            // Apply initial filters
-            applyFilters(packagesData, debouncedSearch, selectedFilter, selectedCountry);
-
-            setNotification({
-                type: 'success',
-                message: `Loaded ${packagesData.length} packages successfully`
-            });
-        } catch (error) {
-            console.error('Error fetching packages:', error);
-            setNotification({
-                type: 'error',
-                message: error.message || 'Failed to fetch packages'
-            });
-        } finally {
-            setLoading(false);
-        }
-    }, [debouncedSearch, selectedFilter, selectedCountry]);
-
-    // Apply filters
+    // Apply filters - optimized version
     const applyFilters = useCallback((allPackages, search, filter, country) => {
         let filtered = [...allPackages];
 
-        // Apply search filter
-        if (search) {
-            const searchLower = search.toLowerCase();
-            filtered = filtered.filter(pkg =>
-                (pkg.name && pkg.name.toLowerCase().includes(searchLower)) ||
-                (pkg.packageCode && pkg.packageCode.toLowerCase().includes(searchLower))
-            );
-        }
+        // Apply all filters in a single pass
+        filtered = filtered.filter(pkg => {
+            // Search filter
+            if (search) {
+                const searchLower = search.toLowerCase();
+                if (!((pkg.name && pkg.name.toLowerCase().includes(searchLower)) ||
+                    (pkg.packageCode && pkg.packageCode.toLowerCase().includes(searchLower)))) {
+                    return false;
+                }
+            }
 
-        // Apply custom pricing filter
-        if (filter === 'custom') {
-            filtered = filtered.filter(pkg => pkg.hasCustomPricing);
-        } else if (filter === 'default') {
-            filtered = filtered.filter(pkg => !pkg.hasCustomPricing);
-        }
+            // Custom pricing filter - based on markup amount
+            if (filter === 'custom' && hasDefaultMarkup(pkg)) {
+                return false;
+            }
+            if (filter === 'default' && !hasDefaultMarkup(pkg)) {
+                return false;
+            }
 
-        // Apply country filter
-        if (country) {
-            filtered = filtered.filter(pkg =>
-                pkg.locations && pkg.locations.includes(country)
-            );
-        }
+            // Country filter
+            if (country && (!pkg.locations || !pkg.locations.includes(country))) {
+                return false;
+            }
+
+            return true;
+        });
 
         // Apply sorting
         if (sortConfig.key) {
@@ -156,6 +91,96 @@ export default function PricingManagement() {
         setFilteredPackages(filtered);
     }, [sortConfig]);
 
+    // Fetch packages using the admin-specific API
+    const fetchPackages = useCallback(async () => {
+        try {
+            setLoading(true);
+            setError(null);
+            setNotification(null);
+
+            console.log('Fetching packages...');
+
+            // Add a timeout to prevent hanging
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+
+            // Use the admin packages API which returns all packages without filtering
+            const response = await fetch('/api/admin/packages', {
+                signal: controller.signal
+            });
+
+            clearTimeout(timeoutId);
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                console.error('API error:', response.status, errorText);
+                throw new Error(`API error: ${response.status} - ${errorText || 'Failed to fetch packages'}`);
+            }
+
+            const data = await response.json();
+            console.log('Received data:', data);
+
+            if (!data.success) {
+                throw new Error(data.message || 'Failed to fetch packages');
+            }
+
+            // Process packages data
+            let packagesData = data.data || [];
+
+            if (!Array.isArray(packagesData)) {
+                console.error('Invalid data format:', packagesData);
+                throw new Error('Invalid data format received from API');
+            }
+
+            console.log(`Got ${packagesData.length} packages`);
+
+            // Determine custom pricing status based on markup amount
+            packagesData = packagesData.map(pkg => ({
+                ...pkg,
+                hasCustomPricing: pkg.markupAmount !== DEFAULT_MARKUP_AMOUNT
+            }));
+
+            // Extract unique countries for filtering
+            const uniqueCountries = new Set();
+            packagesData.forEach(pkg => {
+                if (pkg.locations && pkg.locations.length) {
+                    pkg.locations.forEach(loc => uniqueCountries.add(loc));
+                }
+            });
+
+            setCountries(Array.from(uniqueCountries).sort());
+            setPackages(packagesData);
+
+            // Initialize edit prices
+            const initialEditPrices = {};
+            packagesData.forEach(pkg => {
+                initialEditPrices[pkg.packageCode] = (pkg.price / 10000).toFixed(2);
+            });
+            setEditPrices(initialEditPrices);
+
+            // Apply initial filters
+            applyFilters(packagesData, searchQuery, selectedFilter, selectedCountry);
+
+            setNotification({
+                type: 'success',
+                message: `Loaded ${packagesData.length} packages successfully`
+            });
+        } catch (error) {
+            console.error('Error fetching packages:', error);
+            setError(error.message || 'Failed to fetch packages');
+            setNotification({
+                type: 'error',
+                message: error.message || 'Failed to fetch packages'
+            });
+
+            // Initialize with empty data on error
+            setPackages([]);
+            setFilteredPackages([]);
+        } finally {
+            setLoading(false);
+        }
+    }, [searchQuery, selectedFilter, selectedCountry, applyFilters]);
+
     // Initial load
     useEffect(() => {
         fetchPackages();
@@ -163,8 +188,10 @@ export default function PricingManagement() {
 
     // Apply filters when criteria change
     useEffect(() => {
-        applyFilters(packages, debouncedSearch, selectedFilter, selectedCountry);
-    }, [packages, debouncedSearch, selectedFilter, selectedCountry, applyFilters]);
+        if (packages.length > 0) {
+            applyFilters(packages, searchQuery, selectedFilter, selectedCountry);
+        }
+    }, [packages, searchQuery, selectedFilter, selectedCountry, applyFilters]);
 
     // Toggle edit mode
     const toggleEdit = (packageCode) => {
@@ -225,6 +252,9 @@ export default function PricingManagement() {
                 throw new Error(data.message || 'Failed to update price');
             }
 
+            // Calculate new markup amount
+            const newMarkupAmount = newPriceApiFormat - originalPrice;
+
             // Update local state
             setPackages(prev =>
                 prev.map(p =>
@@ -232,8 +262,8 @@ export default function PricingManagement() {
                         ? {
                             ...p,
                             price: newPriceApiFormat,
-                            hasCustomPricing: true,
-                            markupAmount: newPriceApiFormat - originalPrice
+                            markupAmount: newMarkupAmount,
+                            hasCustomPricing: newMarkupAmount !== DEFAULT_MARKUP_AMOUNT
                         }
                         : p
                 )
@@ -265,60 +295,6 @@ export default function PricingManagement() {
             }));
         }
         toggleEdit(packageCode);
-    };
-
-    // Apply bulk markup
-    const applyBulkMarkup = async () => {
-        try {
-            // Validate markup
-            const markup = parseFloat(bulkMarkup);
-            if (isNaN(markup) || markup < 0) {
-                throw new Error('Please enter a valid markup percentage');
-            }
-
-            const packageCodes = filteredPackages.map(pkg => pkg.packageCode).filter(Boolean);
-
-            if (packageCodes.length === 0) {
-                throw new Error('No packages selected for bulk update');
-            }
-
-            setSyncLoading(true);
-
-            // Call API to apply markup
-            const response = await fetch('/api/admin/pricing', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    markupPercentage: markup,
-                    filter: {
-                        packageCode: { $in: packageCodes }
-                    }
-                })
-            });
-
-            if (!response.ok) {
-                const data = await response.json();
-                throw new Error(data.message || 'Failed to apply markup');
-            }
-
-            const result = await response.json();
-
-            // Refresh packages
-            await fetchPackages();
-
-            setNotification({
-                type: 'success',
-                message: result.message || `Applied ${markup}% markup to ${packageCodes.length} packages`
-            });
-        } catch (error) {
-            console.error('Error applying bulk markup:', error);
-            setNotification({
-                type: 'error',
-                message: error.message || 'Failed to apply markup'
-            });
-        } finally {
-            setSyncLoading(false);
-        }
     };
 
     // Sync pricing with provider API
@@ -380,11 +356,25 @@ export default function PricingManagement() {
         return Math.round((retail - original) / original * 100);
     };
 
+    // Retry loading if there was an error
+    const handleRetryLoading = () => {
+        fetchPackages();
+    };
+
     return (
         <AdminLayout>
             <div className="p-6">
                 <div className="flex justify-between items-center mb-6">
                     <h1 className="text-2xl font-bold">eSIM Pricing Management</h1>
+                    {!loading && (
+                        <button
+                            onClick={handleRetryLoading}
+                            className="text-gray-600 hover:text-gray-900 flex items-center gap-1"
+                        >
+                            <RefreshCw size={16} />
+                            <span>Refresh</span>
+                        </button>
+                    )}
                 </div>
 
                 {/* Notification */}
@@ -408,329 +398,347 @@ export default function PricingManagement() {
                     </div>
                 )}
 
-                {/* Info box */}
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 flex items-start">
-                    <Info className="text-blue-500 mr-3 flex-shrink-0 mt-0.5" />
-                    <div className="text-sm text-blue-800">
-                        <p className="font-medium mb-1">About eSIM Pricing</p>
-                        <p>
-                            Set your own retail prices for eSIM packages. The original price comes from the provider API, and you can add a markup to determine what your customers pay.
-                            When a customer makes a purchase, they'll be charged your retail price, but the provider will charge you their original price.
-                        </p>
-                    </div>
-                </div>
-
-                {/* Filters and controls */}
-                <div className="bg-white p-6 rounded-lg shadow-sm mb-6">
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                        {/* Search */}
-                        <div className="relative">
-                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <Search size={18} className="text-gray-400" />
-                            </div>
-                            <input
-                                type="text"
-                                placeholder="Search packages..."
-                                value={searchQuery}
-                                onChange={(e) => setSearchQuery(e.target.value)}
-                                className="pl-10 p-2 border rounded-lg w-full focus:ring-2 focus:ring-[#F15A25] focus:border-transparent"
-                            />
-                        </div>
-
-                        {/* Filter buttons */}
-                        <div className="flex space-x-2">
-                            <button
-                                onClick={() => setSelectedFilter('all')}
-                                className={`px-3 py-2 rounded-lg text-sm font-medium ${selectedFilter === 'all'
-                                    ? 'bg-[#F15A25] text-white'
-                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                    }`}
-                            >
-                                All Packages
-                            </button>
-                            <button
-                                onClick={() => setSelectedFilter('custom')}
-                                className={`px-3 py-2 rounded-lg text-sm font-medium ${selectedFilter === 'custom'
-                                    ? 'bg-[#F15A25] text-white'
-                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                    }`}
-                            >
-                                Custom Pricing
-                            </button>
-                            <button
-                                onClick={() => setSelectedFilter('default')}
-                                className={`px-3 py-2 rounded-lg text-sm font-medium ${selectedFilter === 'default'
-                                    ? 'bg-[#F15A25] text-white'
-                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                    }`}
-                            >
-                                Default Pricing
-                            </button>
-                        </div>
-
-                        {/* Country filter */}
-                        <div className="relative">
-                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                <Filter size={18} className="text-gray-400" />
-                            </div>
-                            <select
-                                value={selectedCountry}
-                                onChange={(e) => setSelectedCountry(e.target.value)}
-                                className="pl-10 p-2 border rounded-lg w-full focus:ring-2 focus:ring-[#F15A25] focus:border-transparent appearance-none bg-white"
-                            >
-                                <option value="">All Countries</option>
-                                {countries.map(country => (
-                                    <option key={country} value={country}>{country}</option>
-                                ))}
-                            </select>
+                {/* Main content */}
+                {loading ? (
+                    <div className="bg-white rounded-lg shadow-sm p-10">
+                        <div className="flex flex-col items-center justify-center">
+                            <Loader2 size={48} className="text-[#F15A25] animate-spin mb-6" />
+                            <p className="text-gray-700 font-medium mb-2">Loading packages...</p>
+                            <p className="text-gray-500 text-sm">This may take a few moments</p>
                         </div>
                     </div>
+                ) : error ? (
+                    <div className="bg-white rounded-lg shadow-sm p-8">
+                        <div className="flex flex-col items-center justify-center">
+                            <AlertTriangle size={48} className="text-red-500 mb-6" />
+                            <p className="text-gray-700 font-medium mb-2">Error loading packages</p>
+                            <p className="text-gray-500 text-sm mb-4">{error}</p>
+                            <button
+                                onClick={handleRetryLoading}
+                                className="bg-[#F15A25] hover:bg-[#e04e20] text-white px-4 py-2 rounded-lg transition-colors flex items-center"
+                            >
+                                <RefreshCw size={16} className="mr-2" />
+                                Try Again
+                            </button>
+                        </div>
+                    </div>
+                ) : (
+                    <>
+                        {/* Info box */}
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6 flex items-start">
+                            <Info className="text-blue-500 mr-3 flex-shrink-0 mt-0.5" />
+                            <div className="text-sm text-blue-800">
+                                <p className="font-medium mb-1">Quick Help</p>
+                                <p>
+                                    Packages with $1.00 markup are using the default pricing (displayed in normal rows).
+                                    Custom pricing (any markup other than $1.00) is highlighted in blue.
+                                    Click the edit button to customize your retail price.
+                                </p>
+                            </div>
+                        </div>
 
-                    {/* Bulk pricing controls */}
-                    <div className="flex flex-col md:flex-row md:items-end gap-4">
-                        <div className="flex-1">
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Markup Percentage</label>
-                            <div className="relative">
-                                <input
-                                    type="number"
-                                    min="0"
-                                    step="0.5"
-                                    value={bulkMarkup}
-                                    onChange={(e) => setBulkMarkup(e.target.value)}
-                                    className="p-2 pl-8 border rounded-lg w-full focus:ring-2 focus:ring-[#F15A25] focus:border-transparent"
-                                />
-                                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                    <Percent size={16} className="text-gray-400" />
+                        {/* Filters and controls */}
+                        <div className="bg-white p-6 rounded-lg shadow-sm mb-6">
+                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                                {/* Search */}
+                                <div className="relative">
+                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <Search size={18} className="text-gray-400" />
+                                    </div>
+                                    <input
+                                        type="text"
+                                        placeholder="Search packages..."
+                                        value={searchQuery}
+                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        className="pl-10 p-2 border rounded-lg w-full focus:ring-2 focus:ring-[#F15A25] focus:border-transparent"
+                                    />
+                                </div>
+
+                                {/* Filter buttons */}
+                                <div className="flex space-x-2">
+                                    <button
+                                        onClick={() => setSelectedFilter('all')}
+                                        className={`px-3 py-2 rounded-lg text-sm font-medium ${selectedFilter === 'all'
+                                            ? 'bg-[#F15A25] text-white'
+                                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                            }`}
+                                    >
+                                        All Packages
+                                    </button>
+                                    <button
+                                        onClick={() => setSelectedFilter('custom')}
+                                        className={`px-3 py-2 rounded-lg text-sm font-medium ${selectedFilter === 'custom'
+                                            ? 'bg-[#F15A25] text-white'
+                                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                            }`}
+                                    >
+                                        Custom Pricing
+                                    </button>
+                                    <button
+                                        onClick={() => setSelectedFilter('default')}
+                                        className={`px-3 py-2 rounded-lg text-sm font-medium ${selectedFilter === 'default'
+                                            ? 'bg-[#F15A25] text-white'
+                                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                            }`}
+                                    >
+                                        Default Pricing
+                                    </button>
+                                </div>
+
+                                {/* Country filter */}
+                                <div className="relative">
+                                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                        <Filter size={18} className="text-gray-400" />
+                                    </div>
+                                    <select
+                                        value={selectedCountry}
+                                        onChange={(e) => setSelectedCountry(e.target.value)}
+                                        className="pl-10 p-2 border rounded-lg w-full focus:ring-2 focus:ring-[#F15A25] focus:border-transparent appearance-none bg-white"
+                                    >
+                                        <option value="">All Countries</option>
+                                        {countries.map(country => (
+                                            <option key={country} value={country}>{country}</option>
+                                        ))}
+                                    </select>
                                 </div>
                             </div>
+
+                            {/* Sync control */}
+                            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                                        <span className="text-sm font-medium text-gray-700">
+                                            {filteredPackages.length} packages
+                                        </span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-3 h-3 rounded-full bg-white border border-gray-300"></div>
+                                        <span className="text-xs text-gray-500">Default pricing ($1.00 markup)</span>
+                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <div className="w-3 h-3 rounded-full bg-blue-50 border border-blue-200"></div>
+                                        <span className="text-xs text-gray-500">Custom pricing</span>
+                                    </div>
+                                </div>
+
+                                <button
+                                    onClick={syncPricing}
+                                    disabled={syncLoading}
+                                    className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center disabled:bg-blue-300 disabled:cursor-not-allowed"
+                                >
+                                    {syncLoading ? (
+                                        <Loader2 size={16} className="mr-2 animate-spin" />
+                                    ) : (
+                                        <RefreshCw size={16} className="mr-2" />
+                                    )}
+                                    Sync Pricing
+                                </button>
+                            </div>
                         </div>
 
-                        <div className="flex-1">
-                            <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
-                                <span className="text-sm font-medium text-gray-700">
-                                    {filteredPackages.length} packages selected
+                        {/* Packages table */}
+                        <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+                            <div className="overflow-x-auto">
+                                <table className="min-w-full divide-y divide-gray-200">
+                                    <thead className="bg-gray-50">
+                                        <tr>
+                                            <th
+                                                scope="col"
+                                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                                                onClick={() => handleSort('name')}
+                                            >
+                                                <div className="flex items-center">
+                                                    Package
+                                                    {sortConfig.key === 'name' && (
+                                                        sortConfig.direction === 'asc'
+                                                            ? <ArrowUp size={14} className="ml-1" />
+                                                            : <ArrowDown size={14} className="ml-1" />
+                                                    )}
+                                                </div>
+                                            </th>
+                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Details
+                                            </th>
+                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Location
+                                            </th>
+                                            <th
+                                                scope="col"
+                                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                                                onClick={() => handleSort('originalPrice')}
+                                            >
+                                                <div className="flex items-center">
+                                                    Original Price
+                                                    {sortConfig.key === 'originalPrice' && (
+                                                        sortConfig.direction === 'asc'
+                                                            ? <ArrowUp size={14} className="ml-1" />
+                                                            : <ArrowDown size={14} className="ml-1" />
+                                                    )}
+                                                </div>
+                                            </th>
+                                            <th
+                                                scope="col"
+                                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                                                onClick={() => handleSort('price')}
+                                            >
+                                                <div className="flex items-center">
+                                                    Retail Price
+                                                    {sortConfig.key === 'price' && (
+                                                        sortConfig.direction === 'asc'
+                                                            ? <ArrowUp size={14} className="ml-1" />
+                                                            : <ArrowDown size={14} className="ml-1" />
+                                                    )}
+                                                </div>
+                                            </th>
+                                            <th
+                                                scope="col"
+                                                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                                                onClick={() => handleSort('markupAmount')}
+                                            >
+                                                <div className="flex items-center">
+                                                    Markup
+                                                    {sortConfig.key === 'markupAmount' && (
+                                                        sortConfig.direction === 'asc'
+                                                            ? <ArrowUp size={14} className="ml-1" />
+                                                            : <ArrowDown size={14} className="ml-1" />
+                                                    )}
+                                                </div>
+                                            </th>
+                                            <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Actions
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="bg-white divide-y divide-gray-200">
+                                        {filteredPackages.length === 0 ? (
+                                            <tr>
+                                                <td colSpan={7} className="px-6 py-10 text-center">
+                                                    <p className="text-gray-500">No packages found matching your criteria</p>
+                                                </td>
+                                            </tr>
+                                        ) : (
+                                            filteredPackages.map((pkg) => (
+                                                <tr
+                                                    key={pkg.packageCode}
+                                                    className={hasDefaultMarkup(pkg) ? "" : "bg-blue-50"}
+                                                >
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        <div className="text-sm font-medium text-gray-900">{pkg.name}</div>
+                                                        <div className="text-xs text-gray-500">{pkg.packageCode}</div>
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        <div className="text-sm font-medium">
+                                                            {pkg.dataAmount}
+                                                            <span className="mx-1">•</span>
+                                                            {pkg.duration} days
+                                                        </div>
+                                                        <div className="text-xs text-gray-500">{pkg.speed}</div>
+                                                    </td>
+                                                    <td className="px-6 py-4">
+                                                        <div className="text-sm flex items-center gap-2">
+                                                            <span>
+                                                                {pkg.locations && pkg.locations.length > 0
+                                                                    ? pkg.locations.slice(0, 3).join(', ') + (pkg.locations.length > 3 ? '...' : '')
+                                                                    : 'Global'}
+                                                            </span>
+                                                            {pkg.locations && pkg.locations.length === 1 && (
+                                                                <img className='w-6 h-6 rounded-full' src={`/flags/${pkg.locations[0]}_flag.jpeg`} alt="" />
+                                                            )}
+                                                            {pkg.locations && pkg.locations.length > 1 && (
+                                                                <img className='w-6 h-6 rounded-full' src={`/flags/global_flag.svg`} alt="" />
+                                                            )}
+                                                        </div>
+                                                        {pkg.locations && pkg.locations.length > 3 && (
+                                                            <div className="text-xs text-gray-500">
+                                                                +{pkg.locations.length - 3} more
+                                                            </div>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        <div className="text-sm font-medium text-gray-600">
+                                                            ${formatPrice(pkg.originalPrice)}
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        {editMode[pkg.packageCode] ? (
+                                                            <div className="flex items-center">
+                                                                <div className="relative">
+                                                                    <span className="absolute inset-y-0 left-0 pl-2 flex items-center text-gray-500">
+                                                                        $
+                                                                    </span>
+                                                                    <input
+                                                                        type="number"
+                                                                        step="0.01"
+                                                                        min={formatPrice(pkg.originalPrice)}
+                                                                        value={editPrices[pkg.packageCode]}
+                                                                        onChange={(e) => handlePriceChange(pkg.packageCode, e.target.value)}
+                                                                        className="pl-6 p-1 border rounded w-28 focus:ring-2 focus:ring-[#F15A25] focus:border-transparent"
+                                                                    />
+                                                                </div>
+                                                            </div>
+                                                        ) : (
+                                                            <div className={`text-sm font-medium ${hasDefaultMarkup(pkg) ? 'text-gray-900' : 'text-blue-700'}`}>
+                                                                ${formatPrice(pkg.price)}
+                                                                {hasDefaultMarkup(pkg) && (
+                                                                    <span className="ml-1 text-xs text-gray-500">(default)</span>
+                                                                )}
+                                                            </div>
+                                                        )}
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        <div className="text-sm">
+                                                            ${formatPrice(pkg.markupAmount)}
+                                                            <span className="ml-1 text-xs text-gray-500">
+                                                                ({calculateMarkupPercentage(pkg.originalPrice, pkg.price)}%)
+                                                            </span>
+                                                        </div>
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
+                                                        {editMode[pkg.packageCode] ? (
+                                                            <div className="flex justify-end space-x-2">
+                                                                <button
+                                                                    onClick={() => savePrice(pkg.packageCode)}
+                                                                    className="p-1 text-green-600 hover:text-green-800 hover:bg-green-100 rounded"
+                                                                    title="Save"
+                                                                >
+                                                                    <Check size={18} />
+                                                                </button>
+                                                                <button
+                                                                    onClick={() => cancelEdit(pkg.packageCode)}
+                                                                    className="p-1 text-red-600 hover:text-red-800 hover:bg-red-100 rounded"
+                                                                    title="Cancel"
+                                                                >
+                                                                    <X size={18} />
+                                                                </button>
+                                                            </div>
+                                                        ) : (
+                                                            <button
+                                                                onClick={() => toggleEdit(pkg.packageCode)}
+                                                                className="p-1 text-blue-600 hover:text-blue-800 hover:bg-blue-100 rounded"
+                                                                title="Edit Price"
+                                                            >
+                                                                <Edit2 size={18} />
+                                                            </button>
+                                                        )}
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        )}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {/* Table footer with package count */}
+                            <div className="px-6 py-4 bg-gray-50 text-sm text-gray-500 flex justify-between">
+                                <span>Showing {filteredPackages.length} of {packages.length} packages</span>
+                                <span>
+                                    {packages.filter(pkg => !hasDefaultMarkup(pkg)).length} custom pricing /
+                                    {packages.filter(pkg => hasDefaultMarkup(pkg)).length} default pricing
                                 </span>
                             </div>
                         </div>
-
-                        <div className="flex space-x-2 h-full">
-
-
-                            <button
-                                onClick={syncPricing}
-                                disabled={syncLoading}
-                                className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center disabled:bg-blue-300 disabled:cursor-not-allowed"
-                            >
-                                {syncLoading ? (
-                                    <Loader2 size={16} className="mr-2 animate-spin" />
-                                ) : (
-                                    <RefreshCw size={16} className="mr-2" />
-                                )}
-                                Sync Pricing
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                {/* Packages table */}
-                <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-                    <div className="overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-200">
-                            <thead className="bg-gray-50">
-                                <tr>
-                                    <th
-                                        scope="col"
-                                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                                        onClick={() => handleSort('name')}
-                                    >
-                                        <div className="flex items-center">
-                                            Package
-                                            {sortConfig.key === 'name' && (
-                                                sortConfig.direction === 'asc'
-                                                    ? <ArrowUp size={14} className="ml-1" />
-                                                    : <ArrowDown size={14} className="ml-1" />
-                                            )}
-                                        </div>
-                                    </th>
-                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Details
-                                    </th>
-                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Location
-                                    </th>
-                                    <th
-                                        scope="col"
-                                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                                        onClick={() => handleSort('originalPrice')}
-                                    >
-                                        <div className="flex items-center">
-                                            Original Price
-                                            {sortConfig.key === 'originalPrice' && (
-                                                sortConfig.direction === 'asc'
-                                                    ? <ArrowUp size={14} className="ml-1" />
-                                                    : <ArrowDown size={14} className="ml-1" />
-                                            )}
-                                        </div>
-                                    </th>
-                                    <th
-                                        scope="col"
-                                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                                        onClick={() => handleSort('price')}
-                                    >
-                                        <div className="flex items-center">
-                                            Retail Price
-                                            {sortConfig.key === 'price' && (
-                                                sortConfig.direction === 'asc'
-                                                    ? <ArrowUp size={14} className="ml-1" />
-                                                    : <ArrowDown size={14} className="ml-1" />
-                                            )}
-                                        </div>
-                                    </th>
-                                    <th
-                                        scope="col"
-                                        className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
-                                        onClick={() => handleSort('markupAmount')}
-                                    >
-                                        <div className="flex items-center">
-                                            Markup
-                                            {sortConfig.key === 'markupAmount' && (
-                                                sortConfig.direction === 'asc'
-                                                    ? <ArrowUp size={14} className="ml-1" />
-                                                    : <ArrowDown size={14} className="ml-1" />
-                                            )}
-                                        </div>
-                                    </th>
-                                    <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                        Actions
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody className="bg-white divide-y divide-gray-200">
-                                {loading ? (
-                                    <tr>
-                                        <td colSpan={7} className="px-6 py-10 text-center">
-                                            <div className="flex flex-col items-center justify-center">
-                                                <Loader2 size={32} className="text-[#F15A25] animate-spin mb-4" />
-                                                <p className="text-gray-500">Loading packages...</p>
-                                            </div>
-                                        </td>
-                                    </tr>
-                                ) : filteredPackages.length === 0 ? (
-                                    <tr>
-                                        <td colSpan={7} className="px-6 py-10 text-center">
-                                            <p className="text-gray-500">No packages found matching your criteria</p>
-                                        </td>
-                                    </tr>
-                                ) : (
-                                    filteredPackages.map((pkg) => (
-                                        <tr
-                                            key={pkg.packageCode}
-                                            className={pkg.hasCustomPricing ? "bg-blue-50" : ""}
-                                        >
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="text-sm font-medium text-gray-900">{pkg.name}</div>
-                                                <div className="text-xs text-gray-500">{pkg.packageCode}</div>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="text-sm font-medium">
-                                                    {pkg.dataAmount}
-                                                    <span className="mx-1">•</span>
-                                                    {pkg.duration} days
-                                                </div>
-                                                <div className="text-xs text-gray-500">{pkg.speed}</div>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <div className="text-sm">
-                                                    {pkg.locations && pkg.locations.length > 0
-                                                        ? pkg.locations.slice(0, 3).join(', ') + (pkg.locations.length > 3 ? '...' : '')
-                                                        : 'Global'}
-                                                    {pkg.locations && pkg.locations.length === 1 && (
-                                                        <img className='w-10 h-10 rounded-full' src={`/flags/${pkg.locations[0]}_flag.jpeg`} alt="" />)}
-                                                    {pkg.locations && pkg.locations.length > 1 && (
-                                                        <img className='w-10 h-10 rounded-full' src={`/flags/global_flag.svg`} alt="" />)}
-                                                </div>
-                                                {pkg.locations && pkg.locations.length > 3 && (
-                                                    <div className="text-xs text-gray-500">
-                                                        +{pkg.locations.length - 3} more
-                                                    </div>
-                                                )}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="text-sm font-medium text-gray-600">
-                                                    ${formatPrice(pkg.originalPrice)}
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                {editMode[pkg.packageCode] ? (
-                                                    <div className="flex items-center">
-                                                        <div className="relative">
-                                                            <span className="absolute inset-y-0 left-0 pl-2 flex items-center text-gray-500">
-                                                                $
-                                                            </span>
-                                                            <input
-                                                                type="number"
-                                                                step="0.01"
-                                                                min={formatPrice(pkg.originalPrice)}
-                                                                value={editPrices[pkg.packageCode]}
-                                                                onChange={(e) => handlePriceChange(pkg.packageCode, e.target.value)}
-                                                                className="pl-6 p-1 border rounded w-28 focus:ring-2 focus:ring-[#F15A25] focus:border-transparent"
-                                                            />
-                                                        </div>
-                                                    </div>
-                                                ) : (
-                                                    <div className={`text-sm font-medium ${pkg.hasCustomPricing ? 'text-blue-700' : 'text-gray-900'}`}>
-                                                        ${formatPrice(pkg.price)}
-                                                    </div>
-                                                )}
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap">
-                                                <div className="text-sm">
-                                                    ${formatPrice(pkg.markupAmount)}
-                                                    <span className="ml-1 text-xs text-gray-500">
-                                                        ({calculateMarkupPercentage(pkg.originalPrice, pkg.price)}%)
-                                                    </span>
-                                                </div>
-                                            </td>
-                                            <td className="px-6 py-4 whitespace-nowrap text-right text-sm">
-                                                {editMode[pkg.packageCode] ? (
-                                                    <div className="flex justify-end space-x-2">
-                                                        <button
-                                                            onClick={() => savePrice(pkg.packageCode)}
-                                                            className="p-1 text-green-600 hover:text-green-800 hover:bg-green-100 rounded"
-                                                            title="Save"
-                                                        >
-                                                            <Check size={18} />
-                                                        </button>
-                                                        <button
-                                                            onClick={() => cancelEdit(pkg.packageCode)}
-                                                            className="p-1 text-red-600 hover:text-red-800 hover:bg-red-100 rounded"
-                                                            title="Cancel"
-                                                        >
-                                                            <X size={18} />
-                                                        </button>
-                                                    </div>
-                                                ) : (
-                                                    <button
-                                                        onClick={() => toggleEdit(pkg.packageCode)}
-                                                        className="p-1 text-blue-600 hover:text-blue-800 hover:bg-blue-100 rounded"
-                                                        title="Edit Price"
-                                                    >
-                                                        <Edit2 size={18} />
-                                                    </button>
-                                                )}
-                                            </td>
-                                        </tr>
-                                    ))
-                                )}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    {/* Table footer with package count */}
-                    <div className="px-6 py-4 bg-gray-50 text-sm text-gray-500">
-                        Showing {filteredPackages.length} of {packages.length} packages
-                    </div>
-                </div>
+                    </>
+                )}
             </div>
         </AdminLayout>
     );
