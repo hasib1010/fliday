@@ -340,8 +340,8 @@ const ConfirmationContent = () => {
   };
 
   return (
-    <div className="max-w-[1220px] mx-auto px-4 my-20 bg-gray-50">
-      <div className="bg-white p-8 rounded-lg shadow-sm mb-8 text-center">
+    <div className="max-w-[1220px] mx-auto px-4 my-20 ">
+      <div className="bg-white p-8 rounded-lg  mb-8 text-center">
         <div className="bg-[#F15A25] h-16 w-16 rounded-full flex items-center justify-center mx-auto mb-4">
           <Check className="h-12 w-12 text-white" />
         </div>
@@ -377,7 +377,7 @@ const ConfirmationContent = () => {
       </div>
 
       {state.orderData.esimDetails && state.orderData.esimDetails.qrCodeUrl && (
-        <div className="bg-white p-8 rounded-lg shadow-sm mb-8">
+        <div className="bg-white p-8 rounded-lg  mb-8">
           <div className="flex mb-6 max-w-md mx-auto">
             <button
               className={`flex-1 p-3 rounded-l-lg text-center text-sm font-medium transition-colors ${state.activeTab === 'qr' ? 'bg-gray-200 text-gray-800' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
