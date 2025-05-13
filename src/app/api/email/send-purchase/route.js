@@ -1,4 +1,3 @@
-// app/api/email/send-purchase/route.js
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
@@ -72,6 +71,8 @@ export async function POST(request) {
       pin: order.esimDetails.pin || '',
       puk: order.esimDetails.puk || '',
       apn: order.esimDetails.apn || '',
+      smdpAddress: parseActivationCode(order.esimDetails.ac).smdpAddress,
+      activationCode: parseActivationCode(order.esimDetails.ac).activationCode,
       dataAllowance: order.esimDetails.totalVolume
         ? `${(order.esimDetails.totalVolume / (1024 * 1024 * 1024)).toFixed(2)} GB`
         : order.dataAmount,
@@ -96,7 +97,23 @@ export async function POST(request) {
   }
 }
 
+// Helper function to parse SM-DP+ Address and Activation Code
+function parseActivationCode(ac) {
+  if (!ac || typeof ac !== 'string') {
+    return { smdpAddress: 'N/A', activationCode: 'N/A' };
+  }
+  const parts = ac.split('$');
+  if (parts.length !== 3 || !parts[1] || !parts[2]) {
+    return { smdpAddress: 'N/A', activationCode: ac };
+  }
+  return {
+    smdpAddress: parts[1],
+    activationCode: parts[2]
+  };
+}
+
 function generateInstallationInstructions(esimDetails) {
+  const { smdpAddress, activationCode } = parseActivationCode(esimDetails.ac);
   return `
 # eSIM Installation Instructions
 
@@ -108,7 +125,8 @@ function generateInstallationInstructions(esimDetails) {
 5. Follow on-screen instructions to activate
 
 ## Manual Installation (if needed)
-- Activation Code: ${esimDetails.ac || 'Not provided'}
+- SM-DP+ Address: ${smdpAddress}
+- Activation Code: ${activationCode}
 - APN: ${esimDetails.apn || 'Default APN'}
 
 ## Important Information

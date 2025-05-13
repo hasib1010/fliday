@@ -55,12 +55,12 @@ export default function MyOrdersPage() {
             if (data.success) {
                 // Store all orders
                 setOrders(data.orders);
-                
+
                 // Filter only completed orders
                 const onlyCompleted = data.orders.filter(order => order.orderStatus === 'completed');
                 setCompletedOrders(onlyCompleted);
                 setFilteredOrders(onlyCompleted);
-                
+
                 console.log(`Filtered ${onlyCompleted.length} completed orders out of ${data.orders.length} total orders`);
             } else {
                 throw new Error(data.error || 'Failed to fetch orders');
@@ -200,19 +200,33 @@ export default function MyOrdersPage() {
                     ) : (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             {filteredOrders.map((order) => (
-                                <div key={order.orderId} className="bg-white shadow-md rounded-lg overflow-hidden">
+
+
+                                < div key={order.orderId} className="bg-white shadow-md rounded-lg overflow-hidden" >
+                                    {console.log(order)}
                                     <div className="p-6">
+                                        <img
+                                            src={
+                                                order.location.length > 2
+                                                    ? '/flags/global_flag.svg'
+                                                    : `/flags/${order.location.toLowerCase()}_flag.jpeg`
+                                            }
+                                            alt={`${order.location} flag`}
+                                            className="w-20 inline-block my-2 rounded-2xl"
+                                        />
                                         <h3 className="text-lg font-semibold text-gray-900 mb-2">
-                                            Order ID: <span className="font-mono">{order.orderId.substring(0, 8)}...</span>
+                                            <span className="font-mono">{order.packageName}</span>
+                                            {/* <span className="font-mono">{order.location}</span> */}
+
+
+
                                         </h3>
                                         <div className="flex items-center mb-2">
-                                             
-                                            <p className="text-sm text-gray-500">Location: {order.location}</p>
+
                                         </div>
-                                        <p className="text-sm text-gray-500 mb-2">Package: {order.dataAmount} - {order.duration}</p>
                                         <p className="text-sm text-gray-500 mb-2">Date: {formatDate(order.createdAt)}</p>
                                         <p className="text-sm font-medium text-gray-900 mb-3">
-                                            Price: {order.currency} {formatPrice(order.finalPrice/100)}
+                                            Price: {order.currency} {formatPrice(order.finalPrice / 100)}
                                         </p>
                                         <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${getStatusColor(order.orderStatus)} mb-3`}>
                                             {getStatusIcon(order.orderStatus)}
@@ -221,38 +235,18 @@ export default function MyOrdersPage() {
                                         <div className="flex justify-between mt-5 space-x-2">
                                             <Link
                                                 href={`/checkout/confirmation?orderId=${order.orderId}`}
-                                                className="text-[#F15A25] hover:text-[#E04E1A] inline-flex items-center"
-                                            >
-                                                <Eye size={18} />
-                                                <span className="hidden sm:inline ml-1">View</span>
-                                            </Link>
-
-                                            {order.esimDetails?.qrCodeUrl && (
-                                                <a
-                                                    href={order.esimDetails.qrCodeUrl}
-                                                    target='_blank'
-                                                    download={`esim-${order.orderId}.png`}
-                                                    className="text-blue-600 hover:text-blue-800 inline-flex items-center"
-                                                >
-                                                    <Download size={18} />
-                                                    <span className="hidden sm:inline ml-1">QR</span>
-                                                </a>
-                                            )}
-
-                                            <Link
-                                                href={`/esim/${order.orderId}`}
                                                 className="text-green-600 hover:text-green-800 inline-flex items-center"
                                             >
                                                 <Smartphone size={18} />
                                                 <span className="hidden sm:inline ml-1">Install</span>
                                             </Link>
-                                            
+
                                             <Link
                                                 href={`/esim/profile/${order.orderId}`}
                                                 className="text-green-600 hover:text-green-800 inline-flex items-center"
                                             >
                                                 <HouseWifi size={18} />
-                                                <span className="hidden sm:inline ml-1">Check Use</span>
+                                                <span className="hidden sm:inline ml-1">Check Uses</span>
                                             </Link>
                                         </div>
                                     </div>
@@ -261,7 +255,8 @@ export default function MyOrdersPage() {
                         </div>
                     )}
                 </>
-            )}
-        </div>
+            )
+            }
+        </div >
     );
 }
