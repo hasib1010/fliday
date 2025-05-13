@@ -246,7 +246,7 @@ export default function MyOrdersPage() {
                                                 className="text-green-600 hover:text-green-800 inline-flex items-center"
                                             >
                                                 <HouseWifi size={18} />
-                                                <span className=" ml-1">Check Uses</span>
+                                                <span className=" ml-1">Check Usage</span>
                                             </Link>
                                         </div>
                                     </div>
