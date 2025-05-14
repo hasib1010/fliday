@@ -1,6 +1,6 @@
 'use client';
 // app/admin/pricing/page.jsx
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import {
     Search, RefreshCw, Edit2, X, Check, Filter,
     AlertTriangle, Info, Loader2, ArrowUp, ArrowDown
@@ -15,6 +15,7 @@ export default function PricingManagement() {
     const [error, setError] = useState(null);
     const [syncLoading, setSyncLoading] = useState(false);
     const [searchQuery, setSearchQuery] = useState('');
+    const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
     const [editMode, setEditMode] = useState({});
     const [editPrices, setEditPrices] = useState({});
     const [selectedFilter, setSelectedFilter] = useState('all');
@@ -22,6 +23,10 @@ export default function PricingManagement() {
     const [countries, setCountries] = useState([]);
     const [notification, setNotification] = useState(null);
     const [sortConfig, setSortConfig] = useState({ key: 'name', direction: 'asc' });
+    const [tableLoading, setTableLoading] = useState(false); // For table-only loading
+    
+    // Debounce timer reference
+    const debounceTimerRef = useRef(null);
 
     // Constants
     const DEFAULT_MARKUP_AMOUNT = 10000; // $1.00 in cents * 100 format
@@ -38,8 +43,10 @@ export default function PricingManagement() {
         return pkg.markupAmount !== DEFAULT_MARKUP_AMOUNT;
     };
 
-    // Apply filters - optimized version
+    // Apply filters - optimized version with memoization to prevent unnecessary re-renders
     const applyFilters = useCallback((allPackages, search, filter, country) => {
+        // No need to show loading indicator here - we'll control that separately
+        
         let filtered = [...allPackages];
 
         // Apply all filters in a single pass
@@ -89,6 +96,7 @@ export default function PricingManagement() {
         }
 
         setFilteredPackages(filtered);
+        setTableLoading(false); // Hide table loading when done
     }, [sortConfig]);
 
     // Fetch packages using the admin-specific API
@@ -158,8 +166,8 @@ export default function PricingManagement() {
             });
             setEditPrices(initialEditPrices);
 
-            // Apply initial filters
-            applyFilters(packagesData, searchQuery, selectedFilter, selectedCountry);
+            // Apply initial filters - don't pass searchQuery to avoid re-filtering during initial load
+            applyFilters(packagesData, '', selectedFilter, selectedCountry);
 
             setNotification({
                 type: 'success',
@@ -179,19 +187,51 @@ export default function PricingManagement() {
         } finally {
             setLoading(false);
         }
-    }, [searchQuery, selectedFilter, selectedCountry, applyFilters]);
+    }, [selectedFilter, selectedCountry, applyFilters]); // Removed searchQuery dependency
 
     // Initial load
     useEffect(() => {
         fetchPackages();
     }, [fetchPackages]);
 
-    // Apply filters when criteria change
+    // Implement debounce for search query
     useEffect(() => {
-        if (packages.length > 0) {
-            applyFilters(packages, searchQuery, selectedFilter, selectedCountry);
+        // Clear any existing timer
+        if (debounceTimerRef.current) {
+            clearTimeout(debounceTimerRef.current);
         }
-    }, [packages, searchQuery, selectedFilter, selectedCountry, applyFilters]);
+        
+        // Set new timer to update the debounced value after delay
+        debounceTimerRef.current = setTimeout(() => {
+            setDebouncedSearchQuery(searchQuery);
+            if (packages.length > 0) {
+                setTableLoading(true);
+            }
+        }, 300); // 300ms debounce delay
+        
+        // Cleanup on unmount
+        return () => {
+            if (debounceTimerRef.current) {
+                clearTimeout(debounceTimerRef.current);
+            }
+        };
+    }, [searchQuery]);
+
+    // Initial load and effect dependencies
+    useEffect(() => {
+        if (!loading) { // Only apply filters if not in initial loading state
+            // This fixes the issue with filtering during search
+            if (packages.length > 0) {
+                applyFilters(packages, debouncedSearchQuery, selectedFilter, selectedCountry);
+            }
+        }
+    }, [packages, debouncedSearchQuery, selectedFilter, selectedCountry, applyFilters, loading]);
+
+    // Handle search input change without debounce
+    const handleSearchChange = (e) => {
+        setSearchQuery(e.target.value);
+        // Don't set tableLoading here, wait for the debounced effect
+    };
 
     // Toggle edit mode
     const toggleEdit = (packageCode) => {
@@ -337,11 +377,17 @@ export default function PricingManagement() {
 
     // Handle sorting
     const handleSort = (key) => {
+        setTableLoading(true); // Show table loading indicator when sorting
         let direction = 'asc';
         if (sortConfig.key === key && sortConfig.direction === 'asc') {
             direction = 'desc';
         }
         setSortConfig({ key, direction });
+        
+        // Apply sorting immediately rather than waiting for effect to trigger
+        setTimeout(() => {
+            applyFilters(packages, debouncedSearchQuery, selectedFilter, selectedCountry);
+        }, 0);
     };
 
     // Format price for display
@@ -440,7 +486,7 @@ export default function PricingManagement() {
                         {/* Filters and controls */}
                         <div className="bg-white p-6 rounded-lg shadow-sm mb-6">
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                                {/* Search */}
+                                {/* Search - Now with improved handling */}
                                 <div className="relative">
                                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                         <Search size={18} className="text-gray-400" />
@@ -449,9 +495,14 @@ export default function PricingManagement() {
                                         type="text"
                                         placeholder="Search packages..."
                                         value={searchQuery}
-                                        onChange={(e) => setSearchQuery(e.target.value)}
+                                        onChange={handleSearchChange}
                                         className="pl-10 p-2 border rounded-lg w-full focus:ring-2 focus:ring-[#F15A25] focus:border-transparent"
                                     />
+                                    {debouncedSearchQuery !== searchQuery && (
+                                        <div className="absolute right-2 top-1/2 transform -translate-y-1/2">
+                                            <div className="w-4 h-4 border-t-2 border-r-2 border-[#F15A25] rounded-full animate-spin"></div>
+                                        </div>
+                                    )}
                                 </div>
 
                                 {/* Filter buttons */}
@@ -516,7 +567,7 @@ export default function PricingManagement() {
                                         <span className="text-xs text-gray-500">Default pricing ($1.00 markup)</span>
                                     </div>
                                     <div className="flex items-center gap-2">
-                                        <div className="w-3 h-3 rounded-full bg-blue-50 border border-blue-200"></div>
+                                        <div className="w-3 h-3 rounded-full bg-blue-300 border border-blue-200"></div>
                                         <span className="text-xs text-gray-500">Custom pricing</span>
                                     </div>
                                 </div>
@@ -536,9 +587,19 @@ export default function PricingManagement() {
                             </div>
                         </div>
 
-                        {/* Packages table */}
+                        {/* Packages table with separate loading state */}
                         <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-                            <div className="overflow-x-auto">
+                            <div className="overflow-x-auto relative">
+                                {/* Table loading overlay - shows only when filtering/searching but data is already loaded */}
+                                {tableLoading && (
+                                    <div className="absolute inset-0 bg-white bg-opacity-70 z-10 flex items-center justify-center">
+                                        <div className="flex items-center">
+                                            <Loader2 size={24} className="text-[#F15A25] animate-spin mr-3" />
+                                            <span className="text-gray-700">Updating results...</span>
+                                        </div>
+                                    </div>
+                                )}
+                                
                                 <table className="min-w-full divide-y divide-gray-200">
                                     <thead className="bg-gray-50">
                                         <tr>
@@ -620,7 +681,7 @@ export default function PricingManagement() {
                                             filteredPackages.map((pkg) => (
                                                 <tr
                                                     key={pkg.packageCode}
-                                                    className={hasDefaultMarkup(pkg) ? "" : "bg-blue-50"}
+                                                    className={hasDefaultMarkup(pkg) ? "" : "bg-blue-300/50"}
                                                 >
                                                     <td className="px-6 py-4 whitespace-nowrap">
                                                         <div className="text-sm font-medium text-gray-900">{pkg.name}</div>

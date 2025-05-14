@@ -680,9 +680,9 @@ function CheckoutContent() {
               <>
                 <div className="flex items-center mb-6">
                   <div className="w-8 h-8 bg-red-600 rounded-full flex items-center justify-center text-white mr-3">
-                    <img className='w-full h-full object-cover rounded-full' src={`/flags/${packageData.location}_flag.jpeg`} alt="" />
+                    <img className='w-full h-full object-cover rounded-full' src={`/flags/${packageData.location.toLowerCase()}_flag.jpeg`} alt="" />
                   </div>
-                  <span className="font-medium">{packageData.name.split(' ')[0]}</span>
+                  <span className="font-medium">{packageData.name}</span>
                 </div>
                 <div className="space-y-4 mb-8">
                   <div className="flex justify-between">
