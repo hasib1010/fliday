@@ -234,21 +234,73 @@ const ConfirmationContent = () => {
     }
   }, [state.orderData, session?.user?.email]);
 
+  // Fix for the copyToClipboard function - focus on correct state variable naming
   const copyToClipboard = useCallback((text, type) => {
-    navigator.clipboard.writeText(text).then(() => {
-      setState(prev => ({
-        ...prev,
-        [`copied${type.charAt(0).toUpperCase() + type.slice(1)}`]: true
-      }));
+    if (!text || text === 'N/A') return;
+
+    // Debug log to check the type being passed
+    console.log('Copy type:', type);
+
+    // Create a temporary input element
+    const tempInput = document.createElement('input');
+    tempInput.value = text;
+    tempInput.style.position = 'fixed';
+    tempInput.style.opacity = '0';
+    document.body.appendChild(tempInput);
+    tempInput.select();
+
+    // Execute the copy command
+    document.execCommand('copy');
+
+    // Remove the temporary element
+    document.body.removeChild(tempInput);
+
+    // For ICCID - make sure we're using the correct capitalization
+    if (type.toLowerCase() === 'iccid') {
+      setState(prev => ({ ...prev, copiedICCID: true }));
+      setTimeout(() => setState(prev => ({ ...prev, copiedICCID: false })), 2000);
+    }
+    // For SMDP - make sure we're using the correct capitalization
+    else if (type.toLowerCase() === 'smdp') {
+      setState(prev => ({ ...prev, copiedSMDP: true }));
+      setTimeout(() => setState(prev => ({ ...prev, copiedSMDP: false })), 2000);
+    }
+    // For Activation - make sure we're using the correct capitalization
+    else if (type.toLowerCase() === 'activation') {
+      setState(prev => ({ ...prev, copiedActivation: true }));
+      setTimeout(() => setState(prev => ({ ...prev, copiedActivation: false })), 2000);
+    }
+    // For PIN - make sure we're using the correct capitalization
+    else if (type.toLowerCase() === 'pin') {
+      setState(prev => ({ ...prev, copiedPIN: true }));
+      setTimeout(() => setState(prev => ({ ...prev, copiedPIN: false })), 2000);
+    }
+    // For PUK - make sure we're using the correct capitalization
+    else if (type.toLowerCase() === 'puk') {
+      setState(prev => ({ ...prev, copiedPUK: true }));
+      setTimeout(() => setState(prev => ({ ...prev, copiedPUK: false })), 2000);
+    }
+    // For APN - make sure we're using the correct capitalization
+    else if (type.toLowerCase() === 'apn') {
+      setState(prev => ({ ...prev, copiedAPN: true }));
+      setTimeout(() => setState(prev => ({ ...prev, copiedAPN: false })), 2000);
+    }
+    // For any other type (fallback)
+    else {
+      const stateVarName = `copied${type.charAt(0).toUpperCase() + type.slice(1)}`;
+      const stateUpdate = {};
+      stateUpdate[stateVarName] = true;
+      setState(prev => ({ ...prev, ...stateUpdate }));
+
       setTimeout(() => {
-        setState(prev => ({
-          ...prev,
-          [`copied${type.charAt(0).toUpperCase() + type.slice(1)}`]: false
-        }));
+        const resetUpdate = {};
+        resetUpdate[stateVarName] = false;
+        setState(prev => ({ ...prev, ...resetUpdate }));
       }, 2000);
-    }).catch(err => console.error('Copy failed:', err));
+    }
   }, []);
 
+  
   useEffect(() => {
     if (status === 'authenticated') {
       fetchOrderData();
@@ -543,10 +595,10 @@ const ConfirmationContent = () => {
             </div>
 
             <div className="flex flex-col items-center mb-8">
-              <div className="w-12 h-12 rounded-full flex items-center justify-center text-[#f05b24] mb-3">
+              <div className="w-12 h-12 rounded-full flex items-center justify-center text-[#f05b24] mb-3  border-[#f05b24]">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="#f05b24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                  <path d="M12 16C14.2091 16 16 14.2091 16 12C16 9.79086 14.2091 8 12 8C9.79086 8 8 9.79086 8 12C8 14.2091 9.79086 16 12 16Z" stroke="#f05b24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                  <path d="M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12Z" stroke="#f05b24" strokeWidth="2" />
+                  <path d="M8 12L11 15L16 9" stroke="#f05b24" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
               </div>
               <h4 className="text-base font-medium mb-1 text-center">Activate data roaming</h4>
