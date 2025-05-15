@@ -236,7 +236,7 @@ export default function BlogDetail({ params, initialBlog, initialError }) {
               name: 'Fliday',
               logo: {
                 '@type': 'ImageObject',
-                url: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/logo.png`,
+                url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://fliday.com'}/logo.png`,
               },
             },
           }),

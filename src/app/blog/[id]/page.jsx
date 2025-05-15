@@ -13,7 +13,7 @@ async function fetchBlog(slug) {
     // Normalize slug to lowercase to match BlogSchema
     const normalizedSlug = slug.toLowerCase();
     const response = await fetch(
-      `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000'}/api/blogs/${encodeURIComponent(normalizedSlug)}`,
+      `${process.env.NEXT_PUBLIC_API_URL || 'https://fliday.com'}/api/blogs/${encodeURIComponent(normalizedSlug)}`,
       {
         next: { revalidate: 60 }, // Leverage ISR with 60-second revalidation
       }
@@ -49,7 +49,7 @@ export async function generateMetadata({ params }) {
       openGraph: {
         title: blog.title,
         description: blog.excerpt,
-        url: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/blog/${blog.slug}`,
+        url: `${process.env.NEXT_PUBLIC_SITE_URL || 'https://fliday.com'}/blog/${blog.slug}`,
         images: [blog.featuredImage],
         type: 'article',
         publishedTime: blog.date,
