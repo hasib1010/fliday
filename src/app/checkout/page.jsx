@@ -21,7 +21,19 @@ const stripePromise = stripeKey ? loadStripe(stripeKey) : null;
 if (!stripeKey) {
   console.error('Missing Stripe publishable key! Ensure NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY is set in .env.local');
 }
+// Extract country name from package name string
+const getCountryName = (packageName) => {
+  if (!packageName) return '';
 
+  // Pattern: Extract everything before the first digit (which starts the data amount)
+  const countryMatch = packageName.match(/^(.*?)\s*\d+/);
+
+  if (countryMatch && countryMatch[1]) {
+    return countryMatch[1].trim(); // Trim to remove any trailing spaces
+  }
+
+  return packageName; // Return original if pattern doesn't match
+};
 function CheckoutForm({ packageData, selectedPaymentMethod, taxCountry, couponCode, onSuccess, onError }) {
   const stripe = useStripe();
   const elements = useElements();
@@ -30,6 +42,7 @@ function CheckoutForm({ packageData, selectedPaymentMethod, taxCountry, couponCo
   const [paymentRequest, setPaymentRequest] = useState(null);
   const { data: session } = useSession();
   const [stripeLoaded, setStripeLoaded] = useState(false);
+
 
   useEffect(() => {
     if (stripe && elements) {
@@ -682,7 +695,7 @@ function CheckoutContent() {
                   <div className="w-8 h-8 bg-red-600 rounded-full flex items-center justify-center text-white mr-3">
                     <img className='w-full h-full object-cover rounded-full' src={`/flags/${packageData.location.toLowerCase()}_flag.jpeg`} alt="" />
                   </div>
-                  <span className="font-medium">{packageData.name}</span>
+                  <span className="font-medium">{getCountryName(packageData.name)}</span>
                 </div>
                 <div className="space-y-4 mb-8">
                   <div className="flex justify-between">

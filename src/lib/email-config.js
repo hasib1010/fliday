@@ -1,15 +1,16 @@
-// lib/email-config.js
 import nodemailer from 'nodemailer';
 
 /**
- * Create a transporter for sending emails via Gmail with app password
+ * Create a transporter for sending emails via Brevo SMTP
  */
-export function createGmailTransporter() {
+export function createBrevoTransporter() {
   return nodemailer.createTransport({
-    service: 'gmail',
+    host: process.env.BREVO_SMTP_HOST,
+    port: parseInt(process.env.BREVO_SMTP_PORT),
+    secure: false, // Use TLS
     auth: {
-      user: process.env.GMAIL_USER,
-      pass: process.env.GMAIL_APP_PASSWORD, // This should be an app password, not your regular Gmail password
+      user: process.env.BREVO_SMTP_USER,
+      pass: process.env.BREVO_SMTP_PASSWORD,
     },
   });
 }
@@ -21,10 +22,10 @@ export function createGmailTransporter() {
  */
 export async function sendEmail(options) {
   try {
-    const transporter = createGmailTransporter();
+    const transporter = createBrevoTransporter();
     
     const mailOptions = {
-      from: `"eSIM Service" <${process.env.GMAIL_USER}>`,
+      from: `"Fliday" <support@fliday.com>`,
       ...options,
     };
 
