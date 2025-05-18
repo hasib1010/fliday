@@ -1,0 +1,41 @@
+/* app/privacy/privacy.module.css */
+
+.smoothScrollSection {
+  scroll-margin-top: 80px; /* Adjust based on your header height */
+}
+
+.highlightSection {
+  transition: background-color 0.3s ease;
+}
+
+.highlightSection:target {
+  background-color: rgba(241, 90, 37, 0.05);
+  padding: 1rem;
+  border-radius: 0.5rem;
+}
+
+.privacyContent a {
+  color: #F15A25;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.privacyContent a:hover {
+  color: #E04E1A;
+  text-decoration: underline;
+}
+
+.backToTopButton {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  z-index: 10;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+}
+
+.backToTopButtonVisible {
+  opacity: 1;
+  visibility: visible;
+}

@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { Loader2 } from 'lucide-react';
 
 export default function Blog() {
   const [activeCategory, setActiveCategory] = useState('All');
@@ -67,10 +68,9 @@ export default function Blog() {
 
   const LoadingSpinner = () => (
     <div className="fixed inset-0 bg-white bg-opacity-80 flex items-center justify-center z-50">
-      <div className="relative w-16 h-16">
-        <div className="absolute inset-0 border-4 border-t-orange-500 border-r-transparent border-b-transparent border-l-transparent rounded-full animate-spin"></div>
-        <div className="absolute inset-2 border-4 border-t-transparent border-r-blue-500 border-b-transparent border-l-transparent rounded-full animate-spin animation-delay-100"></div>
-        <div className="absolute inset-4 border-4 border-t-transparent border-r-transparent border-b-green-500 border-l-transparent rounded-full animate-spin animation-delay-200"></div>
+     <div className="flex justify-center items-center py-10">
+        <Loader2 className="w-8 h-8 text-[#F15A25] animate-spin mr-3" />
+        <span className="text-gray-600">Loading Blogs</span>
       </div>
     </div>
   );

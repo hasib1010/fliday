@@ -10,10 +10,11 @@ import { AiFillApple } from 'react-icons/ai';
 
 // Map of error codes to user-friendly messages
 const ERROR_MESSAGES = {
-  OAuthCallback: "There was a problem with the sign-in process. This could be due to a configuration issue with the authentication service.",
-  OAuthSignin: "Could not initiate sign in with provider.",
+  OAuthCallback: "There was a problem with the sign-in process. This could be due to a configuration issue.",
+  OAuthCallbackError: "There was a problem with the sign-in process. This may be related to browser cookie settings.",
+  OAuthSignin: "Could not initiate sign in with the provider.",
   OAuthAccountNotLinked: "To confirm your identity, sign in with the same account you used originally.",
-  AccessDenied: "You do not have permission to sign in.",
+  AccessDenied: "You don't have permission to sign in.",
   Verification: "The verification link may have expired or already been used.",
   Configuration: "There is a problem with the server configuration.",
   default: "An error occurred during sign in. Please try again."
@@ -29,30 +30,65 @@ export default function SignInForm() {
   const [error, setError] = useState('');
   const [provider, setProvider] = useState(null);
   const [retryCount, setRetryCount] = useState(0);
+  const [alternateAppleFlow, setAlternateAppleFlow] = useState(false);
   
   // Extract and handle error from URL if present
   useEffect(() => {
     const errorParam = searchParams.get('error');
     if (errorParam) {
       console.log('Auth error from URL:', errorParam);
+      
+      // Set error message
       setError(ERROR_MESSAGES[errorParam] || ERROR_MESSAGES.default);
+      
+      // If there's a PKCE error with Apple, try an alternate approach next time
+      if ((errorParam === 'OAuthCallbackError' || errorParam === 'OAuthCallback') && 
+          searchParams.get('providerId') === 'apple') {
+        setAlternateAppleFlow(true);
+        console.log('Will use alternate Apple sign-in approach next time');
+      }
     }
   }, [searchParams]);
 
   // Redirect if already authenticated
   useEffect(() => {
     if (status === 'authenticated') {
-      console.log('User is authenticated, redirecting to:', callbackUrl);
       router.push(callbackUrl);
     }
   }, [status, router, callbackUrl]);
 
-  // Handle sign-in with retry mechanism
+  // Function to handle standard Apple Sign In
+  const handleStandardAppleSignIn = () => {
+    setIsLoading(true);
+    setProvider('apple');
+    setError('');
+    
+    // Use NextAuth signIn function with redirect
+    signIn('apple', { callbackUrl, redirect: true });
+  };
+  
+  // Function to handle alternate Apple Sign In (direct approach)
+  const handleAlternateAppleSignIn = () => {
+    setIsLoading(true);
+    setProvider('apple');
+    setError('');
+    
+    // Clean up any existing PKCE cookies
+    document.cookie = "next-auth.pkce.code_verifier=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+    
+    // Use direct URL navigation instead of signIn function
+    const redirectUrl = `/api/auth/signin/apple?callbackUrl=${encodeURIComponent(callbackUrl)}`;
+    console.log('Using alternate Apple sign-in approach with direct navigation to:', redirectUrl);
+    window.location.href = redirectUrl;
+  };
+
+  // Handle sign-in with retry mechanism (for non-Apple providers)
   useEffect(() => {
     let timeout;
     
     const attemptSignIn = async () => {
-      if (!provider || isLoading || status === 'authenticated') return;
+      // Skip Apple sign-in here (handled separately) and skip if already loading or authenticated
+      if (!provider || provider === 'apple' || isLoading || status === 'authenticated') return;
       
       try {
         setIsLoading(true);
@@ -63,23 +99,9 @@ export default function SignInForm() {
           timeout = setTimeout(() => reject(new Error('Sign in request timed out')), 15000);
         });
         
-        // Special handling for Apple sign-in which requires redirect
-        if (provider === 'apple') {
-          console.log('Redirecting to Apple sign-in page...');
-          // Use redirect: true for Apple - it requires a full page redirect
-          signIn('apple', { 
-            callbackUrl, 
-            redirect: true 
-          });
-          return; // Exit early as we're redirecting
-        }
-        
-        // For other providers like Google, we can use a popup/modal flow
+        // For other providers like Google
         const result = await Promise.race([
-          signIn(provider, { 
-            callbackUrl, 
-            redirect: false 
-          }),
+          signIn(provider, { callbackUrl, redirect: false }),
           timeoutPromise
         ]);
         
@@ -102,7 +124,6 @@ export default function SignInForm() {
         if (err.message.includes('timed out') && retryCount < 2) {
           setError(`Sign in is taking longer than expected. Retrying... (${retryCount + 1}/3)`);
           setRetryCount(prev => prev + 1);
-          // Allow small delay before retry
           setTimeout(() => {
             setIsLoading(false);
           }, 1000);
@@ -126,17 +147,26 @@ export default function SignInForm() {
     };
   }, [provider, isLoading, status, callbackUrl, router, retryCount]);
 
-  // Initiate sign-in
+  // Handle sign-in for all providers
   const handleSignIn = (providerName) => {
-    console.log(`Sign-in requested with provider: ${providerName}`);
     setError('');
-    setProvider(providerName);
+    
+    if (providerName === 'apple') {
+      // Use alternate flow if previous attempts had PKCE issues
+      if (alternateAppleFlow) {
+        handleAlternateAppleSignIn();
+      } else {
+        handleStandardAppleSignIn();
+      }
+    } else {
+      setProvider(providerName);
+    }
   };
 
   // Loading state while checking session
   if (status === 'loading') {
     return (
-      <div className="flex justify-center items-center min-h-screen">
+      <div className="flex justify-center items-center">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#F15A25]"></div>
       </div>
     );
@@ -163,15 +193,15 @@ export default function SignInForm() {
       {error && (
         <div className="p-4 bg-red-50 text-red-600 text-sm rounded-md">
           <p>{error}</p>
-          {error.includes('problem with the sign-in process') && (
+          {(error.includes('problem with the sign-in process') || error.includes('cookie settings')) && (
             <div className="mt-2 text-xs">
               <p>This could be due to:</p>
               <ul className="list-disc pl-5 mt-1 space-y-1">
-                <li>Authentication service misconfiguration</li>
-                <li>Browser cookie settings</li>
-                <li>Network issues</li>
+                <li>Browser cookie settings - cookies must be enabled</li>
+                <li>Using private browsing mode which restricts cookies</li>
+                <li>Authentication service configuration</li>
               </ul>
-              <p className="mt-2">Try using Google sign-in instead, or check if cookies are enabled in your browser.</p>
+              <p className="mt-2">Try enabling cookies, using a different browser, or sign in with Google instead.</p>
             </div>
           )}
         </div>
@@ -182,6 +212,8 @@ export default function SignInForm() {
           onClick={() => handleSignIn('google')}
           disabled={isLoading}
           className="w-full flex items-center justify-center gap-3 py-3 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#F15A25] transition-colors disabled:opacity-70"
+          aria-label="Sign in with Google"
+          data-testid="google-signin-button"
         >
           {isLoading && provider === 'google' ? (
             <div className="flex items-center gap-2">
@@ -200,11 +232,13 @@ export default function SignInForm() {
           onClick={() => handleSignIn('apple')}
           disabled={isLoading}
           className="w-full flex items-center justify-center gap-3 py-3 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#F15A25] transition-colors disabled:opacity-70"
+          aria-label="Sign in with Apple"
+          data-testid="apple-signin-button"
         >
           {isLoading && provider === 'apple' ? (
             <div className="flex items-center gap-2">
               <div className="animate-spin h-4 w-4 border-2 border-[#F15A25] border-t-transparent rounded-full"></div>
-              <span>Signing in...</span>
+              <span>Signing in{alternateAppleFlow ? ' (alternate method)' : ''}...</span>
             </div>
           ) : (
             <>
@@ -237,6 +271,23 @@ export default function SignInForm() {
           <div>Status: {status}</div>
           <div>Error: {searchParams.get('error') || 'none'}</div>
           <div>CallbackUrl: {callbackUrl}</div>
+          <div>Cookies Enabled: {navigator.cookieEnabled ? 'Yes' : 'No'}</div>
+          <div>Alternate Apple Flow: {alternateAppleFlow ? 'Yes' : 'No'}</div>
+          <div className="mt-2">
+            <button 
+              onClick={() => console.log({
+                session,
+                status,
+                provider,
+                cookies: document.cookie.split(';').map(c => c.trim()),
+                error: searchParams.get('error'),
+                alternateAppleFlow
+              })}
+              className="text-blue-600 hover:underline"
+            >
+              Log debug info
+            </button>
+          </div>
         </div>
       )}
     </div>

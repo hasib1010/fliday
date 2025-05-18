@@ -5,14 +5,15 @@ import AppleProvider from 'next-auth/providers/apple';
 import dbConnect from '@/lib/mongodb';
 import User from '@/models/User';
 
-// Debug logging for setup phase
+// Debug logging for initialization
 console.log('NextAuth configuration loading...');
 console.log('Environment check:', {
   applIdExists: !!process.env.APPLE_ID,
   appleSecretExists: !!process.env.APPLE_SECRET,
   appleIdValue: process.env.APPLE_ID,
   appleSecretLength: process.env.APPLE_SECRET?.length || 0,
-  nextAuthUrl: process.env.NEXTAUTH_URL
+  nextAuthUrl: process.env.NEXTAUTH_URL || '(not set)',
+  nodeEnv: process.env.NODE_ENV
 });
 
 export const authOptions = {
@@ -29,17 +30,18 @@ export const authOptions = {
         params: {
           scope: 'name email',
           response_mode: 'form_post',
-          response_type: 'code id_token'
         }
       },
+      // Fix for PKCE issue: Only use state checking, not PKCE
+      checks: ['state'],
     }),
   ],
-  // Fix: Custom pages configuration to use your actual sign-in page path
+  // Custom pages configuration pointing to your sign-in page
   pages: {
     signIn: '/auth/signin',
-    error: '/auth/signin'
+    error: '/auth/signin',
   },
-  // Fix: Proper cookie configuration
+  // Comprehensive cookie configuration for better cookie handling
   cookies: {
     sessionToken: {
       name: `next-auth.session-token`,
@@ -48,6 +50,34 @@ export const authOptions = {
         sameSite: 'lax',
         path: '/',
         secure: process.env.NODE_ENV === 'production'
+      }
+    },
+    callbackUrl: {
+      name: `next-auth.callback-url`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production'
+      }
+    },
+    csrfToken: {
+      name: 'next-auth.csrf-token',
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production'
+      }
+    },
+    pkceCodeVerifier: {
+      name: 'next-auth.pkce.code_verifier',
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 60 * 15 // 15 minutes in seconds
       }
     }
   },
@@ -67,37 +97,34 @@ export const authOptions = {
     },
     
     async jwt({ token, account, user, profile }) {
-      // Fix: Enhanced jwt callback with better logging and Apple-specific handling
+      // Log detailed information when creating/updating JWT
       if (account) {
-        console.log(`JWT callback for ${account.provider} authentication`);
+        console.log(`JWT callback for ${account.provider} sign-in`);
+        
+        // Store provider information in token
         token.provider = account.provider;
         token.providerId = account.providerAccountId;
         
-        // Fix: Handle Apple-specific behavior - name is only provided on first sign-in
-        if (account.provider === 'apple') {
-          // Log the profile for debugging
-          if (profile) {
-            console.log('Apple profile data received:', 
-              JSON.stringify({
-                sub: profile.sub,
-                email: profile.email,
-                emailVerified: profile.email_verified,
-                hasName: !!profile.name
-              })
-            );
-            
-            // Store name when provided (typically only on first login)
-            if (profile.name) {
-              const firstName = profile.name.firstName || '';
-              const lastName = profile.name.lastName || '';
-              token.name = (firstName + ' ' + lastName).trim();
-              console.log(`Storing name from Apple profile: ${token.name}`);
-            }
+        // Special handling for Apple profile data
+        if (account.provider === 'apple' && profile) {
+          // Log profile data for debugging
+          console.log('Apple profile data received:', {
+            hasEmail: !!profile.email,
+            hasName: !!profile.name,
+            sub: profile.sub
+          });
+          
+          // Store name when available (Apple only provides name on first login)
+          if (profile.name) {
+            const firstName = profile.name.firstName || '';
+            const lastName = profile.name.lastName || '';
+            token.name = (firstName + ' ' + lastName).trim();
+            console.log(`Storing name from Apple profile: ${token.name}`);
           }
         }
       }
       
-      // Only fetch role if not already present to avoid repeated DB calls
+      // Only fetch role if not already present
       if (user && user.id && !token.role) {
         try {
           token.role = user.role || 'user'; // Default to 'user' if not set
@@ -110,49 +137,50 @@ export const authOptions = {
     },
     
     async signIn({ user, account, profile }) {
-      // Fix: Enhanced signIn callback with better logging and error handling
       console.log(`Sign-in attempt with ${account.provider}`);
       
-      // Fix: Special handling for Apple's email behavior
+      // Special handling for Apple (which might not provide email on subsequent logins)
       if (account.provider === 'apple' && !user.email && profile?.email) {
         console.log('Using email from Apple profile');
         user.email = profile.email;
       }
       
+      // Validate that we have an email
       if (!user.email) {
         console.error('User email missing from OAuth provider');
         return false;
       }
 
       try {
-        // Optimize database connection - only establish once
+        // Connect to database
         await dbConnect();
         console.log('Database connected successfully');
 
-        // Quick lookup by email only - simpler query
+        // Look up existing user by email
         const existingUser = await User.findOne({ email: user.email })
           .select('_id role provider providerId name')
-          .lean(); // Use lean() for faster queries
+          .lean();
 
         if (existingUser) {
           console.log(`Found existing user with email: ${user.email}`);
-          // Set minimal user data and update the DB asynchronously
+          
+          // Set user data
           user.id = existingUser._id.toString();
           user.role = existingUser.role || 'user';
           
-          // Fix: Improved user update logic
+          // Prepare update data
           const updateData = {
             lastLogin: new Date(),
             provider: account.provider,
             providerId: account.providerAccountId,
           };
           
-          // Only update name if provided and it's not empty
+          // Only update name if provided and not empty
           if (user.name && user.name.trim() !== '') {
             updateData.name = user.name;
           }
           
-          // Update in the background without waiting
+          // Update user in background
           User.findByIdAndUpdate(
             existingUser._id,
             { $set: updateData },
@@ -160,7 +188,8 @@ export const authOptions = {
           ).catch(err => console.error('Background user update failed:', err));
         } else {
           console.log(`Creating new user with email: ${user.email}`);
-          // Create user with minimal data
+          
+          // Create new user
           const newUser = await User.create({
             name: user.name || 'Unnamed User',
             email: user.email,
@@ -178,10 +207,9 @@ export const authOptions = {
         console.log('Sign-in callback completed successfully');
         return true;
       } catch (error) {
-        // Fix: Better error logging
+        // Detailed error logging
         console.error('Error in signIn callback:', error);
         
-        // Log detailed error for debugging
         if (error.name && error.message) {
           console.error(`${error.name}: ${error.message}`);
           if (error.stack) {
@@ -189,17 +217,16 @@ export const authOptions = {
           }
         }
         
-        // Still allow sign in even if DB operations fail
-        // This prevents authentication errors due to database issues
+        // Allow sign-in even if DB operations fail to prevent authentication failures
+        // due to database issues
         return true;
       }
     },
     
     async redirect({ url, baseUrl }) {
-      // Fix: Enhanced redirect callback with better logging
       console.log('Redirect callback:', { url, baseUrl });
       
-      // Fix: More robust redirect logic
+      // Enhanced redirect logic
       if (url.startsWith(baseUrl)) {
         console.log(`Redirecting to same-origin URL: ${url}`);
         return url;
@@ -211,31 +238,54 @@ export const authOptions = {
         return fullUrl;
       }
       
-      console.log(`Redirecting to base URL: ${baseUrl}`);
+      console.log(`Redirecting to baseUrl: ${baseUrl}`);
       return baseUrl;
     },
   },
   events: {
-    // Fix: Add event handlers for better debugging
+    // Event handlers for logging authentication events
     async signIn(message) {
       console.log(`User signed in: ${message.user.email}`);
     },
     async signOut(message) {
-      console.log(`User signed out: ${message.token.sub}`);
+      console.log(`User signed out: ${message.token?.sub || 'Unknown user'}`);
+    },
+    async createUser(message) {
+      console.log(`User created: ${message.user.email}`);
+    },
+    async linkAccount(message) {
+      console.log(`Account linked: ${message.account.provider} for ${message.user.email}`);
+    },
+    async session(message) {
+      // Don't log every session to avoid flooding logs
+      if (process.env.DEBUG_AUTH === 'true') {
+        console.log(`Session accessed: ${message.token?.sub || 'Unknown user'}`);
+      }
     },
     async error(message) {
-      console.error(`Auth error occurred: ${message}`);
+      console.error(`Auth error occurred:`, message);
     }
   },
   logger: {
-    // Fix: Custom logger for better error tracking
+    // Custom logger for detailed error tracking
     error(code, metadata) {
       console.error(`[AUTH ERROR] ${code}:`, metadata);
+      
+      // Special handling for common errors
+      if (code === 'oauth_callback_error') {
+        console.error('OAuth callback error details:', {
+          provider: metadata?.providerId,
+          error: metadata?.error?.message || metadata?.error,
+          stack: metadata?.error?.stack?.split('\n').slice(0, 3).join('\n'),
+          cause: 'This could be related to PKCE, cookies, or OAuth configuration'
+        });
+      }
     },
     warn(code) {
       console.warn(`[AUTH WARNING] ${code}`);
     },
     debug(code, metadata) {
+      // Only log debug messages if explicitly enabled
       if (process.env.NEXTAUTH_DEBUG === 'true') {
         console.log(`[AUTH DEBUG] ${code}:`, metadata);
       }
@@ -246,7 +296,12 @@ export const authOptions = {
     strategy: 'jwt',
     maxAge: 30 * 24 * 60 * 60, // 30 days
   },
-  debug: true, // Enable for troubleshooting - remember to disable in production later
+  // Enable debug mode for now, disable in production later
+  debug: process.env.NODE_ENV !== 'production' || process.env.NEXTAUTH_DEBUG === 'true',
+  // Improve JWT encoding/decoding
+  jwt: {
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+  }
 };
 
 const handler = NextAuth(authOptions);
@@ -254,5 +309,5 @@ const handler = NextAuth(authOptions);
 export { handler as GET, handler as POST };
 
 export const config = {
-  runtime: 'nodejs', // Keep as nodejs for database operations
+  runtime: 'nodejs',
 };
