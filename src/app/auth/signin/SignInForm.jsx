@@ -8,14 +8,14 @@ import { FcGoogle } from 'react-icons/fc';
 import { AiFillApple } from 'react-icons/ai';
 
 const ERROR_MESSAGES = {
-  OAuthCallback: 'There was a problem with the sign-in process. Please ensure cookies are enabled.',
-  OAuthCallbackError: 'Authentication failed. Cookies may be blocked or browser settings may restrict sign-in.',
+  OAuthCallback: 'Sign-in failed. Ensure cookies are enabled or try the standard Apple sign-in.',
+  OAuthCallbackError: 'Authentication failed. Cookies may be blocked. Use the standard Apple sign-in.',
   OAuthSignin: 'Could not initiate sign-in with the provider.',
   OAuthAccountNotLinked: 'Please sign in with the same account you used originally.',
   AccessDenied: "You don't have permission to sign in.",
   Verification: 'The verification link may have expired or been used.',
   Configuration: 'There is a server configuration issue.',
-  default: 'An error occurred during sign-in. Please try again.',
+  default: 'An error occurred during sign-in. Try the standard Apple sign-in.',
 };
 
 export default function SignInForm() {
@@ -33,20 +33,20 @@ export default function SignInForm() {
   useEffect(() => {
     setCookiesEnabled(navigator.cookieEnabled);
     if (!navigator.cookieEnabled) {
-      setError('Cookies are disabled in your browser. Please enable cookies to sign in.');
+      setError('Cookies are disabled. Enable cookies or use the standard Apple sign-in.');
       return;
     }
     try {
-      document.cookie = 'test_cookie=1; Path=/; SameSite=Lax; Secure; Max-Age=60';
+      document.cookie = 'test_cookie=1; Path=/; SameSite=None; Secure; Max-Age=60; Domain=.fliday.com';
       const cookies = document.cookie.split('; ').find(row => row.startsWith('test_cookie='));
       if (cookies) {
         setCookieTestPassed(true);
-        document.cookie = 'test_cookie=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+        document.cookie = 'test_cookie=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; Domain=.fliday.com';
       } else {
-        setError('Cookies are enabled but cannot be set. Check browser privacy settings (e.g., Safari’s Prevent Cross-Site Tracking).');
+        setError('Cookies are enabled but cannot be set. Check privacy settings (e.g., Safari’s Prevent Cross-Site Tracking) or use the standard Apple sign-in.');
       }
     } catch (err) {
-      setError('Failed to set cookies. Try disabling private browsing or using a different browser.');
+      setError('Failed to set cookies. Try disabling private browsing or use the standard Apple sign-in.');
     }
 
     const errorParam = searchParams.get('error');
@@ -63,8 +63,8 @@ export default function SignInForm() {
   }, [status, router, callbackUrl]);
 
   const handleSignIn = async (providerName) => {
-    if (!cookiesEnabled || !cookieTestPassed) {
-      setError('Cookies must be enabled and settable to sign in. Check browser settings.');
+    if (!cookiesEnabled || (!cookieTestPassed && providerName === 'apple')) {
+      setError('Cookies must be enabled for PKCE sign-in. Use the standard Apple sign-in instead.');
       return;
     }
     setError('');
@@ -81,11 +81,11 @@ export default function SignInForm() {
         setError(ERROR_MESSAGES[result.error] || ERROR_MESSAGES.default);
       } else {
         console.warn('Sign-in result missing url or error:', result);
-        setError('Authentication failed. Please try again.');
+        setError('Authentication failed. Try the standard Apple sign-in.');
       }
     } catch (err) {
       console.error('Sign-in error:', err.message);
-      setError('Authentication failed. Try a different browser or contact support.');
+      setError('Authentication failed. Try the standard Apple sign-in or contact support.');
     } finally {
       setIsLoading(false);
       setProvider(null);
@@ -112,7 +112,7 @@ export default function SignInForm() {
       {error && (
         <div className="p-4 bg-red-50 text-red-600 text-sm rounded-md">
           <p>{error}</p>
-          {(error.includes('problem with the sign-in process') || error.includes('restrict sign-in') || error.includes('cookie')) && (
+          {(error.includes('sign-in failed') || error.includes('cookies') || error.includes('authentication failed')) && (
             <div className="mt-2 text-xs">
               <p>This could be due to:</p>
               <ul className="list-disc pl-5 mt-1 space-y-1">
@@ -121,7 +121,7 @@ export default function SignInForm() {
                 <li>Browser cache issues - try clearing cache</li>
                 <li>Strict privacy settings (e.g., Safari’s Prevent Cross-Site Tracking)</li>
               </ul>
-              <p className="mt-2">Try enabling cookies, disabling private browsing, or using a different browser.</p>
+              <p className="mt-2">Try enabling cookies, disabling private browsing, or using the standard Apple sign-in below.</p>
             </div>
           )}
         </div>
@@ -146,10 +146,28 @@ export default function SignInForm() {
           )}
         </button>
         <button
+          onClick={() => handleSignIn('apple-fallback')}
+          disabled={isLoading}
+          className="w-full flex items-center justify-center gap-3 py-3 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#F15A25] transition-colors disabled:opacity-70"
+          aria-label="Sign in with Apple"
+        >
+          {isLoading && provider === 'apple-fallback' ? (
+            <div className="flex items-center gap-2">
+              <div className="animate-spin h-4 w-4 border-2 border-[#F15A25] border-t-transparent rounded-full"></div>
+              <span>Signing in...</span>
+            </div>
+          ) : (
+            <>
+              <AiFillApple className="h-5 w-5 text-black" />
+              <span>Continue with Apple</span>
+            </>
+          )}
+        </button>
+        <button
           onClick={() => handleSignIn('apple')}
           disabled={isLoading || !cookiesEnabled || !cookieTestPassed}
           className="w-full flex items-center justify-center gap-3 py-3 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#F15A25] transition-colors disabled:opacity-70"
-          aria-label="Sign in with Apple"
+          aria-label="Sign in with Apple (PKCE)"
         >
           {isLoading && provider === 'apple' ? (
             <div className="flex items-center gap-2">
@@ -159,7 +177,7 @@ export default function SignInForm() {
           ) : (
             <>
               <AiFillApple className="h-5 w-5 text-black" />
-              <span>Continue with Apple</span>
+              <span>Continue with Apple (PKCE)</span>
             </>
           )}
         </button>

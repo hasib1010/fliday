@@ -23,7 +23,10 @@ export const authOptions = {
         },
       },
     }),
+    // Fallback provider first for testing
     AppleProvider({
+      id: 'apple-fallback',
+      name: 'Apple',
       clientId: process.env.APPLE_ID,
       clientSecret: process.env.APPLE_SECRET,
       wellKnown: 'https://appleid.apple.com/.well-known/openid-configuration',
@@ -33,9 +36,37 @@ export const authOptions = {
           response_mode: 'form_post',
         },
       },
-      checks: ['pkce'], // Try PKCE first
+      checks: [], // No PKCE or state
       profile(profile) {
-        console.log('Apple profile received:', {
+        console.log('Apple fallback profile received:', {
+          sub: profile.sub,
+          email: profile.email,
+          name: profile.name,
+        });
+        return {
+          id: profile.sub,
+          email: profile.email,
+          name: profile.name
+            ? `${profile.name.firstName || ''} ${profile.name.lastName || ''}`.trim()
+            : null,
+        };
+      },
+    }),
+    AppleProvider({
+      id: 'apple',
+      name: 'Apple (PKCE)',
+      clientId: process.env.APPLE_ID,
+      clientSecret: process.env.APPLE_SECRET,
+      wellKnown: 'https://appleid.apple.com/.well-known/openid-configuration',
+      authorization: {
+        params: {
+          scope: 'name email',
+          response_mode: 'form_post',
+        },
+      },
+      checks: ['pkce'],
+      profile(profile) {
+        console.log('Apple PKCE profile received:', {
           sub: profile.sub,
           email: profile.email,
           name: profile.name,
@@ -89,10 +120,10 @@ export const authOptions = {
       name: `next-auth.pkce.code_verifier`,
       options: {
         httpOnly: true,
-        sameSite: 'lax', // Try lax for broader compatibility
+        sameSite: 'none',
         path: '/',
         secure: true,
-        domain: '.fliday.com', // Include subdomains
+        domain: '.fliday.com', // Support subdomains
         maxAge: 15 * 60,
       },
     },
@@ -100,7 +131,7 @@ export const authOptions = {
       name: `next-auth.state`,
       options: {
         httpOnly: true,
-        sameSite: 'lax',
+        sameSite: 'none',
         path: '/',
         secure: true,
         domain: '.fliday.com',
@@ -127,7 +158,7 @@ export const authOptions = {
         });
         token.provider = account.provider;
         token.providerId = account.providerAccountId;
-        if (account.provider === 'apple' && profile) {
+        if (account.provider.includes('apple') && profile) {
           token.name = user.name;
         }
       }
@@ -231,6 +262,7 @@ export const authOptions = {
           cookies: metadata?.cookies || 'not available',
           callbackUrl: metadata?.callbackUrl || 'not available',
           requestCookies: metadata?.request?.cookies || 'not available',
+          setCookieHeaders: metadata?.response?.headers?.['set-cookie'] || 'not available',
         });
       }
     },
