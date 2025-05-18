@@ -23,10 +23,7 @@ export const authOptions = {
         },
       },
     }),
-    // Fallback provider first for testing
     AppleProvider({
-      id: 'apple-fallback',
-      name: 'Apple',
       clientId: process.env.APPLE_ID,
       clientSecret: process.env.APPLE_SECRET,
       wellKnown: 'https://appleid.apple.com/.well-known/openid-configuration',
@@ -36,37 +33,9 @@ export const authOptions = {
           response_mode: 'form_post',
         },
       },
-      checks: [], // No PKCE or state
+      checks: [], // No PKCE or state to avoid cookie issues
       profile(profile) {
-        console.log('Apple fallback profile received:', {
-          sub: profile.sub,
-          email: profile.email,
-          name: profile.name,
-        });
-        return {
-          id: profile.sub,
-          email: profile.email,
-          name: profile.name
-            ? `${profile.name.firstName || ''} ${profile.name.lastName || ''}`.trim()
-            : null,
-        };
-      },
-    }),
-    AppleProvider({
-      id: 'apple',
-      name: 'Apple (PKCE)',
-      clientId: process.env.APPLE_ID,
-      clientSecret: process.env.APPLE_SECRET,
-      wellKnown: 'https://appleid.apple.com/.well-known/openid-configuration',
-      authorization: {
-        params: {
-          scope: 'name email',
-          response_mode: 'form_post',
-        },
-      },
-      checks: ['pkce'],
-      profile(profile) {
-        console.log('Apple PKCE profile received:', {
+        console.log('Apple profile received:', {
           sub: profile.sub,
           email: profile.email,
           name: profile.name,
@@ -84,60 +53,6 @@ export const authOptions = {
   pages: {
     signIn: '/auth/signin',
     error: '/auth/error',
-  },
-  cookies: {
-    sessionToken: {
-      name: `next-auth.session-token`,
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/',
-        secure: true,
-        maxAge: 30 * 24 * 60 * 60,
-      },
-    },
-    callbackUrl: {
-      name: `next-auth.callback-url`,
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/',
-        secure: true,
-        maxAge: 15 * 60,
-      },
-    },
-    csrfToken: {
-      name: `next-auth.csrf-token`,
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/',
-        secure: true,
-        maxAge: 15 * 60,
-      },
-    },
-    pkce: {
-      name: `next-auth.pkce.code_verifier`,
-      options: {
-        httpOnly: true,
-        sameSite: 'none',
-        path: '/',
-        secure: true,
-        domain: '.fliday.com', // Support subdomains
-        maxAge: 15 * 60,
-      },
-    },
-    state: {
-      name: `next-auth.state`,
-      options: {
-        httpOnly: true,
-        sameSite: 'none',
-        path: '/',
-        secure: true,
-        domain: '.fliday.com',
-        maxAge: 15 * 60,
-      },
-    },
   },
   callbacks: {
     async session({ session, token }) {
@@ -158,7 +73,7 @@ export const authOptions = {
         });
         token.provider = account.provider;
         token.providerId = account.providerAccountId;
-        if (account.provider.includes('apple') && profile) {
+        if (account.provider === 'apple' && profile) {
           token.name = user.name;
         }
       }
