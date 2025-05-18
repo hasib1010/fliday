@@ -9,12 +9,14 @@ export function middleware(request) {
     const cookies = request.cookies;
     const cookieNames = cookies.getAll().map(c => c.name);
     console.log(`🍪 Cookies:`, cookieNames.join(', ') || 'none');
-    const stateCookie = cookies.get('next-auth.state');
-    console.log(`🔑 State cookie:`, stateCookie ? `Present (value: ${stateCookie.value})` : 'Missing');
-    if (request.nextUrl.pathname.includes('/callback') && !stateCookie) {
-      console.warn('⚠️ State cookie missing on callback route', {
+    const pkceCookie = cookies.get('next-auth.pkce.code_verifier');
+    console.log(`🔑 PKCE cookie:`, pkceCookie ? `Present (value: ${pkceCookie.value})` : 'Missing');
+    if (request.nextUrl.pathname.includes('/callback/apple')) {
+      console.log('Apple callback details:', {
         url: request.nextUrl.toString(),
         headers: Object.fromEntries(request.headers.entries()),
+        method: request.method,
+        body: request.method === 'POST' ? 'Form POST data (not logged)' : 'N/A',
       });
     }
     const searchParams = request.nextUrl.searchParams;
@@ -30,10 +32,6 @@ export function middleware(request) {
     response.headers.set('X-Frame-Options', 'DENY');
     response.headers.set('X-Content-Type-Options', 'nosniff');
     response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
-    if (request.nextUrl.pathname.includes('/signin')) {
-      response.headers.set('Set-Cookie', 'next-auth.state=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0');
-      console.log('🧹 Cleared stale state cookie on sign-in route');
-    }
     return response;
   }
   return NextResponse.next();

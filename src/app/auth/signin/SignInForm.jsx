@@ -10,7 +10,7 @@ import { AiFillApple } from 'react-icons/ai';
 
 const ERROR_MESSAGES = {
   OAuthCallback: 'There was a problem with the sign-in process. Please ensure cookies are enabled.',
-  OAuthCallbackError: 'There was a problem with the sign-in process. Cookies may be blocked.',
+  OAuthCallbackError: 'Authentication failed. Cookies may be blocked or browser settings may restrict sign-in.',
   OAuthSignin: 'Could not initiate sign-in with the provider.',
   OAuthAccountNotLinked: 'Please sign in with the same account you used originally.',
   AccessDenied: "You don't have permission to sign in.",
@@ -28,8 +28,13 @@ export default function SignInForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [provider, setProvider] = useState(null);
+  const [cookiesEnabled, setCookiesEnabled] = useState(true);
 
   useEffect(() => {
+    setCookiesEnabled(navigator.cookieEnabled);
+    if (!navigator.cookieEnabled) {
+      setError('Cookies are disabled in your browser. Please enable cookies to sign in.');
+    }
     const errorParam = searchParams.get('error');
     if (errorParam) {
       console.log('Auth error from URL:', errorParam);
@@ -43,22 +48,16 @@ export default function SignInForm() {
     }
   }, [status, router, callbackUrl]);
 
-  const clearNonEssentialCookies = () => {
-    ['next-auth.csrf-token', 'next-auth.callback-url'].forEach(cookie => {
-      document.cookie = `${cookie}=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;`;
-    });
-    console.log('Cleared non-essential NextAuth cookies');
-  };
-
   const handleSignIn = async (providerName) => {
+    if (!cookiesEnabled) {
+      setError('Cookies must be enabled to sign in.');
+      return;
+    }
     setError('');
     setIsLoading(true);
     setProvider(providerName);
     try {
-      if (providerName === 'apple') {
-        clearNonEssentialCookies();
-      }
-      console.log(`Initiating sign-in with ${providerName}`);
+      console.log(`Initiating sign-in with ${providerName}`, { callbackUrl });
       const result = await signIn(providerName, { callbackUrl, redirect: false });
       if (result?.url) {
         console.log('Sign-in successful, redirecting to:', result.url);
@@ -99,15 +98,16 @@ export default function SignInForm() {
       {error && (
         <div className="p-4 bg-red-50 text-red-600 text-sm rounded-md">
           <p>{error}</p>
-          {(error.includes('problem with the sign-in process') || error.includes('cookie settings')) && (
+          {(error.includes('problem with the sign-in process') || error.includes('restrict sign-in')) && (
             <div className="mt-2 text-xs">
               <p>This could be due to:</p>
               <ul className="list-disc pl-5 mt-1 space-y-1">
                 <li>Browser cookie settings - cookies must be enabled</li>
                 <li>Private browsing mode restricting cookies</li>
                 <li>Browser cache issues - try clearing cache</li>
+                <li>Strict privacy settings (e.g., Safari’s Intelligent Tracking Prevention)</li>
               </ul>
-              <p className="mt-2">Try enabling cookies or using a different browser.</p>
+              <p className="mt-2">Try enabling cookies, disabling private browsing, or using a different browser.</p>
             </div>
           )}
         </div>
@@ -115,7 +115,7 @@ export default function SignInForm() {
       <div className="mt-8 space-y-4">
         <button
           onClick={() => handleSignIn('google')}
-          disabled={isLoading}
+          disabled={isLoading || !cookiesEnabled}
           className="w-full flex items-center justify-center gap-3 py-3 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#F15A25] transition-colors disabled:opacity-70"
           aria-label="Sign in with Google"
         >
@@ -133,7 +133,7 @@ export default function SignInForm() {
         </button>
         <button
           onClick={() => handleSignIn('apple')}
-          disabled={isLoading}
+          disabled={isLoading || !cookiesEnabled}
           className="w-full flex items-center justify-center gap-3 py-3 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#F15A25] transition-colors disabled:opacity-70"
           aria-label="Sign in with Apple"
         >
@@ -162,7 +162,7 @@ export default function SignInForm() {
           </Link>
         </p>
       </div>
-      {process.env.NODE_ENV === 'development' && (
+      {process.env.NODE_ENV !== 'production' && (
         <div className="mt-8 p-3 bg-gray-100 rounded text-xs font-mono">
           <div className="font-semibold">Debug Info:</div>
           <div>Page: /auth/signin</div>
@@ -170,7 +170,7 @@ export default function SignInForm() {
           <div>Status: {status}</div>
           <div>Error: {searchParams.get('error') || 'none'}</div>
           <div>CallbackUrl: {callbackUrl}</div>
-          <div>Cookies Enabled: {navigator.cookieEnabled ? 'Yes' : 'No'}</div>
+          <div>Cookies Enabled: {cookiesEnabled ? 'Yes' : 'No'}</div>
           <div>Current Cookies: {document.cookie.split('; ').join(', ') || 'none'}</div>
         </div>
       )}
