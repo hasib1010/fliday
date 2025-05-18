@@ -10,14 +10,23 @@ export function middleware(request) {
     const cookieNames = cookies.getAll().map(c => c.name);
     console.log(`🍪 Cookies:`, cookieNames.join(', ') || 'none');
     const pkceCookie = cookies.get('next-auth.pkce.code_verifier');
+    const stateCookie = cookies.get('next-auth.state');
     console.log(`🔑 PKCE cookie:`, pkceCookie ? `Present (value: ${pkceCookie.value})` : 'Missing');
+    console.log(`🔑 State cookie:`, stateCookie ? `Present (value: ${stateCookie.value})` : 'Missing');
     if (request.nextUrl.pathname.includes('/callback/apple')) {
       console.log('Apple callback details:', {
         url: request.nextUrl.toString(),
         headers: Object.fromEntries(request.headers.entries()),
         method: request.method,
         body: request.method === 'POST' ? 'Form POST data (not logged)' : 'N/A',
+        cookies: cookieNames,
       });
+      if (!pkceCookie) {
+        console.warn('⚠️ PKCE code_verifier cookie missing on Apple callback', {
+          url: request.nextUrl.toString(),
+          headers: Object.fromEntries(request.headers.entries()),
+        });
+      }
     }
     const searchParams = request.nextUrl.searchParams;
     const error = searchParams.get('error');

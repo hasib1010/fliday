@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { signIn, useSession } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Image from 'next/image';
-import Link from 'next/link';
 import { FcGoogle } from 'react-icons/fc';
 import { AiFillApple } from 'react-icons/ai';
 
@@ -29,12 +28,27 @@ export default function SignInForm() {
   const [error, setError] = useState('');
   const [provider, setProvider] = useState(null);
   const [cookiesEnabled, setCookiesEnabled] = useState(true);
+  const [cookieTestPassed, setCookieTestPassed] = useState(false);
 
   useEffect(() => {
     setCookiesEnabled(navigator.cookieEnabled);
     if (!navigator.cookieEnabled) {
       setError('Cookies are disabled in your browser. Please enable cookies to sign in.');
+      return;
     }
+    try {
+      document.cookie = 'test_cookie=1; Path=/; SameSite=Lax; Secure; Max-Age=60';
+      const cookies = document.cookie.split('; ').find(row => row.startsWith('test_cookie='));
+      if (cookies) {
+        setCookieTestPassed(true);
+        document.cookie = 'test_cookie=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;';
+      } else {
+        setError('Cookies are enabled but cannot be set. Check browser privacy settings (e.g., Safari’s Prevent Cross-Site Tracking).');
+      }
+    } catch (err) {
+      setError('Failed to set cookies. Try disabling private browsing or using a different browser.');
+    }
+
     const errorParam = searchParams.get('error');
     if (errorParam) {
       console.log('Auth error from URL:', errorParam);
@@ -49,8 +63,8 @@ export default function SignInForm() {
   }, [status, router, callbackUrl]);
 
   const handleSignIn = async (providerName) => {
-    if (!cookiesEnabled) {
-      setError('Cookies must be enabled to sign in.');
+    if (!cookiesEnabled || !cookieTestPassed) {
+      setError('Cookies must be enabled and settable to sign in. Check browser settings.');
       return;
     }
     setError('');
@@ -98,14 +112,14 @@ export default function SignInForm() {
       {error && (
         <div className="p-4 bg-red-50 text-red-600 text-sm rounded-md">
           <p>{error}</p>
-          {(error.includes('problem with the sign-in process') || error.includes('restrict sign-in')) && (
+          {(error.includes('problem with the sign-in process') || error.includes('restrict sign-in') || error.includes('cookie')) && (
             <div className="mt-2 text-xs">
               <p>This could be due to:</p>
               <ul className="list-disc pl-5 mt-1 space-y-1">
                 <li>Browser cookie settings - cookies must be enabled</li>
                 <li>Private browsing mode restricting cookies</li>
                 <li>Browser cache issues - try clearing cache</li>
-                <li>Strict privacy settings (e.g., Safari’s Intelligent Tracking Prevention)</li>
+                <li>Strict privacy settings (e.g., Safari’s Prevent Cross-Site Tracking)</li>
               </ul>
               <p className="mt-2">Try enabling cookies, disabling private browsing, or using a different browser.</p>
             </div>
@@ -115,7 +129,7 @@ export default function SignInForm() {
       <div className="mt-8 space-y-4">
         <button
           onClick={() => handleSignIn('google')}
-          disabled={isLoading || !cookiesEnabled}
+          disabled={isLoading || !cookiesEnabled || !cookieTestPassed}
           className="w-full flex items-center justify-center gap-3 py-3 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#F15A25] transition-colors disabled:opacity-70"
           aria-label="Sign in with Google"
         >
@@ -133,7 +147,7 @@ export default function SignInForm() {
         </button>
         <button
           onClick={() => handleSignIn('apple')}
-          disabled={isLoading || !cookiesEnabled}
+          disabled={isLoading || !cookiesEnabled || !cookieTestPassed}
           className="w-full flex items-center justify-center gap-3 py-3 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#F15A25] transition-colors disabled:opacity-70"
           aria-label="Sign in with Apple"
         >
@@ -150,18 +164,6 @@ export default function SignInForm() {
           )}
         </button>
       </div>
-      <div className="mt-6 text-center text-sm">
-        <p className="text-gray-600">
-          By continuing, you agree to our{' '}
-          <Link href="/terms" className="text-[#F15A25] hover:text-[#E04E1A]">
-            Terms of Service
-          </Link>{' '}
-          and{' '}
-          <Link href="/privacy" className="text-[#F15A25] hover:text-[#E04E1A]">
-            Privacy Policy
-          </Link>
-        </p>
-      </div>
       {process.env.NODE_ENV !== 'production' && (
         <div className="mt-8 p-3 bg-gray-100 rounded text-xs font-mono">
           <div className="font-semibold">Debug Info:</div>
@@ -171,6 +173,7 @@ export default function SignInForm() {
           <div>Error: {searchParams.get('error') || 'none'}</div>
           <div>CallbackUrl: {callbackUrl}</div>
           <div>Cookies Enabled: {cookiesEnabled ? 'Yes' : 'No'}</div>
+          <div>Cookie Test Passed: {cookieTestPassed ? 'Yes' : 'No'}</div>
           <div>Current Cookies: {document.cookie.split('; ').join(', ') || 'none'}</div>
         </div>
       )}

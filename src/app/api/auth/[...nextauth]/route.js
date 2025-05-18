@@ -33,7 +33,7 @@ export const authOptions = {
           response_mode: 'form_post',
         },
       },
-      checks: ['pkce'], // Use PKCE instead of state
+      checks: ['pkce'], // Try PKCE first
       profile(profile) {
         console.log('Apple profile received:', {
           sub: profile.sub,
@@ -89,10 +89,21 @@ export const authOptions = {
       name: `next-auth.pkce.code_verifier`,
       options: {
         httpOnly: true,
-        sameSite: 'lax',
+        sameSite: 'lax', // Try lax for broader compatibility
         path: '/',
         secure: true,
         domain: '.fliday.com', // Include subdomains
+        maxAge: 15 * 60,
+      },
+    },
+    state: {
+      name: `next-auth.state`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: true,
+        domain: '.fliday.com',
         maxAge: 15 * 60,
       },
     },
@@ -175,14 +186,18 @@ export const authOptions = {
         return true;
       } catch (error) {
         console.error('Error in signIn callback:', error.message);
-        return false; // Fail sign-in on error to avoid redirect loop
+        return false;
       }
     },
     async redirect({ url, baseUrl }) {
       console.log('Redirect callback:', { url, baseUrl });
-      const callbackUrl = new URL(url, baseUrl).searchParams.get('callbackUrl') || url;
+      const parsedUrl = new URL(url, baseUrl);
+      const callbackUrl = parsedUrl.searchParams.get('callbackUrl') || parsedUrl.pathname;
       console.log('Resolved callbackUrl:', callbackUrl);
-      if (callbackUrl.startsWith('/') || callbackUrl.startsWith(baseUrl)) {
+      if (callbackUrl.startsWith('/') && callbackUrl !== '/auth/signin' && callbackUrl !== '/auth/error') {
+        return `${baseUrl}${callbackUrl}`;
+      }
+      if (callbackUrl.startsWith(baseUrl) && !callbackUrl.includes('/auth/signin') && !callbackUrl.includes('/auth/error')) {
         return callbackUrl;
       }
       return baseUrl;
@@ -215,6 +230,7 @@ export const authOptions = {
           stack: metadata?.error?.stack?.split('\n').slice(0, 3).join('\n'),
           cookies: metadata?.cookies || 'not available',
           callbackUrl: metadata?.callbackUrl || 'not available',
+          requestCookies: metadata?.request?.cookies || 'not available',
         });
       }
     },
