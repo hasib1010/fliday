@@ -1,7 +1,6 @@
 import NextAuth from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
 import AppleProvider from 'next-auth/providers/apple';
-import { createPrivateKey } from 'crypto';
 import { SignJWT, importPKCS8 } from 'jose';
 import dbConnect from '@/lib/mongodb';
 import User from '@/models/User';
@@ -26,70 +25,28 @@ ${process.env.APPLE_PRIVATE_KEY}
   return jwt;
 }
 
-// Generate client secret on startup
-let appleClientSecret;
-(async () => {
-  try {
-    appleClientSecret = await createAppleClientSecret();
-    console.log('Apple client secret generated successfully');
-  } catch (error) {
-    console.error('Failed to generate Apple client secret:', error);
-  }
-})();
-
 export const authOptions = {
   providers: [
     GoogleProvider({
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-      authorization: {
-        params: {
-          prompt: 'consent',
-          access_type: 'offline',
-          response_type: 'code',
-        },
-      },
     }),
-    AppleProvider({
-      clientId: process.env.APPLE_ID,
-      clientSecret: appleClientSecret || '',
+    {
+      id: 'apple',
+      name: 'Apple',
+      type: 'oauth',
+      wellKnown: 'https://appleid.apple.com/.well-known/openid-configuration',
       authorization: {
         params: {
           scope: 'email name',
           response_mode: 'form_post',
           response_type: 'code',
+          client_id: process.env.APPLE_ID,
         },
       },
-      // Apple-specific token request
-      token: {
-        url: 'https://appleid.apple.com/auth/token',
-        async request({ client, params, checks, provider }) {
-          const clientSecret = await createAppleClientSecret();
-          
-          const response = await fetch(provider.token.url, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: new URLSearchParams({
-              client_id: provider.clientId,
-              client_secret: clientSecret,
-              code: params.code,
-              grant_type: 'authorization_code',
-              redirect_uri: provider.callbackUrl,
-            }).toString(),
-          });
-
-          const tokens = await response.json();
-          
-          if (!response.ok) {
-            throw new Error(`Apple token error: ${JSON.stringify(tokens)}`);
-          }
-
-          return { tokens };
-        },
-      },
-      // Custom profile parsing
+      idToken: true,
+      clientId: process.env.APPLE_ID,
+      clientSecret: '', // We'll generate this dynamically
       profile(profile) {
         return {
           id: profile.sub,
@@ -98,7 +55,43 @@ export const authOptions = {
           image: null,
         };
       },
-    }),
+      checks: [], // Disable ALL checks including PKCE
+      client: {
+        id_token_signed_response_alg: 'RS256',
+        token_endpoint_auth_method: 'client_secret_post',
+      },
+      token: {
+        async request(context) {
+          const { params, provider } = context;
+          
+          // Generate client secret for this request
+          const client_secret = await createAppleClientSecret();
+          
+          const response = await fetch('https://appleid.apple.com/auth/token', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams({
+              grant_type: 'authorization_code',
+              code: params.code,
+              client_id: process.env.APPLE_ID,
+              client_secret,
+              redirect_uri: provider.callbackUrl,
+            }).toString(),
+          });
+
+          const tokens = await response.json();
+          
+          if (!response.ok) {
+            console.error('Apple token error:', tokens);
+            throw new Error('Failed to exchange authorization code for tokens');
+          }
+
+          return { tokens };
+        },
+      },
+    },
   ],
   
   pages: {
@@ -118,7 +111,6 @@ export const authOptions = {
         
         // Handle Apple's specific behavior
         if (account.provider === 'apple') {
-          // Apple only provides user info on first authorization
           const appleUserId = profile?.sub || account.providerAccountId;
           
           // Check if user exists by email or appleUser ID
@@ -154,7 +146,7 @@ export const authOptions = {
             // Create new user
             const newUser = await User.create({
               email: user.email,
-              name: user.name || 'User', // Default name if not provided
+              name: user.name || 'User',
               provider: 'apple',
               providerId: account.providerAccountId,
               appleUser: appleUserId,
@@ -178,7 +170,7 @@ export const authOptions = {
             user.role = existingUser.role;
           } else {
             const newUser = await User.create({
-              name: user.name || 'User', // Default if not provided
+              name: user.name || 'User',
               email: user.email,
               provider: account.provider,
               providerId: account.providerAccountId,
@@ -197,8 +189,7 @@ export const authOptions = {
       }
     },
     
-    async jwt({ token, account, user, profile }) {
-      // Initial sign in
+    async jwt({ token, account, user }) {
       if (account && user) {
         return {
           ...token,
@@ -207,8 +198,6 @@ export const authOptions = {
           provider: account.provider,
         };
       }
-      
-      // Subsequent requests
       return token;
     },
     
@@ -222,9 +211,7 @@ export const authOptions = {
     },
     
     async redirect({ url, baseUrl }) {
-      // Allows relative callback URLs
       if (url.startsWith('/')) return `${baseUrl}${url}`;
-      // Allows callback URLs on the same origin
       else if (new URL(url).origin === baseUrl) return url;
       return baseUrl;
     },
@@ -239,83 +226,20 @@ export const authOptions = {
     },
   },
   
-  // Security configuration
   session: {
     strategy: 'jwt',
-    maxAge: 30 * 24 * 60 * 60, // 30 days
+    maxAge: 30 * 24 * 60 * 60,
   },
   
   jwt: {
-    maxAge: 30 * 24 * 60 * 60, // 30 days
+    maxAge: 30 * 24 * 60 * 60,
   },
   
-  // Cookie configuration optimized for Apple Sign In
-  cookies: {
-    sessionToken: {
-      name: `${process.env.NODE_ENV === 'production' ? '__Secure-' : ''}next-auth.session-token`,
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/',
-        secure: process.env.NODE_ENV === 'production',
-      },
-    },
-    callbackUrl: {
-      name: `${process.env.NODE_ENV === 'production' ? '__Secure-' : ''}next-auth.callback-url`,
-      options: {
-        sameSite: 'lax',
-        path: '/',
-        secure: process.env.NODE_ENV === 'production',
-      },
-    },
-    csrfToken: {
-      name: `next-auth.csrf-token`,
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/',
-        secure: process.env.NODE_ENV === 'production',
-      },
-    },
-    pkceCodeVerifier: {
-      name: `next-auth.pkce.code_verifier`,
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/',
-        secure: process.env.NODE_ENV === 'production',
-        maxAge: 900, // 15 mins
-      },
-    },
-    state: {
-      name: `next-auth.state`,
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/',
-        secure: process.env.NODE_ENV === 'production',
-        maxAge: 900, // 15 mins
-      },
-    },
-    nonce: {
-      name: `next-auth.nonce`,
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/',
-        secure: process.env.NODE_ENV === 'production',
-      },
-    },
-  },
+  // Use default cookie configuration
+  useSecureCookies: process.env.NODE_ENV === 'production',
   
-  // Required secret
   secret: process.env.NEXTAUTH_SECRET,
-  
-  // Enable debug in development
   debug: process.env.NODE_ENV === 'development',
-  
-  // Trust host header in production
-  trustHost: process.env.NODE_ENV === 'production',
 };
 
 const handler = NextAuth(authOptions);
