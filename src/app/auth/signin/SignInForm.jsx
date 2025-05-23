@@ -46,23 +46,24 @@ export default function SignInForm() {
     setError('');
     setIsLoading(true);
     setProvider(providerName);
+    
     try {
       console.log(`Initiating sign-in with ${providerName}`, { callbackUrl });
-      const result = await signIn(providerName, { callbackUrl, redirect: false });
-      if (result?.url) {
-        console.log('Sign-in successful, redirecting to:', result.url);
-        router.push(result.url);
-      } else if (result?.error) {
-        console.error('Sign-in result error:', result.error);
-        setError(ERROR_MESSAGES[result.error] || ERROR_MESSAGES.default);
-      } else {
-        console.warn('Sign-in result missing url or error:', result);
-        setError('Authentication failed. Please try again.');
-      }
+      
+      // For OAuth providers, we should use redirect: true to handle the OAuth flow properly
+      // The redirect: false option doesn't work well with OAuth providers like Apple
+      const result = await signIn(providerName, {
+        callbackUrl,
+        redirect: true, // Changed to true for proper OAuth flow
+      });
+      
+      // With redirect: true, the code below won't execute as the page redirects
+      // Errors will be handled when redirected back to the signin page with error params
+      
     } catch (err) {
-      console.error('Sign-in error:', err.message);
-      setError('Authentication failed. Try a different browser or contact support.');
-    } finally {
+      console.error('Sign-in error:', err);
+      // Only show error if there's an actual exception
+      setError('Unable to connect to the authentication service. Please try again.');
       setIsLoading(false);
       setProvider(null);
     }
@@ -85,20 +86,26 @@ export default function SignInForm() {
         <h2 className="mt-6 text-2xl font-bold text-gray-900">Welcome back</h2>
         <p className="mt-2 text-sm text-gray-600">Sign in to continue to your account</p>
       </div>
+      
       {error && (
         <div className="p-4 bg-red-50 text-red-600 text-sm rounded-md">
-          <p>{error}</p>
-          <div className="mt-2 text-xs">
-            <p>This could be due to:</p>
-            <ul className="list-disc pl-5 mt-1 space-y-1">
-              <li>Browser cache issues - try clearing cache</li>
-              <li>Private browsing mode - try disabling</li>
-              <li>Strict privacy settings (e.g., Safari’s Prevent Cross-Site Tracking)</li>
-            </ul>
-            <p className="mt-2">Try a different browser or contact support if the issue persists.</p>
-          </div>
+          <p className="font-medium">{error}</p>
+          {/* Only show detailed error info for OAuth callback errors */}
+          {searchParams.get('error') && (
+            <div className="mt-2 text-xs">
+              <p>This could be due to:</p>
+              <ul className="list-disc pl-5 mt-1 space-y-1">
+                <li>Browser cache issues - try clearing cache</li>
+                <li>Private browsing mode - try disabling</li>
+                <li>Strict privacy settings (e.g., Safari's Prevent Cross-Site Tracking)</li>
+                <li>Popup blockers preventing the authentication window</li>
+              </ul>
+              <p className="mt-2">Try a different browser or contact support if the issue persists.</p>
+            </div>
+          )}
         </div>
       )}
+      
       <div className="mt-8 space-y-4">
         <button
           onClick={() => handleSignIn('google')}
@@ -118,6 +125,7 @@ export default function SignInForm() {
             </>
           )}
         </button>
+        
         <button
           onClick={() => handleSignIn('apple')}
           disabled={isLoading}
@@ -137,6 +145,7 @@ export default function SignInForm() {
           )}
         </button>
       </div>
+      
       {process.env.NODE_ENV !== 'production' && (
         <div className="mt-8 p-3 bg-gray-100 rounded text-xs font-mono">
           <div className="font-semibold">Debug Info:</div>

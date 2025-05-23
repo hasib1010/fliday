@@ -7,7 +7,9 @@ import User from '@/models/User';
 console.log('NextAuth configuration loading...', {
   googleClientIdExists: !!process.env.GOOGLE_CLIENT_ID,
   appleIdExists: !!process.env.APPLE_ID,
-  appleSecretExists: !!process.env.APPLE_SECRET,
+  appleTeamIdExists: !!process.env.APPLE_TEAM_ID,
+  appleKeyIdExists: !!process.env.APPLE_KEY_ID,
+  applePrivateKeyExists: !!process.env.APPLE_PRIVATE_KEY,
   nextAuthUrl: process.env.NEXTAUTH_URL || '(not set)',
   nodeEnv: process.env.NODE_ENV,
 });
@@ -25,28 +27,18 @@ export const authOptions = {
     }),
     AppleProvider({
       clientId: process.env.APPLE_ID,
-      clientSecret: process.env.APPLE_SECRET,
-      wellKnown: 'https://appleid.apple.com/.well-known/openid-configuration',
+      clientSecret: {
+        appleId: process.env.APPLE_ID,
+        teamId: process.env.APPLE_TEAM_ID,
+        privateKey: process.env.APPLE_PRIVATE_KEY,
+        keyId: process.env.APPLE_KEY_ID,
+      },
       authorization: {
         params: {
-          scope: 'name email',
+          scope: 'email name',
           response_mode: 'form_post',
+          response_type: 'code',
         },
-      },
-      checks: [], // No PKCE or state to avoid cookie issues
-      profile(profile) {
-        console.log('Apple profile received:', {
-          sub: profile.sub,
-          email: profile.email,
-          name: profile.name,
-        });
-        return {
-          id: profile.sub,
-          email: profile.email,
-          name: profile.name
-            ? `${profile.name.firstName || ''} ${profile.name.lastName || ''}`.trim()
-            : null,
-        };
       },
     }),
   ],
@@ -73,8 +65,9 @@ export const authOptions = {
         });
         token.provider = account.provider;
         token.providerId = account.providerAccountId;
+        // Apple only provides the name on first authorization
         if (account.provider === 'apple' && profile) {
-          token.name = user.name;
+          token.name = user.name || profile.name;
         }
       }
       if (user?.id && !token.role) {
@@ -91,28 +84,48 @@ export const authOptions = {
         email: user.email,
         providerId: account.providerAccountId,
       });
+      
+      // Apple-specific handling
+      if (account.provider === 'apple') {
+        // Apple may not provide email in some cases
+        if (!user.email && profile?.email) {
+          user.email = profile.email;
+        }
+        // Apple only provides name on first authorization
+        if (!user.name && profile?.name) {
+          user.name = profile.name;
+        }
+      }
+      
       if (!user.email) {
         console.error('User email missing from OAuth provider');
         return false;
       }
+      
       try {
         await dbConnect();
         console.log('Database connected successfully');
+        
         const existingUser = await User.findOne({ email: user.email })
           .select('_id role provider providerId name')
           .lean();
+          
         if (existingUser) {
           console.log(`Found existing user with email: ${user.email}`);
           user.id = existingUser._id.toString();
           user.role = existingUser.role || 'user';
+          
           const updateData = {
             lastLogin: new Date(),
             provider: account.provider,
             providerId: account.providerAccountId,
           };
+          
+          // Update name if provided and not empty
           if (user.name && user.name.trim() !== '') {
             updateData.name = user.name;
           }
+          
           User.findByIdAndUpdate(existingUser._id, { $set: updateData }, { new: false })
             .catch(err => console.error('Background user update failed:', err));
         } else {
@@ -140,12 +153,17 @@ export const authOptions = {
       const parsedUrl = new URL(url, baseUrl);
       const callbackUrl = parsedUrl.searchParams.get('callbackUrl') || parsedUrl.pathname;
       console.log('Resolved callbackUrl:', callbackUrl);
+      
+      // Allow redirects to paths within the application
       if (callbackUrl.startsWith('/') && callbackUrl !== '/auth/signin' && callbackUrl !== '/auth/error') {
         return `${baseUrl}${callbackUrl}`;
       }
+      
+      // Allow redirects to the same host
       if (callbackUrl.startsWith(baseUrl) && !callbackUrl.includes('/auth/signin') && !callbackUrl.includes('/auth/error')) {
         return callbackUrl;
       }
+      
       return baseUrl;
     },
   },
@@ -193,11 +211,11 @@ export const authOptions = {
   secret: process.env.NEXTAUTH_SECRET,
   session: {
     strategy: 'jwt',
-    maxAge: 30 * 24 * 60 * 60,
+    maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   debug: process.env.NEXTAUTH_DEBUG === 'true',
   jwt: {
-    maxAge: 30 * 24 * 60 * 60,
+    maxAge: 30 * 24 * 60 * 60, // 30 days
   },
 };
 
