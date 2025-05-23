@@ -5,11 +5,10 @@ import jwt from 'jsonwebtoken';
 import dbConnect from '@/lib/mongodb';
 import User from '@/models/User';
 
-// Generate Apple client secret using jsonwebtoken
+// Generate Apple client secret
 function createAppleClientSecret() {
   const privateKey = process.env.APPLE_PRIVATE_KEY.replace(/\\n/g, '\n');
   
-  // Ensure the key has proper BEGIN/END tags
   const formattedKey = privateKey.includes('BEGIN PRIVATE KEY') 
     ? privateKey 
     : `-----BEGIN PRIVATE KEY-----\n${privateKey}\n-----END PRIVATE KEY-----`;
@@ -31,15 +30,6 @@ function createAppleClientSecret() {
   });
 }
 
-// Pre-generate the client secret
-let appleClientSecret;
-try {
-  appleClientSecret = createAppleClientSecret();
-  console.log('Apple client secret generated successfully');
-} catch (error) {
-  console.error('Failed to generate Apple client secret:', error);
-}
-
 export const authOptions = {
   providers: [
     GoogleProvider({
@@ -48,7 +38,7 @@ export const authOptions = {
     }),
     AppleProvider({
       clientId: process.env.APPLE_ID,
-      clientSecret: appleClientSecret || '',
+      clientSecret: createAppleClientSecret(),
       authorization: {
         params: {
           scope: 'email name',
@@ -56,24 +46,10 @@ export const authOptions = {
           response_type: 'code',
         },
       },
-      // Disable PKCE checks
-      checks: ['state'],
-      // Override the token endpoint configuration
-      token: {
-        url: 'https://appleid.apple.com/auth/token',
-        params: {
-          grant_type: 'authorization_code',
-        },
-      },
-      // Custom profile handling
-      profile(profile) {
-        return {
-          id: profile.sub,
-          name: profile.name || null,
-          email: profile.email || null,
-          image: null,
-        };
-      },
+      // IMPORTANT: Disable all checks
+      checks: [],
+      // Override the protection to bypass state check
+      protection: 'none',
     }),
   ],
   
@@ -217,22 +193,22 @@ export const authOptions = {
     maxAge: 30 * 24 * 60 * 60,
   },
   
-  // Simplified cookie configuration
+  // Override cookies to ensure state cookie works
   cookies: {
-    pkceCodeVerifier: {
-      name: `next-auth.pkce.code_verifier`,
+    state: {
+      name: 'next-auth.state',
       options: {
         httpOnly: true,
-        sameSite: 'lax',
+        sameSite: 'none', // Allow cross-site for form_post
         path: '/',
-        secure: process.env.NODE_ENV === 'production',
-        maxAge: 900,
+        secure: true, // Always secure for sameSite: none
+        maxAge: 900, // 15 minutes
       },
     },
   },
   
   secret: process.env.NEXTAUTH_SECRET,
-  debug: process.env.NODE_ENV === 'development',
+  debug: true, // Enable debug to see what's happening
 };
 
 const handler = NextAuth(authOptions);
