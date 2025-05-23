@@ -1,28 +1,43 @@
 import NextAuth from 'next-auth';
 import GoogleProvider from 'next-auth/providers/google';
 import AppleProvider from 'next-auth/providers/apple';
-import { SignJWT, importPKCS8 } from 'jose';
+import jwt from 'jsonwebtoken';
 import dbConnect from '@/lib/mongodb';
 import User from '@/models/User';
 
-// Generate Apple client secret
-async function createAppleClientSecret() {
-  const privateKey = `-----BEGIN PRIVATE KEY-----
-${process.env.APPLE_PRIVATE_KEY}
------END PRIVATE KEY-----`;
-
-  const ecPrivateKey = await importPKCS8(privateKey, 'ES256');
+// Generate Apple client secret using jsonwebtoken
+function createAppleClientSecret() {
+  const privateKey = process.env.APPLE_PRIVATE_KEY.replace(/\\n/g, '\n');
   
-  const jwt = await new SignJWT({})
-    .setProtectedHeader({ alg: 'ES256', kid: process.env.APPLE_KEY_ID })
-    .setIssuer(process.env.APPLE_TEAM_ID)
-    .setAudience('https://appleid.apple.com')
-    .setSubject(process.env.APPLE_ID)
-    .setIssuedAt()
-    .setExpirationTime('180 days')
-    .sign(ecPrivateKey);
+  // Ensure the key has proper BEGIN/END tags
+  const formattedKey = privateKey.includes('BEGIN PRIVATE KEY') 
+    ? privateKey 
+    : `-----BEGIN PRIVATE KEY-----\n${privateKey}\n-----END PRIVATE KEY-----`;
 
-  return jwt;
+  const now = Math.floor(Date.now() / 1000);
+  const expirationTime = now + 86400 * 180; // 180 days
+
+  const claims = {
+    iss: process.env.APPLE_TEAM_ID,
+    iat: now,
+    exp: expirationTime,
+    aud: 'https://appleid.apple.com',
+    sub: process.env.APPLE_ID,
+  };
+
+  return jwt.sign(claims, formattedKey, {
+    algorithm: 'ES256',
+    keyid: process.env.APPLE_KEY_ID,
+  });
+}
+
+// Pre-generate the client secret
+let appleClientSecret;
+try {
+  appleClientSecret = createAppleClientSecret();
+  console.log('Apple client secret generated successfully');
+} catch (error) {
+  console.error('Failed to generate Apple client secret:', error);
 }
 
 export const authOptions = {
@@ -31,22 +46,26 @@ export const authOptions = {
       clientId: process.env.GOOGLE_CLIENT_ID,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET,
     }),
-    {
-      id: 'apple',
-      name: 'Apple',
-      type: 'oauth',
-      wellKnown: 'https://appleid.apple.com/.well-known/openid-configuration',
+    AppleProvider({
+      clientId: process.env.APPLE_ID,
+      clientSecret: appleClientSecret || '',
       authorization: {
         params: {
           scope: 'email name',
           response_mode: 'form_post',
           response_type: 'code',
-          client_id: process.env.APPLE_ID,
         },
       },
-      idToken: true,
-      clientId: process.env.APPLE_ID,
-      clientSecret: '', // We'll generate this dynamically
+      // Disable PKCE checks
+      checks: ['state'],
+      // Override the token endpoint configuration
+      token: {
+        url: 'https://appleid.apple.com/auth/token',
+        params: {
+          grant_type: 'authorization_code',
+        },
+      },
+      // Custom profile handling
       profile(profile) {
         return {
           id: profile.sub,
@@ -55,43 +74,7 @@ export const authOptions = {
           image: null,
         };
       },
-      checks: [], // Disable ALL checks including PKCE
-      client: {
-        id_token_signed_response_alg: 'RS256',
-        token_endpoint_auth_method: 'client_secret_post',
-      },
-      token: {
-        async request(context) {
-          const { params, provider } = context;
-          
-          // Generate client secret for this request
-          const client_secret = await createAppleClientSecret();
-          
-          const response = await fetch('https://appleid.apple.com/auth/token', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: new URLSearchParams({
-              grant_type: 'authorization_code',
-              code: params.code,
-              client_id: process.env.APPLE_ID,
-              client_secret,
-              redirect_uri: provider.callbackUrl,
-            }).toString(),
-          });
-
-          const tokens = await response.json();
-          
-          if (!response.ok) {
-            console.error('Apple token error:', tokens);
-            throw new Error('Failed to exchange authorization code for tokens');
-          }
-
-          return { tokens };
-        },
-      },
-    },
+    }),
   ],
   
   pages: {
@@ -101,6 +84,12 @@ export const authOptions = {
   
   callbacks: {
     async signIn({ user, account, profile }) {
+      console.log('SignIn callback:', { 
+        provider: account.provider, 
+        email: user.email,
+        hasProfile: !!profile 
+      });
+
       if (!user.email) {
         console.error('No email provided by OAuth provider');
         return false;
@@ -109,11 +98,9 @@ export const authOptions = {
       try {
         await dbConnect();
         
-        // Handle Apple's specific behavior
         if (account.provider === 'apple') {
           const appleUserId = profile?.sub || account.providerAccountId;
           
-          // Check if user exists by email or appleUser ID
           let existingUser = await User.findOne({ 
             $or: [
               { email: user.email },
@@ -122,19 +109,16 @@ export const authOptions = {
           });
           
           if (existingUser) {
-            // Update last login and any new data
             const updateData = {
               lastLogin: new Date(),
               provider: 'apple',
               providerId: account.providerAccountId,
             };
             
-            // Only update name if provided and user doesn't have one
             if (user.name && (!existingUser.name || existingUser.name === 'User')) {
               updateData.name = user.name;
             }
             
-            // Set appleUser if not already set
             if (!existingUser.appleUser) {
               updateData.appleUser = appleUserId;
             }
@@ -143,7 +127,6 @@ export const authOptions = {
             user.id = existingUser._id.toString();
             user.role = existingUser.role;
           } else {
-            // Create new user
             const newUser = await User.create({
               email: user.email,
               name: user.name || 'User',
@@ -157,7 +140,6 @@ export const authOptions = {
             user.role = 'user';
           }
         } else {
-          // Handle other providers (Google, etc.)
           const existingUser = await User.findOne({ email: user.email });
           
           if (existingUser) {
@@ -235,8 +217,19 @@ export const authOptions = {
     maxAge: 30 * 24 * 60 * 60,
   },
   
-  // Use default cookie configuration
-  useSecureCookies: process.env.NODE_ENV === 'production',
+  // Simplified cookie configuration
+  cookies: {
+    pkceCodeVerifier: {
+      name: `next-auth.pkce.code_verifier`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+        maxAge: 900,
+      },
+    },
+  },
   
   secret: process.env.NEXTAUTH_SECRET,
   debug: process.env.NODE_ENV === 'development',
