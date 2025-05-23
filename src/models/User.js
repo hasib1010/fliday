@@ -4,7 +4,8 @@ import mongoose from 'mongoose';
 const UserSchema = new mongoose.Schema({
   name: {
     type: String,
-    required: [true, 'Please provide a name'],
+    required: false, // Changed: Apple might not provide name
+    default: 'User', // Added: Default value when name is not provided
     trim: true,
     maxlength: [50, 'Name cannot be more than 50 characters']
   },
@@ -27,6 +28,12 @@ const UserSchema = new mongoose.Schema({
   providerId: {
     type: String,
     required: [true, 'Provider ID is required']
+  },
+  // Added: Apple-specific user identifier
+  appleUser: {
+    type: String,
+    sparse: true, // Allows null/undefined while maintaining unique constraint
+    unique: true,
   },
   image: {
     type: String,
@@ -61,6 +68,10 @@ const UserSchema = new mongoose.Schema({
 UserSchema.pre('findOneAndUpdate', function() {
   this.set({ updatedAt: Date.now() });
 });
+
+// Add indexes for better query performance
+UserSchema.index({ email: 1, provider: 1 });
+UserSchema.index({ appleUser: 1 });
 
 // Create model if it doesn't exist already
 const User = mongoose.models.User || mongoose.model('User', UserSchema);

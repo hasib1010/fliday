@@ -25,6 +25,7 @@
     "cloudinary": "^2.6.0",
     "country-flags-svg": "^2.0.0-beta.1",
     "date-fns": "^4.1.0",
+    "jose": "^6.0.11",
     "jsonwebtoken": "^9.0.2",
     "lru-cache": "^11.1.0",
     "lucide-react": "^0.487.0",
