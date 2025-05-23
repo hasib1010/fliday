@@ -36,7 +36,7 @@ export const authOptions = {
       authorization: {
         params: {
           scope: 'email name',
-          response_mode: 'form_post',
+          response_mode: 'query', // Changed from 'form_post' to 'query'
           response_type: 'code',
         },
       },
@@ -246,9 +246,9 @@ export const authOptions = {
       name: `__Secure-next-auth.pkce.code_verifier`,
       options: {
         httpOnly: true,
-        sameSite: 'lax',
+        sameSite: 'none', // Changed to 'none' for cross-site POST
         path: '/',
-        secure: process.env.NODE_ENV === 'production',
+        secure: true, // Always true for sameSite: 'none'
         maxAge: 60 * 15, // 15 minutes
       },
     },
@@ -256,9 +256,9 @@ export const authOptions = {
       name: `__Secure-next-auth.state`,
       options: {
         httpOnly: true,
-        sameSite: 'lax',
+        sameSite: 'none', // Changed to 'none' for cross-site POST
         path: '/',
-        secure: process.env.NODE_ENV === 'production',
+        secure: true, // Always true for sameSite: 'none'
         maxAge: 60 * 15, // 15 minutes
       },
     },
