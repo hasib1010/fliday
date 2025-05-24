@@ -37,27 +37,28 @@ function CheckoutForm({ packageData, selectedPaymentMethod, taxCountry, couponCo
   const elements = useElements();
   const [processing, setProcessing] = useState(false);
   const [cardError, setCardError] = useState(null);
-  const [paymentRequest, setPaymentRequest] = useState(null);
-  const [canMakePayment, setCanMakePayment] = useState(false);
+  const [applePayRequest, setApplePayRequest] = useState(null);
+  const [googlePayRequest, setGooglePayRequest] = useState(null);
+  const [canMakeApplePay, setCanMakeApplePay] = useState(false);
+  const [canMakeGooglePay, setCanMakeGooglePay] = useState(false);
   const [isPaymentRequestLoading, setIsPaymentRequestLoading] = useState(true);
   const { data: session } = useSession();
 
-  // Set up Payment Request for Apple Pay and Google Pay
+  // Set up Payment Requests for Apple Pay and Google Pay
   useEffect(() => {
     if (!stripe || !packageData) {
       console.log('Stripe or package data not ready');
       return;
     }
 
-    const initPaymentRequest = async () => {
+    const initPaymentRequests = async () => {
       try {
         setIsPaymentRequestLoading(true);
-        
-        // Convert price from your format (10000 = $1.00) to cents (100 = $1.00)
         const priceInCents = Math.round(parseInt(packageData.price) / 100);
         console.log('Setting up payment request with amount (cents):', priceInCents);
 
-        const pr = stripe.paymentRequest({
+        // Apple Pay Payment Request
+        const applePayPr = stripe.paymentRequest({
           country: 'US',
           currency: 'usd',
           total: {
@@ -68,212 +69,148 @@ function CheckoutForm({ packageData, selectedPaymentMethod, taxCountry, couponCo
           requestPayerEmail: true,
         });
 
-        // Check if the browser supports payment request
-        const canMakePaymentResult = await pr.canMakePayment();
-        console.log('Can make payment result:', canMakePaymentResult);
-        
-        if (canMakePaymentResult) {
-          setPaymentRequest(pr);
-          setCanMakePayment(true);
-          
-          // Set up the payment method handler
-          pr.on('paymentmethod', async (e) => {
-            console.log('Payment method received:', e.paymentMethod);
-            setProcessing(true);
+        // Google Pay Payment Request
+        const googlePayPr = stripe.paymentRequest({
+          country: 'US',
+          currency: 'usd',
+          total: {
+            label: packageData?.name || 'eSIM Package',
+            amount: priceInCents,
+          },
+          requestPayerName: true,
+          requestPayerEmail: true,
+        });
 
-            try {
-              // Create order
-              const orderResponse = await fetch('/api/orders', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  packageCode: packageData.packageCode,
-                  packageName: packageData.name,
-                  dataAmount: packageData.dataAmount,
-                  duration: packageData.duration,
-                  location: packageData.location,
-                  price: packageData.price,
-                  currency: packageData.currency,
-                  paymentMethod: selectedPaymentMethod,
-                  couponCode: couponCode || null,
-                  status: 'pending_payment',
-                }),
-              });
-
-              if (!orderResponse.ok) {
-                const errorData = await orderResponse.json();
-                throw new Error(errorData.error || 'Failed to create order');
-              }
-
-              const orderData = await orderResponse.json();
-              console.log('Order created:', orderData);
-
-              // Create payment intent
-              const intentResponse = await fetch('/api/payment/create-intent', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                  orderId: orderData.orderId,
-                  packageCode: packageData.packageCode,
-                  paymentMethod: e.paymentMethod.id,
-                  couponCode: couponCode || null,
-                  taxCountry: taxCountry,
-                }),
-              });
-
-              if (!intentResponse.ok) {
-                const errorData = await intentResponse.json();
-                throw new Error(errorData.error || 'Payment server error');
-              }
-
-              const { clientSecret, orderId } = await intentResponse.json();
-              console.log('Payment intent created');
-
-              // Confirm the payment
-              const { error: confirmError, paymentIntent } = await stripe.confirmCardPayment(
-                clientSecret,
-                { payment_method: e.paymentMethod.id },
-                { handleActions: false }
-              );
-
-              if (confirmError) {
-                console.error('Payment confirmation error:', confirmError);
-                e.complete('fail');
-                onError(confirmError.message);
-              } else if (paymentIntent.status === 'requires_action') {
-                // Handle 3D Secure
-                e.complete('success');
-                const { error: actionError } = await stripe.confirmCardPayment(clientSecret);
-                if (actionError) {
-                  console.error('Error after additional action:', actionError);
-                  onError(actionError.message);
-                } else {
-                  console.log('Payment confirmed after additional action');
-                  onSuccess(orderId);
-                }
-              } else {
-                console.log('Payment succeeded');
-                e.complete('success');
-                onSuccess(orderId);
-              }
-            } catch (err) {
-              console.error('Payment processing error:', err);
-              e.complete('fail');
-              onError(err.message || 'Payment failed');
-            } finally {
-              setProcessing(false);
-            }
-          });
+        // Check Apple Pay availability
+        const applePayResult = await applePayPr.canMakePayment();
+        console.log('Apple Pay canMakePayment result:', applePayResult);
+        if (applePayResult?.applePay) {
+          setApplePayRequest(applePayPr);
+          setCanMakeApplePay(true);
+          applePayPr.on('paymentmethod', handlePaymentMethod);
         } else {
-          console.log('Payment Request API not available');
-          setCanMakePayment(false);
+          setCanMakeApplePay(false);
+        }
+
+        // Check Google Pay availability
+        const googlePayResult = await googlePayPr.canMakePayment();
+        console.log('Google Pay canMakePayment result:', googlePayResult);
+        if (googlePayResult?.googlePay) {
+          setGooglePayRequest(googlePayPr);
+          setCanMakeGooglePay(true);
+          googlePayPr.on('paymentmethod', handlePaymentMethod);
+        } else {
+          setCanMakeGooglePay(false);
         }
       } catch (error) {
-        console.error('Error setting up payment request:', error);
-        setCanMakePayment(false);
+        console.error('Error setting up payment requests:', error);
+        setCanMakeApplePay(false);
+        setCanMakeGooglePay(false);
       } finally {
         setIsPaymentRequestLoading(false);
       }
     };
 
-    initPaymentRequest();
+    const handlePaymentMethod = async (e) => {
+      console.log('Payment method received:', e.paymentMethod);
+      setProcessing(true);
+
+      try {
+        // Create order
+        const orderResponse = await fetch('/api/orders', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            packageCode: packageData.packageCode,
+            packageName: packageData.name,
+            dataAmount: packageData.dataAmount,
+            duration: packageData.duration,
+            location: packageData.location,
+            price: packageData.price,
+            currency: packageData.currency,
+            paymentMethod: selectedPaymentMethod,
+            couponCode: couponCode || null,
+            status: 'pending_payment',
+          }),
+        });
+
+        if (!orderResponse.ok) {
+          const errorData = await orderResponse.json();
+          throw new Error(errorData.error || 'Failed to create order');
+        }
+
+        const orderData = await orderResponse.json();
+        console.log('Order created:', orderData);
+
+        // Create payment intent
+        const intentResponse = await fetch('/api/payment/create-intent', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            orderId: orderData.orderId,
+            packageCode: packageData.packageCode,
+            paymentMethod: e.paymentMethod.id,
+            couponCode: couponCode || null,
+            taxCountry: taxCountry,
+          }),
+        });
+
+        if (!intentResponse.ok) {
+          const errorData = await intentResponse.json();
+          throw new Error(errorData.error || 'Payment server error');
+        }
+
+        const { clientSecret, orderId } = await intentResponse.json();
+        console.log('Payment intent created');
+
+        // Confirm the payment
+        const { error: confirmError, paymentIntent } = await stripe.confirmCardPayment(
+          clientSecret,
+          { payment_method: e.paymentMethod.id },
+          { handleActions: false }
+        );
+
+        if (confirmError) {
+          console.error('Payment confirmation error:', confirmError);
+          e.complete('fail');
+          onError(confirmError.message);
+        } else if (paymentIntent.status === 'requires_action') {
+          // Handle 3D Secure
+          e.complete('success');
+          const { error: actionError } = await stripe.confirmCardPayment(clientSecret);
+          if (actionError) {
+            console.error('Error after additional action:', actionError);
+            onError(actionError.message);
+          } else {
+            console.log('Payment confirmed after additional action');
+            onSuccess(orderId);
+          }
+        } else {
+          console.log('Payment succeeded');
+          e.complete('success');
+          onSuccess(orderId);
+        }
+      } catch (err) {
+        console.error('Payment processing error:', err);
+        e.complete('fail');
+        onError(err.message || 'Payment failed');
+      } finally {
+        setProcessing(false);
+      }
+    };
+
+    initPaymentRequests();
   }, [stripe, packageData, selectedPaymentMethod, couponCode, taxCountry, onSuccess, onError]);
 
-  const handleCardSubmit = async (event) => {
-    event.preventDefault();
-
-    if (!stripe || !elements || !packageData || !session) {
-      console.error('Missing required elements for payment');
-      onError('Missing required payment information');
-      return;
+  // Fallback to credit card if selected payment method is unavailable
+  useEffect(() => {
+    if (isPaymentRequestLoading) return;
+    if (selectedPaymentMethod === 'applepay' && !canMakeApplePay) {
+      onError('Apple Pay is not available on this device or browser. Please use another payment method.');
+    } else if (selectedPaymentMethod === 'googlepay' && !canMakeGooglePay) {
+      onError('Google Pay is not available on this device or browser. Please use another payment method.');
     }
-
-    setProcessing(true);
-    setCardError(null);
-
-    try {
-      // Create order
-      const orderResponse = await fetch('/api/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          packageCode: packageData.packageCode,
-          packageName: packageData.name,
-          dataAmount: packageData.dataAmount,
-          duration: packageData.duration,
-          location: packageData.location,
-          price: packageData.price,
-          currency: packageData.currency,
-          paymentMethod: 'card',
-          couponCode: couponCode || null,
-          status: 'pending_payment',
-        }),
-      });
-
-      const orderData = await orderResponse.json();
-
-      if (!orderResponse.ok) {
-        throw new Error(orderData.error || 'Failed to create order');
-      }
-
-      console.log('Order created:', orderData);
-
-      // Create payment method
-      const cardElement = elements.getElement(CardElement);
-      if (!cardElement) {
-        throw new Error('Card element not found');
-      }
-
-      const { error, paymentMethod } = await stripe.createPaymentMethod({
-        type: 'card',
-        card: cardElement,
-      });
-
-      if (error) {
-        console.error('Error creating payment method:', error);
-        setCardError(error.message);
-        return;
-      }
-
-      console.log('Payment method created:', paymentMethod.id);
-
-      // Create payment intent
-      const response = await fetch('/api/payment/create-intent', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          orderId: orderData.orderId,
-          packageCode: packageData.packageCode,
-          paymentMethod: paymentMethod.id,
-          couponCode: couponCode || null,
-          taxCountry: taxCountry,
-        }),
-      });
-
-      const intentData = await response.json();
-
-      if (!response.ok) {
-        throw new Error(intentData.error || 'Payment server error');
-      }
-
-      // Confirm payment
-      const { error: confirmError } = await stripe.confirmCardPayment(intentData.clientSecret);
-
-      if (confirmError) {
-        console.error('Error confirming payment:', confirmError);
-        setCardError(confirmError.message);
-      } else {
-        console.log('Payment succeeded');
-        onSuccess(intentData.orderId);
-      }
-    } catch (err) {
-      console.error('Payment processing error:', err);
-      setCardError(err.message || 'Failed to process payment. Please try again.');
-      onError(err.message || 'Payment failed');
-    } finally {
-      setProcessing(false);
-    }
-  };
+  }, [selectedPaymentMethod, canMakeApplePay, canMakeGooglePay, isPaymentRequestLoading, onError]);
 
   // Show loading state while Stripe initializes
   if (!stripe || !elements) {
@@ -288,7 +225,100 @@ function CheckoutForm({ packageData, selectedPaymentMethod, taxCountry, couponCo
   // Credit card form
   if (selectedPaymentMethod === 'credit') {
     return (
-      <form onSubmit={handleCardSubmit}>
+      <form onSubmit={async (event) => {
+        event.preventDefault();
+        if (!stripe || !elements || !packageData || !session) {
+          console.error('Missing required elements for payment');
+          onError('Missing required payment information');
+          return;
+        }
+
+        setProcessing(true);
+        setCardError(null);
+
+        try {
+          // Create order
+          const orderResponse = await fetch('/api/orders', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              packageCode: packageData.packageCode,
+              packageName: packageData.name,
+              dataAmount: packageData.dataAmount,
+              duration: packageData.duration,
+              location: packageData.location,
+              price: packageData.price,
+              currency: packageData.currency,
+              paymentMethod: 'card',
+              couponCode: couponCode || null,
+              status: 'pending_payment',
+            }),
+          });
+
+          const orderData = await orderResponse.json();
+
+          if (!orderResponse.ok) {
+            throw new Error(orderData.error || 'Failed to create order');
+          }
+
+          console.log('Order created:', orderData);
+
+          // Create payment method
+          const cardElement = elements.getElement(CardElement);
+          if (!cardElement) {
+            throw new Error('Card element not found');
+          }
+
+          const { error, paymentMethod } = await stripe.createPaymentMethod({
+            type: 'card',
+            card: cardElement,
+          });
+
+          if (error) {
+            console.error('Error creating payment method:', error);
+            setCardError(error.message);
+            return;
+          }
+
+          console.log('Payment method created:', paymentMethod.id);
+
+          // Create payment intent
+          const response = await fetch('/api/payment/create-intent', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              orderId: orderData.orderId,
+              packageCode: packageData.packageCode,
+              paymentMethod: paymentMethod.id,
+              couponCode: couponCode || null,
+              taxCountry: taxCountry,
+            }),
+          });
+
+          const intentData = await response.json();
+
+          if (!response.ok) {
+            throw new Error(intentData.error || 'Payment server error');
+          }
+
+          // Confirm payment
+          const { error: confirmError } = await stripe.confirmCardPayment(intentData.clientSecret);
+
+          if (confirmError) {
+            console.error('Error confirming payment:', confirmError);
+            setCardError(confirmError.message);
+          } else {
+            console.log('Payment succeeded');
+            onSuccess(intentData.orderId);
+          }
+        } catch (err) {
+          console.error('Payment processing error:', err);
+          setCardError(err.message || 'Failed to process payment. Please try again.');
+          onError(err.message || 'Payment failed');
+        } finally {
+          setProcessing(false);
+        }
+      }}>
         <div className="mb-6">
           <label className="block text-sm font-medium text-gray-700 mb-2">Card details</label>
           <div className="p-3 border border-gray-300 rounded-lg">
@@ -335,7 +365,6 @@ function CheckoutForm({ packageData, selectedPaymentMethod, taxCountry, couponCo
 
   // Apple Pay / Google Pay
   if (selectedPaymentMethod === 'googlepay' || selectedPaymentMethod === 'applepay') {
-    // Still loading payment request
     if (isPaymentRequestLoading) {
       return (
         <div className="flex justify-center items-center py-10">
@@ -345,7 +374,9 @@ function CheckoutForm({ packageData, selectedPaymentMethod, taxCountry, couponCo
       );
     }
 
-    // Payment request is ready and browser supports it
+    const paymentRequest = selectedPaymentMethod === 'applepay' ? applePayRequest : googlePayRequest;
+    const canMakePayment = selectedPaymentMethod === 'applepay' ? canMakeApplePay : canMakeGooglePay;
+
     if (paymentRequest && canMakePayment) {
       return (
         <div className="mt-6">
@@ -371,20 +402,19 @@ function CheckoutForm({ packageData, selectedPaymentMethod, taxCountry, couponCo
       );
     }
 
-    // Payment method not available
     return (
       <div className="mt-6 p-4 bg-yellow-50 border border-yellow-100 rounded-lg">
         <p className="text-center text-sm text-yellow-700">
-          {selectedPaymentMethod === 'applepay' ? 'Apple Pay' : 'Google Pay'} is not available on this device or browser.
+          {selectedPaymentMethod === 'applepay' ? 'Apple Pay' : 'Google Pay'} is not available.
         </p>
         <p className="text-center text-sm text-yellow-700 mt-2">
-          Please select credit card as your payment method.
+          {selectedPaymentMethod === 'applepay'
+            ? 'Apple Pay requires Safari on macOS/iOS or Chrome on macOS with Touch ID and a configured Apple Pay wallet.'
+            : 'Google Pay requires a compatible browser (e.g., Chrome, Edge) and a configured Google Pay wallet.'}
         </p>
-        {selectedPaymentMethod === 'applepay' && (
-          <p className="text-center text-xs text-yellow-600 mt-2">
-            Apple Pay requires Safari on macOS/iOS or Chrome on macOS with Touch ID.
-          </p>
-        )}
+        <p className="text-center text-sm text-yellow-700 mt-2">
+          Please select another payment method, such as credit card.
+        </p>
       </div>
     );
   }
@@ -467,6 +497,7 @@ function CheckoutContent() {
 
   const handlePaymentMethodSelect = (method) => {
     setSelectedPaymentMethod(method);
+    setError(null); // Clear any previous errors
   };
 
   const handlePaymentSuccess = (newOrderId) => {
@@ -577,7 +608,7 @@ function CheckoutContent() {
                 </div>
               </div>
             ) : (
-              <div className="mb-8 ">
+              <div className="mb-8">
                 <h2 className="text-xl font-semibold mb-6">Sign up or log in</h2>
                 <div className="flex md:flex-row flex-col gap-2 mb-6 lg:p-2">
                   <button
@@ -585,14 +616,14 @@ function CheckoutContent() {
                     className="flex items-center justify-center gap-2 w-full py-2.5 px-4 border border-gray-300 rounded-full hover:bg-gray-50 transition-colors"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="-3 0 262 262" preserveAspectRatio="xMidYMid"><path d="M255.878 133.451c0-10.734-.871-18.567-2.756-26.69H130.55v48.448h71.947c-1.45 12.04-9.283 30.172-26.69 42.356l-.244 1.622 38.755 30.023 2.685.268c24.659-22.774 38.875-56.282 38.875-96.027" fill="#4285F4" /><path d="M130.55 261.1c35.248 0 64.839-11.605 86.453-31.622l-41.196-31.913c-11.024 7.688-25.82 13.055-45.257 13.055-34.523 0-63.824-22.773-74.269-54.25l-1.531.13-40.298 31.187-.527 1.465C35.393 231.798 79.49 261.1 130.55 261.1" fill="#34A853" /><path d="M56.281 156.37c-2.756-8.123-4.351-16.827-4.351-25.82 0-8.994 1.595-17.697 4.206-25.82l-.073-1.73L15.26 71.312l-1.335.635C5.077 89.644 0 109.517 0 130.55s5.077 40.905 13.925 58.602l42.356-32.782" fill="#FBBC05" /><path d="M130.55 50.479c24.514 0 41.05 10.589 50.479 19.438l36.844-35.974C195.245 12.91 165.798 0 130.55 0 79.49 0 35.393 29.301 13.925 71.947l42.211 32.783c10.59-31.477 39.891-54.251 74.414-54.251" fill="#EB4335" /></svg>
-                    <span className="text-base font-medium text-gray-700">  Google</span>
+                    <span className="text-base font-medium text-gray-700">Google</span>
                   </button>
                   <button
                     onClick={handleAppleSignIn}
                     className="flex items-center justify-center gap-2 w-full py-2.5 px-4 border border-gray-300 rounded-full hover:bg-gray-50 transition-colors"
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" fill="#000000" width="18" height="18" viewBox="-52.01 0 560.035 560.035"><path d="M380.844 297.529c.787 84.752 74.349 112.955 75.164 113.314-.622 1.988-11.754 40.191-38.756 79.652-23.343 34.117-47.568 68.107-85.731 68.811-37.499.691-49.557-22.236-92.429-22.236-42.859 0-56.256 21.533-91.753 22.928-36.837 1.395-64.889-36.891-88.424-70.883-48.093-69.53-84.846-196.475-35.496-282.165 24.516-42.554 68.328-69.501 115.882-70.192 36.173-.69 70.315 24.336 92.429 24.336 22.1 0 63.59-30.096 107.208-25.676 18.26.76 69.517 7.376 102.429 55.552-2.652 1.644-61.159 35.704-60.523 106.559M310.369 89.418C329.926 65.745 343.089 32.79 339.498 0 311.308 1.133 277.22 18.785 257 42.445c-18.121 20.952-33.991 54.487-29.709 86.628 31.421 2.431 63.52-15.967 83.078-39.655" /></svg>
-                    <span className="text-base font-medium text-gray-700">  Apple</span>
+                    <span className="text-base font-medium text-gray-700">Apple</span>
                   </button>
                 </div>
                 <div className="text-xs text-gray-500 mb-8">
