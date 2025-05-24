@@ -362,7 +362,7 @@ function CheckoutForm({ packageData, selectedPaymentMethod, taxCountry, couponCo
               paymentRequest,
               style: {
                 paymentRequestButton: {
-                  type: selectedPaymentMethod === 'applepay' ? 'buy' : 'pay',
+                  type: selectedPaymentMethod === 'applepay' ? 'buy' : 'default', // Use 'default' for Google Pay
                   theme: 'dark',
                   height: '48px',
                 },
