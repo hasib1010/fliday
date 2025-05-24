@@ -40,7 +40,6 @@ function CheckoutForm({ packageData, selectedPaymentMethod, taxCountry, couponCo
   const [paymentRequest, setPaymentRequest] = useState(null);
   const [canMakePayment, setCanMakePayment] = useState({ applePay: false, googlePay: false });
   const [isPaymentRequestLoading, setIsPaymentRequestLoading] = useState(true);
-  const { data: session } = useSession();
 
   // Set up Payment Request for Apple Pay and Google Pay
   useEffect(() => {
@@ -66,21 +65,23 @@ function CheckoutForm({ packageData, selectedPaymentMethod, taxCountry, couponCo
           requestPayerEmail: true,
         });
 
-        // Check availability for both Apple Pay and Google Pay
+        // Check availability
         const result = await pr.canMakePayment();
-        console.log('canMakePayment result:', result);
+        console.log('canMakePayment result:', JSON.stringify(result, null, 2));
 
         const updatedCanMakePayment = {
           applePay: !!result?.applePay,
           googlePay: !!result?.googlePay || !!result, // Fallback to true if any wallet is available
         };
 
+        console.log('Setting canMakePayment:', updatedCanMakePayment);
         setCanMakePayment(updatedCanMakePayment);
 
         if (result) {
+          console.log('Setting paymentRequest');
           setPaymentRequest(pr);
           pr.on('paymentmethod', async (e) => {
-            console.log('Payment method received:', e.paymentMethod);
+            console.log('Payment method received:', JSON.stringify(e.paymentMethod, null, 2));
             setProcessing(true);
 
             try {
@@ -173,22 +174,23 @@ function CheckoutForm({ packageData, selectedPaymentMethod, taxCountry, couponCo
         console.error('Error setting up payment request:', error);
         setCanMakePayment({ applePay: false, googlePay: false });
       } finally {
+        console.log('Finished setting up payment request, isPaymentRequestLoading: false');
         setIsPaymentRequestLoading(false);
       }
     };
 
     initPaymentRequest();
-  }, [stripe, packageData, selectedPaymentMethod, couponCode, taxCountry, onSuccess, onError]);
+  }, [stripe, packageData, couponCode, taxCountry, onSuccess, onError]);
 
-  // Fallback to credit card if selected payment method is unavailable
+  // Log state for debugging
   useEffect(() => {
-    if (isPaymentRequestLoading) return;
-    if (selectedPaymentMethod === 'applepay' && !canMakePayment.applePay) {
-      onError('Apple Pay is not available on this device or browser. Please use another payment method.');
-    } else if (selectedPaymentMethod === 'googlepay' && !canMakePayment.googlePay) {
-      onError('Google Pay is not available on this device or browser. Please use another payment method.');
-    }
-  }, [selectedPaymentMethod, canMakePayment, isPaymentRequestLoading, onError]);
+    console.log('CheckoutForm render state:', {
+      selectedPaymentMethod,
+      isPaymentRequestLoading,
+      canMakePayment,
+      paymentRequest: paymentRequest ? 'set' : 'null',
+    });
+  }, [selectedPaymentMethod, isPaymentRequestLoading, canMakePayment, paymentRequest]);
 
   // Show loading state while Stripe initializes
   if (!stripe || !elements) {
@@ -205,7 +207,7 @@ function CheckoutForm({ packageData, selectedPaymentMethod, taxCountry, couponCo
     return (
       <form onSubmit={async (event) => {
         event.preventDefault();
-        if (!stripe || !elements || !packageData || !session) {
+        if (!stripe || !elements || !packageData) {
           console.error('Missing required elements for payment');
           onError('Missing required payment information');
           return;
@@ -319,11 +321,9 @@ function CheckoutForm({ packageData, selectedPaymentMethod, taxCountry, couponCo
 
         <button
           type="submit"
-          disabled={!stripe || processing || !session}
+          disabled={!stripe || processing}
           className={`w-full mt-6 font-medium py-3 rounded-lg transition-colors flex items-center justify-center ${
-            !session
-              ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-              : processing
+            processing
               ? 'bg-[#F15A25]/70 text-white cursor-wait'
               : 'bg-[#F15A25] hover:bg-[#E04E1A] text-white'
           }`}
@@ -700,7 +700,7 @@ function CheckoutContent() {
             </div>
 
             {isAuthenticated && packageData && stripePromise && (
-              <Elements stripe={stripePromise} key={selectedPaymentMethod}>
+              <Elements stripe={stripePromise}>
                 <CheckoutForm
                   packageData={packageData}
                   selectedPaymentMethod={selectedPaymentMethod}
