@@ -6,6 +6,7 @@ Disallow: /dashboard/
 Disallow: /profile/
 Disallow: /api/
 Disallow: /auth/
+Disallow: /checkout/
 Disallow: /checkout/success
 Disallow: /checkout/cancel
 Disallow: /temp/

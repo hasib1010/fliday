@@ -301,6 +301,7 @@ module.exports = {
           '/profile/',
           '/api/',
           '/auth/',
+          '/checkout/',
           '/checkout/success',
           '/checkout/cancel',
           '/temp/',
