@@ -1,0 +1,35 @@
+# *
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: /profile/
+Disallow: /api/
+Disallow: /auth/
+Disallow: /checkout/success
+Disallow: /checkout/cancel
+Disallow: /temp/
+Disallow: /_next/
+Disallow: /static/
+
+# Googlebot
+User-agent: Googlebot
+Allow: /
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: /profile/
+Disallow: /api/
+
+# Bingbot
+User-agent: Bingbot
+Allow: /
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: /profile/
+Disallow: /api/
+
+# Host
+Host: https://fliday.com
+
+# Sitemaps
+Sitemap: https://fliday.com/sitemap.xml

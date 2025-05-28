@@ -29,11 +29,10 @@ const UserSchema = new mongoose.Schema({
     type: String,
     required: [true, 'Provider ID is required']
   },
-  // Added: Apple-specific user identifier
   appleUser: {
     type: String,
     sparse: true, // Allows null/undefined while maintaining unique constraint
-    unique: true,
+    unique: true, // Implicitly creates a unique index on appleUser
   },
   image: {
     type: String,
@@ -65,7 +64,7 @@ const UserSchema = new mongoose.Schema({
 });
 
 // Update the 'lastLogin' field on document update
-UserSchema.pre('findOneAndUpdate', function() {
+UserSchema.pre('findOneAndUpdate', function () {
   this.set({ updatedAt: Date.now() });
 });
 

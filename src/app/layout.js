@@ -13,8 +13,62 @@ const poppins = Poppins({
 });
 
 export const metadata = {
-  title: "Fliday",
-  description: "ESim for travelers",
+  title: "Fliday: Your Travel eSIM Companion | Fast, Easy & Affordable Connectivity",
+  description: "Say goodbye to roaming fees. Fliday offers instant eSIMs for 100+ countries. Get connected in minutes with affordable prepaid data plans starting at just $3.99.",
+  keywords: [
+    "esim",
+    "travel esim", 
+    "international esim",
+    "esim for travel",
+    "buy esim online",
+    "best esim",
+    "digital sim",
+    "global esim",
+    "prepaid esim",
+    "esim for iPhone",
+    "esim for Android",
+    "esim app",
+    "instant esim delivery",
+    "esim plans",
+    "esim countries",
+    "mobile data for travel",
+    "no roaming charges",
+    "travel sim",
+    "e sim card",
+    "virtual sim",
+    "esim europe",
+    "esim usa",
+    "esim france",
+    "esim japan",
+    "esim canada",
+    "esim australia",
+    "esim for tourists",
+    "data roaming alternative"
+  ].join(", "),
+  openGraph: {
+    title: "Fliday: Your Travel eSIM Companion | Fast, Easy & Affordable Connectivity",
+    description: "Say goodbye to roaming fees. Fliday offers instant eSIMs for 100+ countries. Get connected in minutes with affordable prepaid data plans starting at just $3.99.",
+    type: "website",
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Fliday: Your Travel eSIM Companion | Fast, Easy & Affordable Connectivity",
+    description: "Say goodbye to roaming fees. Fliday offers instant eSIMs for 100+ countries. Get connected in minutes with affordable prepaid data plans starting at just $3.99.",
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+    },
+  },
+  verification: {
+    // Add your verification codes here when you have them
+    // google: 'your-google-verification-code',
+    // bing: 'your-bing-verification-code',
+  },
 };
 
 export default function RootLayout({ children }) {

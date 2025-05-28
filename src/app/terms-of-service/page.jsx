@@ -6,7 +6,7 @@ export default function TermsOfService() {
   const [lastUpdated] = useState('May 24, 2025');
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen mt-20">
       {/* Main Content */}
       <main className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <div className="bg-white rounded-xl shadow-md p-8">
