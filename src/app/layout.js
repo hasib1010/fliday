@@ -48,13 +48,24 @@ export const metadata = {
   openGraph: {
     title: "Fliday: Your Travel eSIM Companion | Fast, Easy & Affordable Connectivity",
     description: "Say goodbye to roaming fees. Fliday offers instant eSIMs for 100+ countries. Get connected in minutes with affordable prepaid data plans starting at just $3.99.",
-    type: "website",
-    locale: "en_US",
+    url: 'https://fliday.com',
+    siteName: 'Fliday',
+    images: [
+      {
+        url: 'https://fliday.com/og-image.png', // If using public folder
+        width: 1200,
+        height: 630,
+        alt: 'Fliday eSIM - Your Travel Connectivity Companion',
+      },
+    ],
+    locale: 'en_US',
+    type: 'website',
   },
   twitter: {
     card: "summary_large_image",
     title: "Fliday: Your Travel eSIM Companion | Fast, Easy & Affordable Connectivity",
     description: "Say goodbye to roaming fees. Fliday offers instant eSIMs for 100+ countries. Get connected in minutes with affordable prepaid data plans starting at just $3.99.",
+    images: ['https://fliday.com/og-image.png'], // If using public folder
   },
   robots: {
     index: true,

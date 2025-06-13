@@ -8,11 +8,11 @@ export const metadata = {
   openGraph: {
     title: 'Privacy Policy | Fliday eSIM',
     description: 'Learn about how Fliday eSIM collects, uses, and protects your personal information.',
-    url: 'https://fliday.com/privacy',
-    siteName: 'Fliday eSIM',
+    url: 'https://fliday.com/privacy-policy',
+    siteName: 'Fliday ',
     images: [
       {
-        url: 'https://fliday.com/og-image.jpg',
+        url: 'https://fliday.com/og-image.png',
         width: 1200,
         height: 630,
         alt: 'Fliday eSIM',

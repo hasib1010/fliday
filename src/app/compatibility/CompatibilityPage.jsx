@@ -188,7 +188,7 @@ export default function CompatibilityPage() {
         <div className="bg-gradient-to-r from-[#F15A25]/10 to-[#F15A25]/5 rounded-2xl p-8 mb-10">
           <h1 className="text-3xl md:text-4xl font-bold mb-4 flex items-center">
             <Smartphone className="mr-3 text-[#F15A25]" size={36} />
-            Device Compatibility Checker
+            eSIM Device Compatibility Checker
           </h1>
           <p className="text-lg text-gray-700 md:max-w-3xl mb-6">
             Verify if your smartphone or tablet is compatible with our eSIM service. We support {compatibleCount} 
