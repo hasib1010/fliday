@@ -44,7 +44,7 @@ export default function FAQSection() {
     },
     {
       question: "What if I need help with my eSIM?",
-      answer: "Our customer support team is available 24/7 to assist with any issues. You can contact us via chat on our website, email at support@youresimcompany.com, or through our app. We typically respond within minutes to resolve your connectivity issues quickly."
+      answer: "Our customer support team is available 24/7 to assist with any issues. You can contact us via chat on our website, email at support@fliday.com, or through our app. We typically respond within minutes to resolve your connectivity issues quickly."
     },
     {
       question: "Is an eSIM better than a physical SIM card?",

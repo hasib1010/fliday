@@ -180,8 +180,7 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <h3 className="font-medium text-gray-900">Email Us</h3>
-                    <p className="text-gray-600 mt-1">support@youresimcompany.com</p>
-                    <p className="text-gray-600">info@youresimcompany.com</p>
+                    <p className="text-gray-600 mt-1">support@fliday.com</p> 
                   </div>
                 </div>
                 
