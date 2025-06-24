@@ -260,7 +260,7 @@ export default function ContactPage() {
             <div className="space-y-2">
               <h3 className="font-medium">How can I become a partner or reseller?</h3>
               <p className="text-gray-600">
-                Please email our partnership team at partners@youresimcompany.com with your proposal and company details.
+                Please email our partnership team at support@fliday.com with your proposal and company details.
               </p>
             </div>
           </div>
