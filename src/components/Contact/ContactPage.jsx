@@ -206,7 +206,7 @@ export default function ContactPage() {
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Monday - Friday:</span>
-                  <span className="font-medium">9:00 AM - 6:00 PM</span>
+                  <span className="font-medium">9:00 AM - 5:00 PM</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Saturday:</span>
@@ -250,12 +250,7 @@ export default function ContactPage() {
               </p>
             </div>
             
-            <div className="space-y-2">
-              <h3 className="font-medium">Can I visit your office in person?</h3>
-              <p className="text-gray-600">
-                Yes, but we recommend scheduling an appointment first. Please contact us to arrange a suitable time.
-              </p>
-            </div>
+            
             
             <div className="space-y-2">
               <h3 className="font-medium">How can I become a partner or reseller?</h3>

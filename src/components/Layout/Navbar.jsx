@@ -114,6 +114,7 @@ export default function Navbar() {
     { href: '/how-it-works', label: 'How it works' },
     { href: '/support', label: 'Support' },
     { href: '/faq', label: 'FAQ' },
+    { href: '/compatibility', label: 'Compatibility' },
     { href: '/blog', label: 'Blog' },
   ];
 
