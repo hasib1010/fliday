@@ -11,7 +11,7 @@ export default function ContactPage() {
     subject: '',
     message: ''
   });
-  
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState(false);
   const [submitError, setSubmitError] = useState(false);
@@ -24,13 +24,28 @@ export default function ContactPage() {
     }));
   };
 
-  const handleSubmit = (e) => {
+  // Update the handleSubmit function in your existing ContactPage component
+  const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
-    
-    // Simulate API call
-    setTimeout(() => {
-      setIsSubmitting(false);
+    setSubmitError(false);
+
+    try {
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Something went wrong');
+      }
+
+      // Success
       setSubmitSuccess(true);
       setFormData({
         name: '',
@@ -38,12 +53,23 @@ export default function ContactPage() {
         subject: '',
         message: ''
       });
-      
+
       // Reset success message after 5 seconds
       setTimeout(() => {
         setSubmitSuccess(false);
       }, 5000);
-    }, 1500);
+
+    } catch (error) {
+      console.error('Contact form error:', error);
+      setSubmitError(true);
+
+      // Reset error message after 5 seconds
+      setTimeout(() => {
+        setSubmitError(false);
+      }, 5000);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -67,29 +93,29 @@ export default function ContactPage() {
           <div className="lg:col-span-3">
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 lg:p-8">
               <h2 className="text-2xl font-medium mb-6">Send Us a Message</h2>
-              
+
               {submitSuccess && (
                 <div className="bg-green-50 border border-green-200 text-green-700 rounded-lg p-4 mb-6 flex items-center">
                   <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M13.3334 4L6.00002 11.3333L2.66669 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M13.3334 4L6.00002 11.3333L2.66669 8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   </div>
                   <p>Thank you for your message! We'll get back to you soon.</p>
                 </div>
               )}
-              
+
               {submitError && (
                 <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-4 mb-6 flex items-center">
                   <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center mr-3 flex-shrink-0">
                     <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M8 5V8M8 11H8.01M15 8C15 11.866 11.866 15 8 15C4.13401 15 1 11.866 1 8C1 4.13401 4.13401 1 8 1C11.866 1 15 4.13401 15 8Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                      <path d="M8 5V8M8 11H8.01M15 8C15 11.866 11.866 15 8 15C4.13401 15 1 11.866 1 8C1 4.13401 4.13401 1 8 1C11.866 1 15 4.13401 15 8Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
                     </svg>
                   </div>
                   <p>Something went wrong. Please try again later.</p>
                 </div>
               )}
-              
+
               <form onSubmit={handleSubmit}>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                   <div>
@@ -117,7 +143,7 @@ export default function ContactPage() {
                     />
                   </div>
                 </div>
-                
+
                 <div className="mb-4">
                   <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-1">Subject</label>
                   <input
@@ -130,7 +156,7 @@ export default function ContactPage() {
                     required
                   />
                 </div>
-                
+
                 <div className="mb-6">
                   <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1">Your Message</label>
                   <textarea
@@ -143,7 +169,7 @@ export default function ContactPage() {
                     required
                   ></textarea>
                 </div>
-                
+
                 <button
                   type="submit"
                   disabled={isSubmitting}
@@ -167,12 +193,12 @@ export default function ContactPage() {
               </form>
             </div>
           </div>
-          
+
           {/* Contact Info - 2 columns on large screens */}
           <div className="lg:col-span-2">
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 lg:p-8 mb-6">
               <h2 className="text-2xl font-medium mb-6">Contact Information</h2>
-              
+
               <div className="space-y-6">
                 <div className="flex items-start">
                   <div className="w-10 h-10 bg-[#FFF0EC] rounded-full flex items-center justify-center mr-4 flex-shrink-0">
@@ -180,12 +206,12 @@ export default function ContactPage() {
                   </div>
                   <div>
                     <h3 className="font-medium text-gray-900">Email Us</h3>
-                    <p className="text-gray-600 mt-1">support@fliday.com</p> 
+                    <p className="text-gray-600 mt-1">support@fliday.com</p>
                   </div>
                 </div>
-                
-                
-                
+
+
+
                 <div className="flex items-start">
                   <div className="w-10 h-10 bg-[#FFF0EC] rounded-full flex items-center justify-center mr-4 flex-shrink-0">
                     <MessageSquare size={18} className="text-[#F15A25]" />
@@ -196,17 +222,17 @@ export default function ContactPage() {
                     <p className="text-gray-600">Average response time: 2 minutes</p>
                   </div>
                 </div>
-                
-                
+
+
               </div>
             </div>
-            
+
             <div className="bg-[#FFF8F6] rounded-xl p-6 lg:p-8">
               <h3 className="text-xl font-medium mb-4">Business Hours</h3>
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Monday - Friday:</span>
-                  <span className="font-medium">9:00 AM - 5:00 PM</span>
+                  <span className="font-medium">9:00 AM - 5q:00 PM</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Saturday:</span>
@@ -224,7 +250,7 @@ export default function ContactPage() {
           </div>
         </div>
       </div>
-      
+
       {/* FAQ Section */}
       <div className="max-w-[1220px] mx-auto px-4 lg:px-0 mt-16">
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 lg:p-8">
@@ -234,7 +260,7 @@ export default function ContactPage() {
               Find quick answers to common questions about our services
             </p>
           </div>
-          
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div className="space-y-2">
               <h3 className="font-medium">How quickly do you respond to inquiries?</h3>
@@ -242,16 +268,16 @@ export default function ContactPage() {
                 We typically respond to email inquiries within 24 hours. For urgent matters, please use our live chat or call our support line.
               </p>
             </div>
-            
+
             <div className="space-y-2">
               <h3 className="font-medium">Do you offer customer support in multiple languages?</h3>
               <p className="text-gray-600">
                 Yes, our customer support team can assist you in English, Spanish, French, German, and Mandarin.
               </p>
             </div>
-            
-            
-            
+
+
+
             <div className="space-y-2">
               <h3 className="font-medium">How can I become a partner or reseller?</h3>
               <p className="text-gray-600">
@@ -259,7 +285,7 @@ export default function ContactPage() {
               </p>
             </div>
           </div>
-          
+
           <div className="mt-8 text-center">
             <p className="text-gray-600">
               Still have questions? Check our complete <a href="/faq" className="text-[#F15A25] font-medium">FAQ page</a>.
@@ -267,8 +293,8 @@ export default function ContactPage() {
           </div>
         </div>
       </div>
-      
-      
+
+
     </div>
   );
 }

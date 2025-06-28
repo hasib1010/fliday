@@ -23,7 +23,8 @@ import {
   DollarSign,
   Tag,
   Edit,
-  DollarSignIcon
+  DollarSignIcon,
+  MessageSquare
 } from 'lucide-react';
 
 export default function AdminLayout({ children }) {
@@ -67,6 +68,7 @@ export default function AdminLayout({ children }) {
     }
   };
 
+  // Update the mainNavigation array in your AdminLayout component
   const mainNavigation = [
     { name: 'Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
     {
@@ -81,8 +83,9 @@ export default function AdminLayout({ children }) {
       ],
     },
     { name: 'Users', href: '/admin/users', icon: Users },
+    { name: 'Contacts', href: '/admin/contacts', icon: MessageSquare }, // Add this line
     { name: 'Pricing', href: '/admin/pricing', icon: DollarSignIcon },
-    { name: 'Blog', href: '/admin/blog', icon: Edit }, // Add Blog route
+    { name: 'Blog', href: '/admin/blog', icon: Edit },
     {
       name: 'Settings',
       href: '#',
