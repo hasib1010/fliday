@@ -62,8 +62,7 @@ export async function sendESIMEmail(email, esimData) {
             font-weight: 600;
             display: flex;
             align-items: center;
-        }
-        
+        } 
         .card-icon {
             width: 24px;
             height: 24px;

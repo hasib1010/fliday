@@ -1,3 +1,4 @@
+// src\app\api\webhooks\stripe\route.js
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import dbConnect from '@/lib/mongodb';
@@ -16,7 +17,7 @@ const ESIM_API_BASE_URL = process.env.ESIM_API_BASE_URL || 'https://api.esimacce
 const ESIM_ACCESS_CODE = process.env.ESIM_ACCESS_CODE;
 
 export async function POST(request) {
-  console.log('⚡⚡⚡ WEBHOOK TRIGGERED ⚡⚡⚡');
+ 
   try {
     const body = await request.text();
     const signature = request.headers.get('stripe-signature');

@@ -2,16 +2,22 @@
 import { NextResponse } from 'next/server';
 import axios from 'axios';
 
-const ESIM_ACCESS_CODE = process.env.ESIM_ACCESS_CODE || 'f8b5************335e';
-const ESIM_SECRET_KEY = process.env.ESIM_SECRET_KEY || '2c3b************2a8d';
-const API_BASE_URL = process.env.ESIM_API_BASE_URL || 'https://api.esimaccess.com/api/v1';
+const ESIM_ACCESS_CODE = process.env.ESIM_ACCESS_CODE;
+const ESIM_SECRET_KEY = process.env.ESIM_SECRET_KEY;
+const API_BASE_URL = process.env.ESIM_API_BASE_URL;
 
 // Create a new order
 export async function POST(request) {
   try {
     const body = await request.json();
     const { packageCode, email, customerReference } = body;
-    
+    if (!ESIM_ACCESS_CODE || !ESIM_SECRET_KEY || !API_BASE_URL) {
+      return NextResponse.json(
+        { success: false, message: 'eSIMaccess API credentials are not configured' },
+        { status: 500 }
+      );
+    }
+      
     if (!packageCode) {
       return NextResponse.json(
         { success: false, message: 'Package code is required' },

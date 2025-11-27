@@ -2,8 +2,8 @@
 import { NextResponse } from 'next/server';
 import axios from 'axios';
 
-const ESIM_ACCESS_CODE = process.env.ESIM_ACCESS_CODE || 'f8b5************335e';
-const API_BASE_URL = process.env.ESIM_API_BASE_URL || 'https://api.esimaccess.com/api/v1';
+const ESIM_ACCESS_CODE = process.env.ESIM_ACCESS_CODE  ;
+const API_BASE_URL = process.env.ESIM_API_BASE_URL ;
 
 export async function GET(request, { params }) {
   const { orderNo } = params;

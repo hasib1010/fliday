@@ -1,15 +1,15 @@
-// app/api/orders/route.js
+// app/api/orders/route.js - FINAL VERSION WITH PROPER PRICE HANDLING
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/app/api/auth/[...nextauth]/route';
 import dbConnect from '@/lib/mongodb';
 import Order from '@/models/Order';
 import User from '@/models/User';
-import PackagePricing from '@/models/PackagePricing'; // Import the pricing model
+import PackagePricing from '@/models/PackagePricing';
 import { v4 as uuidv4 } from 'uuid';
+import { fetchProviderPackagePrice, orderESIMFromProvider } from '@/lib/esim-provider';
 
-// Default markup if no custom pricing is found
-const DEFAULT_MARKUP_AMOUNT = 10000; // $1.00 markup in Stripe's format (cents * 100)
+const DEFAULT_MARKUP_AMOUNT = 10000; // $1.00
 
 export async function GET(request) {
   try {
@@ -27,7 +27,6 @@ export async function GET(request) {
 
     await dbConnect();
 
-    // Get user ID
     const user = await User.findOne({
       email: session.user.email
     });
@@ -39,7 +38,6 @@ export async function GET(request) {
       }, { status: 404 });
     }
 
-    // If orderId is provided, fetch a specific order
     if (orderId) {
       const order = await Order.findOne({ 
         orderId, 
@@ -59,7 +57,6 @@ export async function GET(request) {
       });
     }
 
-    // If no orderId, fetch all orders for the user
     const orders = await Order.find({ 
       userId: user._id 
     }).sort({ createdAt: -1 });
@@ -90,14 +87,13 @@ export async function POST(request) {
 
     const body = await request.json();
     
-    // Required fields
     const {
       packageCode,
       packageName,
       dataAmount,
       duration,
       location,
-      price,           // This is the price from the eSIM API (may include frontend markup)
+      price, // What user agreed to pay
       currency = 'USD',
       paymentMethod,
       taxCountry,
@@ -114,7 +110,6 @@ export async function POST(request) {
 
     await dbConnect();
 
-    // Get user by email rather than trying ID conversion
     const user = await User.findOne({ email: session.user.email });
 
     if (!user) {
@@ -124,76 +119,118 @@ export async function POST(request) {
       }, { status: 404 });
     }
 
-    // Look up custom pricing if available
+    console.log('='.repeat(80));
+    console.log(`[Order Creation] Starting order for package: ${packageCode}`);
+    console.log(`[Order Creation] User expected price: $${price / 10000}`);
+    console.log('='.repeat(80));
+
+    // ============================================
+    // STEP 1: Fetch current price from provider
+    // ============================================
+    let currentProviderPrice;
+    let providerPackageData;
+    
+    try {
+      console.log('[STEP 1] Fetching current price from provider...');
+      providerPackageData = await fetchProviderPackagePrice(packageCode);
+      currentProviderPrice = providerPackageData.price;
+      
+      console.log(`[STEP 1] ✓ Current provider price: $${currentProviderPrice / 10000}`);
+    } catch (providerError) {
+      console.error('[STEP 1] ✗ Failed to fetch provider price:', providerError.message);
+      console.log('[STEP 1] Falling back to calculated price...');
+      
+      // Fallback: Try to get from custom pricing or calculate
+      let customPricing = null;
+      try {
+        customPricing = await PackagePricing.findOne({ packageCode });
+      } catch (err) {
+        console.warn('Error fetching custom pricing:', err);
+      }
+
+      if (customPricing) {
+        currentProviderPrice = customPricing.originalPrice;
+        console.log(`[STEP 1] Using custom pricing: $${currentProviderPrice / 10000}`);
+      } else if (body.originalPrice !== undefined) {
+        currentProviderPrice = body.originalPrice;
+        console.log(`[STEP 1] Using provided original price: $${currentProviderPrice / 10000}`);
+      } else {
+        // Last resort: subtract default markup
+        currentProviderPrice = price - DEFAULT_MARKUP_AMOUNT;
+        if (currentProviderPrice < 0) {
+          currentProviderPrice = Math.round(price * 0.9);
+        }
+        console.log(`[STEP 1] Using calculated price: $${currentProviderPrice / 10000}`);
+      }
+    }
+
+    // ============================================
+    // STEP 2: Calculate pricing with markup
+    // ============================================
+    console.log('[STEP 2] Calculating final pricing...');
+    
+    let originalPrice = currentProviderPrice;
+    let markupAmount;
+    let finalPrice;
+
     let customPricing = null;
     try {
       customPricing = await PackagePricing.findOne({ packageCode });
     } catch (error) {
-      console.warn('Error fetching custom pricing:', error);
-      // Continue with default pricing if there's an error
+      console.warn('Error fetching custom pricing for markup:', error);
     }
 
-    // Calculate pricing based on custom settings if available
-    let originalPrice; // Provider's price without markup
-    let markupAmount; // Our markup
-    let finalPrice; // Price customer pays
-
-    if (customPricing) {
-      // Use custom pricing from database
-      originalPrice = customPricing.originalPrice;
+    if (customPricing && customPricing.retailPrice) {
       finalPrice = customPricing.retailPrice;
       markupAmount = finalPrice - originalPrice;
-      
-      console.log(`Using custom pricing for ${packageCode}: Original: ${originalPrice/10000}, Retail: ${finalPrice/10000}, Markup: ${markupAmount/10000}`);
+      console.log(`[STEP 2] Using custom markup: $${markupAmount / 10000}`);
     } else {
-      // Use default markup
-      // The price passed from frontend may already include markup, so we need to be careful
-      
-      // Check if originalPrice was provided in the request (from frontend)
-      if (body.originalPrice !== undefined) {
-        originalPrice = body.originalPrice;
-        finalPrice = price; // Keep the price as-is from the request
-        markupAmount = finalPrice - originalPrice;
-      } else {
-        // Calculate originalPrice by removing default markup from price
-        markupAmount = DEFAULT_MARKUP_AMOUNT;
-        originalPrice = price - markupAmount;
-        finalPrice = price;
-        
-        // Ensure we don't have negative provider price (sanity check)
-        if (originalPrice < 0) {
-          console.warn(`Calculated negative provider price: ${originalPrice}. Using price as fallback.`);
-          originalPrice = Math.round(price * 0.9); // Assume 90% of price is original
-          markupAmount = price - originalPrice;
-        }
-      }
-      
-      console.log(`Using default pricing for ${packageCode}: Original: ${originalPrice/10000}, Final: ${finalPrice/10000}, Markup: ${markupAmount/10000}`);
+      markupAmount = DEFAULT_MARKUP_AMOUNT;
+      finalPrice = originalPrice + markupAmount;
+      console.log(`[STEP 2] Using default markup: $${markupAmount / 10000}`);
     }
 
-    // Apply coupon discount if available
+    // Check if price changed significantly
+    const priceDifference = Math.abs(finalPrice - price);
+    const priceChangePercent = (priceDifference / price) * 100;
+    
+    if (priceChangePercent > 5) {
+      console.warn(`[STEP 2] ⚠ Price changed ${priceChangePercent.toFixed(1)}%: Expected $${price/10000}, Actual $${finalPrice/10000}`);
+    } else {
+      console.log(`[STEP 2] ✓ Price stable (${priceChangePercent.toFixed(1)}% change)`);
+    }
+
+    console.log('[STEP 2] Final pricing breakdown:');
+    console.log(`  - Provider price: $${originalPrice / 10000}`);
+    console.log(`  - Markup: $${markupAmount / 10000}`);
+    console.log(`  - Customer pays: $${finalPrice / 10000}`);
+
     let discountAmount = 0;
     if (couponCode) {
-      // Here you could implement coupon validation and discount calculation
-      // For now, assuming no discount
+      // Implement coupon logic
     }
 
-    // Create a unique orderId
+    // ============================================
+    // STEP 3: Create order in MongoDB
+    // ============================================
+    console.log('[STEP 3] Creating order in MongoDB...');
+    
     const orderId = uuidv4();
+    const transactionId = `TXN-${Date.now()}-${Math.random().toString(36).substring(7)}`;
 
-    // Create new order
     const order = new Order({
       orderId,
       userId: user._id,
+      transactionId,
       packageCode,
       packageName,
       dataAmount,
       duration,
       location,
-      originalPrice: originalPrice,     // Provider's price without markup
-      markupAmount: markupAmount,       // Our markup
-      discountAmount: discountAmount,   // Handle coupons here if needed
-      finalPrice: finalPrice,           // Price with markup (customer pays this)
+      originalPrice,
+      markupAmount,
+      discountAmount,
+      finalPrice,
       currency,
       taxCountry,
       couponCode,
@@ -204,16 +241,79 @@ export async function POST(request) {
     });
 
     await order.save();
+    console.log(`[STEP 3] ✓ Order created: ${orderId}`);
+
+    // ============================================
+    // STEP 4: Order eSIM from provider
+    // ============================================
+    console.log('[STEP 4] Ordering eSIM from provider...');
     
-    console.log(`Order created: ${orderId}, Original price: ${originalPrice/10000}$, Markup: ${markupAmount/10000}$, Final price: ${finalPrice/10000}$`);
-    
-    return NextResponse.json({
-      success: true,
-      orderId,
-      message: 'Order created successfully'
-    });
+    try {
+      const esimResult = await orderESIMFromProvider({
+        transactionId,
+        packageCode,
+        providerPrice: originalPrice, // Use current provider price
+        count: 1
+      });
+
+      console.log(`[STEP 4] ✓ eSIM ordered successfully. OrderNo: ${esimResult.orderNo}`);
+
+      // Update order with orderNo
+      await Order.findOneAndUpdate(
+        { orderId },
+        {
+          $set: {
+            'esimDetails.orderNo': esimResult.orderNo,
+            'esimDetails.transactionId': transactionId,
+            orderStatus: 'processing',
+            updatedAt: new Date()
+          }
+        }
+      );
+
+      console.log(`[STEP 4] ✓ Order updated with orderNo`);
+      console.log('='.repeat(80));
+      console.log('[Order Creation] ✓ SUCCESS - All steps completed');
+      console.log('='.repeat(80));
+
+      return NextResponse.json({
+        success: true,
+        orderId,
+        message: 'Order created successfully'
+      });
+
+    } catch (esimError) {
+      console.error('[STEP 4] ✗ Failed to order eSIM:', esimError.message);
+      
+      // Update order status to failed
+      await Order.findOneAndUpdate(
+        { orderId },
+        {
+          $set: {
+            orderStatus: 'failed',
+            failureReason: esimError.message,
+            updatedAt: new Date()
+          }
+        }
+      );
+
+      console.log('='.repeat(80));
+      console.log('[Order Creation] ✗ FAILED - eSIM provisioning error');
+      console.log('='.repeat(80));
+
+      // Return error to frontend
+      return NextResponse.json({
+        success: false,
+        error: `Failed to provision eSIM: ${esimError.message}`,
+        orderId // Include for support reference
+      }, { status: 500 });
+    }
   } catch (error) {
     console.error('Error creating order:', error);
+    console.log('='.repeat(80));
+    console.log('[Order Creation] ✗ FAILED - Unexpected error');
+    console.log('='.repeat(80));
+    
     return NextResponse.json({
       success: false,
       error: error.message || 'Failed to create order'

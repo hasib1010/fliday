@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import PropTypes from 'prop-types';
 import SetupProcess from '@/components/Home/SetupProcess';
-import ESIMPopup from '@/components/ESIMPopup'; // Import the ESIMPopup component
+import ESIMPopup from '@/components/ESIMPopup'; 
 
 // Loading Skeleton Component
 const LoadingSkeleton = () => (
@@ -75,10 +75,10 @@ const ConfirmationContent = () => {
     copiedPUK: false,
     copiedAPN: false,
     activeTab: 'qr',
-    isPopupOpen: false // New state for popup visibility
+    isPopupOpen: false
   });
 
-  const maxRetries = 5;
+  const maxRetries = 10;
   const retryDelay = 3000;
 
   const formatPrice = useCallback((price) => {
@@ -159,47 +159,102 @@ const ConfirmationContent = () => {
     try {
       setState(prev => ({ ...prev, loading: true, loadingPhase: prev.retryCount === 0 ? 'verifying' : 'generating' }));
 
-      const response = await fetch(`/api/orders?orderId=${orderId}`);
-      if (!response.ok) {
-        throw new Error((await response.json()).error || 'Failed to fetch order');
+      // First, get the order from MongoDB
+      const orderResponse = await fetch(`/api/orders?orderId=${orderId}`);
+      if (!orderResponse.ok) {
+        throw new Error((await orderResponse.json()).error || 'Failed to fetch order');
       }
 
-      const data = await response.json();
-      if (!data.success || !data.order) {
+      const orderData = await orderResponse.json();
+      if (!orderData.success || !orderData.order) {
         throw new Error('Order not found');
       }
 
-      setState(prev => ({ ...prev, orderData: data.order }));
+      const order = orderData.order;
 
-      if (data.order.esimDetails?.qrCodeUrl && data.order.esimDetails?.iccid) {
-        setState(prev => ({ ...prev, loading: false, loadingPhase: 'completed', error: null }));
+      // If we already have complete eSIM details with QR code, use them
+      if (order.esimDetails?.qrCodeUrl && order.esimDetails?.iccid) {
+        setState(prev => ({ 
+          ...prev, 
+          orderData: order, 
+          loading: false, 
+          loadingPhase: 'completed', 
+          error: null 
+        }));
         return;
       }
 
-      if (data.order.orderStatus === 'failed' || data.order.esimDetails?.esimStatus === 'CANCEL') {
+      // If order status is failed or eSIM is canceled
+      if (order.orderStatus === 'failed' || order.esimDetails?.esimStatus === 'CANCEL') {
         setState(prev => ({
           ...prev,
-          error: data.order.failureReason || 'Order processing failed or eSIM canceled',
+          error: order.failureReason || 'Order processing failed or eSIM canceled',
           loading: false,
           loadingPhase: 'error'
         }));
         return;
       }
 
+      // Otherwise, query the eSIM provider API to get/update profile details
+      console.log('Querying eSIM profile for orderId:', orderId);
+      const queryResponse = await fetch('/api/esim/query', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          orderId: orderId,
+          orderNo: order.esimDetails?.orderNo || order.orderNo
+        })
+      });
+                        
+      if (!queryResponse.ok) {
+        const errorData = await queryResponse.json();
+        console.error('eSIM query error:', errorData);
+        
+        // If no profiles found yet, retry
+        if (errorData.errorCode === '200010' && state.retryCount < maxRetries) {
+          setTimeout(() => {
+            setState(prev => ({ ...prev, retryCount: prev.retryCount + 1 }));
+          }, retryDelay);
+          return;
+        }
+        
+        throw new Error(errorData.error || 'Failed to query eSIM profile');
+      }
+
+      const queryData = await queryResponse.json();
+      
+      if (queryData.success && queryData.esimDetails) {
+        const updatedOrderResponse = await fetch(`/api/orders?orderId=${orderId}`);
+        if (updatedOrderResponse.ok) {
+          const updatedOrderData = await updatedOrderResponse.json();
+          if (updatedOrderData.success && updatedOrderData.order) {
+            setState(prev => ({ 
+              ...prev, 
+              orderData: updatedOrderData.order, 
+              loading: false, 
+              loadingPhase: 'completed', 
+              error: null 
+            }));
+            return;
+          }
+        }
+      }
+
+      // If still no QR code after query, retry
       if (state.retryCount < maxRetries) {
         setTimeout(() => {
           setState(prev => ({ ...prev, retryCount: prev.retryCount + 1 }));
-          fetchOrderData();
         }, retryDelay);
       } else {
         setState(prev => ({
           ...prev,
-          error: 'eSIM generation timeout. Please try again later.',
+          error: 'eSIM generation timeout. Profiles are being allocated. Please check back in a few minutes or contact support.',
           loading: false,
           loadingPhase: 'error'
         }));
       }
     } catch (err) {
+      console.error('Fetch error:', err);
       setState(prev => ({
         ...prev,
         error: err.message || 'Failed to load order data',
@@ -234,14 +289,9 @@ const ConfirmationContent = () => {
     }
   }, [state.orderData, session?.user?.email]);
 
-  // Fix for the copyToClipboard function - focus on correct state variable naming
   const copyToClipboard = useCallback((text, type) => {
     if (!text || text === 'N/A') return;
 
-    // Debug log to check the type being passed
-    console.log('Copy type:', type);
-
-    // Create a temporary input element
     const tempInput = document.createElement('input');
     tempInput.value = text;
     tempInput.style.position = 'fixed';
@@ -249,63 +299,28 @@ const ConfirmationContent = () => {
     document.body.appendChild(tempInput);
     tempInput.select();
 
-    // Execute the copy command
     document.execCommand('copy');
-
-    // Remove the temporary element
     document.body.removeChild(tempInput);
 
-    // For ICCID - make sure we're using the correct capitalization
-    if (type.toLowerCase() === 'iccid') {
-      setState(prev => ({ ...prev, copiedICCID: true }));
-      setTimeout(() => setState(prev => ({ ...prev, copiedICCID: false })), 2000);
-    }
-    // For SMDP - make sure we're using the correct capitalization
-    else if (type.toLowerCase() === 'smdp') {
-      setState(prev => ({ ...prev, copiedSMDP: true }));
-      setTimeout(() => setState(prev => ({ ...prev, copiedSMDP: false })), 2000);
-    }
-    // For Activation - make sure we're using the correct capitalization
-    else if (type.toLowerCase() === 'activation') {
-      setState(prev => ({ ...prev, copiedActivation: true }));
-      setTimeout(() => setState(prev => ({ ...prev, copiedActivation: false })), 2000);
-    }
-    // For PIN - make sure we're using the correct capitalization
-    else if (type.toLowerCase() === 'pin') {
-      setState(prev => ({ ...prev, copiedPIN: true }));
-      setTimeout(() => setState(prev => ({ ...prev, copiedPIN: false })), 2000);
-    }
-    // For PUK - make sure we're using the correct capitalization
-    else if (type.toLowerCase() === 'puk') {
-      setState(prev => ({ ...prev, copiedPUK: true }));
-      setTimeout(() => setState(prev => ({ ...prev, copiedPUK: false })), 2000);
-    }
-    // For APN - make sure we're using the correct capitalization
-    else if (type.toLowerCase() === 'apn') {
-      setState(prev => ({ ...prev, copiedAPN: true }));
-      setTimeout(() => setState(prev => ({ ...prev, copiedAPN: false })), 2000);
-    }
-    // For any other type (fallback)
-    else {
-      const stateVarName = `copied${type.charAt(0).toUpperCase() + type.slice(1)}`;
-      const stateUpdate = {};
-      stateUpdate[stateVarName] = true;
-      setState(prev => ({ ...prev, ...stateUpdate }));
-
-      setTimeout(() => {
-        const resetUpdate = {};
-        resetUpdate[stateVarName] = false;
-        setState(prev => ({ ...prev, ...resetUpdate }));
-      }, 2000);
-    }
+    const typeKey = `copied${type.toUpperCase()}`;
+    setState(prev => ({ ...prev, [typeKey]: true }));
+    setTimeout(() => setState(prev => ({ ...prev, [typeKey]: false })), 2000);
   }, []);
 
   
   useEffect(() => {
-    if (status === 'authenticated') {
+    if (status === 'authenticated' && orderId) {
       fetchOrderData();
     }
-  }, [status, fetchOrderData]);
+  }, [status, orderId]);
+
+  // Retry effect
+  useEffect(() => {
+    if (state.retryCount > 0 && state.retryCount < maxRetries && orderId) {
+      const timer = setTimeout(fetchOrderData, retryDelay);
+      return () => clearTimeout(timer);
+    }
+  }, [state.retryCount, orderId, fetchOrderData]);
 
   useEffect(() => {
     if (
@@ -385,8 +400,8 @@ const ConfirmationContent = () => {
       </div>
     );
   }
-
-  // Handler to open the popup
+  
+  
   const handleSeeInstructions = () => {
     setState(prev => ({ ...prev, isPopupOpen: true }));
   };
@@ -400,16 +415,17 @@ const ConfirmationContent = () => {
         <h1 className="text-2xl font-bold mb-2 text-gray-800">Thank you for your purchase!</h1>
         <p className="text-gray-600 mb-4">Your eSIM is ready. See the details below to get started.</p>
         <p className="text-gray-600 mb-4">Your eSIM order details have been sent to your email address.</p>
-        <small>If you don’t see the email, please check your spam folder or click the button below to resend it.</small>
+        <small>If you don't see the email, please check your spam folder or click the button below to resend it.</small>
 
         <div className="mt-6 flex justify-center">
           <button
             onClick={sendPurchaseEmail}
             disabled={state.emailSending || state.emailSent}
-            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${state.emailSent ? 'bg-green-100 text-green-700' :
+            className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+              state.emailSent ? 'bg-green-100 text-green-700' :
               state.emailSending ? 'bg-gray-100 text-gray-500' :
-                'bg-blue-50 text-blue-700 hover:bg-blue-100'
-              }`}
+              'bg-blue-50 text-blue-700 hover:bg-blue-100'
+            }`}
           >
             {state.emailSent ? (
               <>
@@ -432,15 +448,17 @@ const ConfirmationContent = () => {
         <div className="bg-white p-8 rounded-lg shadow-sm mb-8">
           <div className="flex mb-6 max-w-md mx-auto">
             <button
-              className={`flex-1 p-3 rounded-l-lg text-center text-sm font-medium transition-colors ${state.activeTab === 'qr' ? 'bg-gray-200 text-gray-800' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-                }`}
+              className={`flex-1 p-3 rounded-l-lg text-center text-sm font-medium transition-colors ${
+                state.activeTab === 'qr' ? 'bg-gray-200 text-gray-800' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+              }`}
               onClick={() => setState(prev => ({ ...prev, activeTab: 'qr' }))}
             >
               QR code install
             </button>
             <button
-              className={`flex-1 p-3 rounded-r-lg text-center text-sm font-medium transition-colors ${state.activeTab === 'manual' ? 'bg-gray-200 text-gray-800' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
-                }`}
+              className={`flex-1 p-3 rounded-r-lg text-center text-sm font-medium transition-colors ${
+                state.activeTab === 'manual' ? 'bg-gray-200 text-gray-800' : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+              }`}
               onClick={() => setState(prev => ({ ...prev, activeTab: 'manual' }))}
             >
               Manual install
@@ -473,10 +491,10 @@ const ConfirmationContent = () => {
               <div className="w-full mb-4">
                 <p className="text-xs text-gray-500 mb-1">SM-DP+ Address</p>
                 <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
-                  <span className="text-sm text-gray-900">{memoizedOrderDetails.smdpAddress}</span>
+                  <span className="text-sm text-gray-900 break-all">{memoizedOrderDetails.smdpAddress}</span>
                   <button
                     onClick={() => copyToClipboard(memoizedOrderDetails.smdpAddress, 'smdp')}
-                    className="text-gray-600 hover:text-gray-800 ml-2"
+                    className="text-gray-600 hover:text-gray-800 ml-2 flex-shrink-0"
                   >
                     {state.copiedSMDP ? <Check size={18} /> : <Copy size={18} />}
                     <span className="sr-only">Copy</span>
@@ -487,10 +505,10 @@ const ConfirmationContent = () => {
               <div className="w-full mb-4">
                 <p className="text-xs text-gray-500 mb-1">Activation Code</p>
                 <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
-                  <span className="text-sm text-gray-900">{memoizedOrderDetails.activationCode}</span>
+                  <span className="text-sm text-gray-900 break-all">{memoizedOrderDetails.activationCode}</span>
                   <button
                     onClick={() => copyToClipboard(memoizedOrderDetails.activationCode, 'activation')}
-                    className="text-gray-600 hover:text-gray-800 ml-2"
+                    className="text-gray-600 hover:text-gray-800 ml-2 flex-shrink-0"
                   >
                     {state.copiedActivation ? <Check size={18} /> : <Copy size={18} />}
                     <span className="sr-only">Copy</span>
@@ -501,10 +519,10 @@ const ConfirmationContent = () => {
               <div className="w-full mb-4">
                 <p className="text-xs text-gray-500 mb-1">ICCID</p>
                 <div className="flex items-center justify-between bg-gray-50 p-3 rounded-lg">
-                  <span className="text-sm text-gray-900">{state.orderData.esimDetails.iccid || 'N/A'}</span>
+                  <span className="text-sm text-gray-900 break-all">{state.orderData.esimDetails.iccid || 'N/A'}</span>
                   <button
                     onClick={() => copyToClipboard(state.orderData.esimDetails.iccid || 'N/A', 'iccid')}
-                    className="text-gray-600 hover:text-gray-800 ml-2"
+                    className="text-gray-600 hover:text-gray-800 ml-2 flex-shrink-0"
                   >
                     {state.copiedICCID ? <Check size={18} /> : <Copy size={18} />}
                     <span className="sr-only">Copy</span>
@@ -519,7 +537,7 @@ const ConfirmationContent = () => {
                     <span className="text-sm text-gray-900">{state.orderData.esimDetails.pin}</span>
                     <button
                       onClick={() => copyToClipboard(state.orderData.esimDetails.pin, 'pin')}
-                      className="text-gray-600 hover:text-gray-800 ml-2"
+                      className="text-gray-600 hover:text-gray-800 ml-2 flex-shrink-0"
                     >
                       {state.copiedPIN ? <Check size={18} /> : <Copy size={18} />}
                       <span className="sr-only">Copy</span>
@@ -535,7 +553,7 @@ const ConfirmationContent = () => {
                     <span className="text-sm text-gray-900">{state.orderData.esimDetails.puk}</span>
                     <button
                       onClick={() => copyToClipboard(state.orderData.esimDetails.puk, 'puk')}
-                      className="text-gray-600 hover:text-gray-800 ml-2"
+                      className="text-gray-600 hover:text-gray-800 ml-2 flex-shrink-0"
                     >
                       {state.copiedPUK ? <Check size={18} /> : <Copy size={18} />}
                       <span className="sr-only">Copy</span>
@@ -551,7 +569,7 @@ const ConfirmationContent = () => {
                     <span className="text-sm text-gray-900">{state.orderData.esimDetails.apn}</span>
                     <button
                       onClick={() => copyToClipboard(state.orderData.esimDetails.apn, 'apn')}
-                      className="text-gray-600 hover:text-gray-800 ml-2"
+                      className="text-gray-600 hover:text-gray-800 ml-2 flex-shrink-0"
                     >
                       {state.copiedAPN ? <Check size={18} /> : <Copy size={18} />}
                       <span className="sr-only">Copy</span>
@@ -632,7 +650,7 @@ const ConfirmationContent = () => {
           isOpen={state.isPopupOpen}
           onClose={() => setState(prev => ({ ...prev, isPopupOpen: false }))}
           qrCodeSrc={state.orderData.esimDetails.qrCodeUrl}
-          platform={state.activeTab === 'manual' ? 'manual' : state.activeTab === 'qr' ? 'ios' : 'android'} // Adjust platform logic
+          platform={state.activeTab === 'manual' ? 'manual' : state.activeTab === 'qr' ? 'ios' : 'android'}
           title="How to install eSIM"
           smdpAddress={memoizedOrderDetails.smdpAddress}
           activationCode={memoizedOrderDetails.activationCode}

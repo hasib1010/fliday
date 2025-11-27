@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, use } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -34,7 +34,8 @@ export default function AdminOrderDetail({ params }) {
     const [newStatus, setNewStatus] = useState('');
     const [statusNote, setStatusNote] = useState('');
     const [showFullDetails, setShowFullDetails] = useState(false);
-    const orderId = params?.orderId;
+    const unwrappedParams = use(params);
+    const orderId = unwrappedParams?.orderId;
 
     useEffect(() => {
         // Check authentication and admin status
@@ -299,8 +300,7 @@ export default function AdminOrderDetail({ params }) {
                                                         <div className="bg-white p-2 border border-gray-200 rounded-lg h-32 w-32 relative">
                                                             <img
                                                                 src={order.esimDetails.qrCodeUrl}
-                                                                alt="eSIM QR Code"
-                                                                fill
+                                                                alt="eSIM QR Code" 
                                                                 className="object-contain"
                                                             />
                                                         </div>

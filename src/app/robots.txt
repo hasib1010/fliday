@@ -1,0 +1,15 @@
+User-agent: *
+Allow: /
+
+Disallow: /checkout
+Disallow: /checkout/*
+Disallow: /auth*
+Disallow: /dashboard*
+Disallow: /profile*
+Disallow: /admin*
+Disallow: /api/
+Disallow: /packages/
+Disallow: /temp/
+Disallow: /*?*
+
+Sitemap: https://fliday.com/sitemap.xml
