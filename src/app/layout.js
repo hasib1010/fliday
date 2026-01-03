@@ -87,8 +87,7 @@ export default function RootLayout({ children }) {
         <AuthProvider>
           <ClientLayout>
             <AnalyticsTracker />
-            {children}
-            <ConditionalFooter />
+            {children} 
             <ConditionalFooter />
           </ClientLayout>
         </AuthProvider>
