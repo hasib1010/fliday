@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { Search, Check, AlertTriangle, Smartphone, ChevronLeft, ArrowRight, Zap } from 'lucide-react';
 import Head from 'next/head';
+import { compatibleDevices } from "@/lib/devices";
 
 // Import the same compatibility data that we use in the modal
 // You can also move this to a separate data file for better organization
@@ -411,7 +412,16 @@ export default function CompatibilityPage() {
                                   ) : (
                                     <AlertTriangle className="mr-2 text-yellow-500 flex-shrink-0" size={16} />
                                   )}
-                                  <span className="text-sm">{device.model}</span>
+                                  <Link
+  href={`/compatibility/${device.brand}-${device.model}`
+    .toLowerCase()
+    .replace(/\s+/g, "-")
+    .replace(/[()]/g, "")}
+>
+  <span className="text-sm hover:underline cursor-pointer">
+    {device.model}
+  </span>
+</Link>
                                 </div>
                               ))}
                             </div>
