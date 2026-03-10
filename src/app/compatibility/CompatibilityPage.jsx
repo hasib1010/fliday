@@ -198,7 +198,7 @@ export default function CompatibilityPage() {
           </h1>
           <p className="text-lg text-gray-700 md:max-w-3xl mb-6">
             Find out if your phone supports eSIM. Search for your device model to see if it’s compatible 
-            with eSIM technology and ready to use with Fliday’s international travel eSIM plans.
+            with eSIM technology and ready to use with Fliday’s travel eSIM plans.
           </p>
           
           {/* Quick stats */}
