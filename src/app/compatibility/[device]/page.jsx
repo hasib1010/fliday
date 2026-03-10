@@ -1,18 +1,29 @@
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { compatibleDevices } from "@/lib/devices";
+
+function makeSlug(brand, model) {
+  return `${brand}-${model}`
+    .toLowerCase()
+    .replace(/\s+/g, "-")
+    .replace(/[()]/g, "");
+}
+
+export function generateStaticParams() {
+  return compatibleDevices.map((device) => ({
+    device: makeSlug(device.brand, device.model),
+  }));
+}
 
 export default function DevicePage({ params }) {
   const slug = params.device;
 
-  const device = compatibleDevices.find((d) =>
-    `${d.brand}-${d.model}`
-      .toLowerCase()
-      .replace(/\s+/g, "-")
-      .replace(/[()]/g, "") === slug
+  const device = compatibleDevices.find(
+    (d) => makeSlug(d.brand, d.model) === slug
   );
 
   if (!device) {
-    return <div className="p-20">Device not found</div>;
+    notFound();
   }
 
   return (
@@ -33,7 +44,8 @@ export default function DevicePage({ params }) {
       )}
 
       <p className="mb-8">
-        If your phone supports eSIM you can activate a travel plan instantly.
+        If your phone supports eSIM, you can browse Fliday travel plans and
+        activate your eSIM instantly.
       </p>
 
       <Link
