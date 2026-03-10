@@ -93,23 +93,23 @@ export const compatibleDevices = [
   { brand: "Motorola", model: "Edge 30 Pro", compatible: true },
 
   // Huawei
-  { brand: "Huawei", model: "P40 Pro", compatible: true },
-  { brand: "Huawei", model: "P40", compatible: true },
-  { brand: "Huawei", model: "Mate 40 Pro", compatible: true },
+  { brand: "Huawei", model: "HuaweiP40 Pro", compatible: true },
+  { brand: "Huawei", model: "Huawei P40", compatible: true },
+  { brand: "Huawei", model: "Huawei Mate 40 Pro", compatible: true },
 
   // OnePlus
-  { brand: "OnePlus", model: "12", compatible: true },
-  { brand: "OnePlus", model: "11", compatible: true },
-  { brand: "OnePlus", model: "10 Pro", compatible: true },
-  { brand: "OnePlus", model: "9 Pro", compatible: true },
-  { brand: "OnePlus", model: "9", compatible: true },
+  { brand: "OnePlus", model: "OnePlus 12", compatible: true },
+  { brand: "OnePlus", model: "OnePlus 11", compatible: true },
+  { brand: "OnePlus", model: "OnePlus 10 Pro", compatible: true },
+  { brand: "OnePlus", model: "OnePlus 9 Pro", compatible: true },
+  { brand: "OnePlus", model: "OnePlus 9", compatible: true },
 
   // Xiaomi
-  { brand: "Xiaomi", model: "14", compatible: true },
-  { brand: "Xiaomi", model: "13", compatible: true },
-  { brand: "Xiaomi", model: "12T Pro", compatible: true },
-  { brand: "Xiaomi", model: "12 Pro", compatible: true },
-  { brand: "Xiaomi", model: "12", compatible: true },
+  { brand: "Xiaomi", model: "Xiaomi 14", compatible: true },
+  { brand: "Xiaomi", model: "Xiaomi 13", compatible: true },
+  { brand: "Xiaomi", model: "Xiaomi 12T Pro", compatible: true },
+  { brand: "Xiaomi", model: "Xiaomi 12 Pro", compatible: true },
+  { brand: "Xiaomi", model: "Xiaomi 12", compatible: true },
 
   // OPPO
   { brand: "OPPO", model: "Find X6 Pro", compatible: true },
@@ -125,9 +125,9 @@ export const compatibleDevices = [
   { brand: "Sony", model: "Xperia 5 IV", compatible: true },
 
   // Nokia
-  { brand: "Nokia", model: "XR21", compatible: true },
-  { brand: "Nokia", model: "X30", compatible: true },
-  { brand: "Nokia", model: "G60", compatible: true },
+  { brand: "Nokia", model: "Nokia XR21", compatible: true },
+  { brand: "Nokia", model: "Nokia X30", compatible: true },
+  { brand: "Nokia", model: "Nokia G60", compatible: true },
 
   // ASUS
   { brand: "ASUS", model: "ROG Phone 8", compatible: true },
@@ -146,6 +146,6 @@ export const compatibleDevices = [
   { brand: "Apple", model: "iPhone 7", compatible: false },
   { brand: "Samsung", model: "Galaxy S10", compatible: false },
   { brand: "Samsung", model: "Galaxy S9", compatible: false },
-  { brand: "OnePlus", model: "8T", compatible: false }
+  { brand: "OnePlus", model: "OnePlus 8T", compatible: false }
 
 ];
