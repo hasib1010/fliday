@@ -1,5 +1,6 @@
 // app/sitemap.js
 import { headers } from 'next/headers'; // ← This is the magic
+import { compatibleDevices } from "@/lib/devices";
 
 const countryNames = {
     "ad": "Andorra",
@@ -65,7 +66,12 @@ const countryNames = {
 };
 
 
-
+function makeDeviceSlug(brand, model) {
+  return `${brand}-${model}`
+    .toLowerCase()
+    .replace(/\s+/g, "-")
+    .replace(/[()]/g, "");
+}
 
 export default async function sitemap() {
     const headersList = headers();
@@ -100,6 +106,14 @@ export default async function sitemap() {
         priority: 0.8,
     }));
 
+        // Compatibility device pages
+    const compatibilityPages = compatibleDevices.map((device) => ({
+        url: `${baseUrl}/compatibility/${makeDeviceSlug(device.brand, device.model)}`,
+        lastModified: new Date(),
+        changeFrequency: "monthly",
+        priority: 0.7,
+    }));
+
     // BLOG POSTS — this now works on Vercel, localhost, everywhere                    
     let blogPosts = [];
     try {
@@ -121,7 +135,7 @@ export default async function sitemap() {
         console.warn("Sitemap: Could not load blog posts (this is normal on first deploy)", error.message);
     }
 
-    return [...staticPages, ...countryPages, ...blogPosts];
+    return [...staticPages, ...countryPages, ...compatibilityPages, ...blogPosts];
 }
 
 export const revalidate = 600;
