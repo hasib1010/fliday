@@ -9,6 +9,12 @@ import Head from 'next/head';
 // You can also move this to a separate data file for better organization
 const compatibleDevices = [
   // Apple iPhones
+  { brand: 'Apple', model: 'iPhone 17 Pro Max', compatible: true },
+  { brand: 'Apple', model: 'iPhone 17 Pro', compatible: true },
+  { brand: 'Apple', model: 'iPhone 17', compatible: true },
+  { brand: 'Apple', model: 'iPhone 16 Pro Max', compatible: true },
+  { brand: 'Apple', model: 'iPhone 16 Pro', compatible: true },
+  { brand: 'Apple', model: 'iPhone 16', compatible: true },
   { brand: 'Apple', model: 'iPhone 15 Pro Max', compatible: true },
   { brand: 'Apple', model: 'iPhone 15 Pro', compatible: true },
   { brand: 'Apple', model: 'iPhone 15 Plus', compatible: true },
