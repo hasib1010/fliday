@@ -197,8 +197,8 @@ export default function CompatibilityPage() {
             eSIM Device Compatibility Checker
           </h1>
           <p className="text-lg text-gray-700 md:max-w-3xl mb-6">
-            Verify if your smartphone or tablet is compatible with our eSIM service. We support {compatibleCount} 
-            devices across major brands including Apple, Samsung, Google, and more.
+            Find out if your phone supports eSIM. Search for your device model to see if it’s compatible 
+            with eSIM technology and ready to use with Fliday’s international travel eSIM plans.
           </p>
           
           {/* Quick stats */}
