@@ -22,9 +22,9 @@ export default function AdminDashboard() {
   const router = useRouter();
 
   const [loading, setLoading] = useState(true);
-  const [selectedRange, setSelectedRange] = useState('all');
+  const [selectedRange, setSelectedRange] = useState('30');
   const [stats, setStats] = useState({
-    selectedRange: 'all',
+    selectedRange: '30',
     totalOrders: 0,
     totalRevenue: 0,
     totalUsers: 0,
