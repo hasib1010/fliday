@@ -12,7 +12,6 @@ import {
   ArrowDown,
   Globe,
   Activity,
-  Loader2,
   CreditCard,
 } from 'lucide-react';
 import Link from 'next/link';
@@ -25,6 +24,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [selectedRange, setSelectedRange] = useState('30');
   const [stats, setStats] = useState({
+    selectedRange: '30',
     totalOrders: 0,
     totalRevenue: 0,
     totalUsers: 0,
@@ -37,6 +37,7 @@ export default function AdminDashboard() {
     averageOrderValue: 0,
     paidOrdersInRange: 0,
     paidTopUpsInRange: 0,
+    isAllTime: false,
   });
 
   useEffect(() => {
@@ -80,7 +81,17 @@ export default function AdminDashboard() {
     }).format((amount || 0) / 10000);
   };
 
+  const rangeLabel = stats.isAllTime ? 'all time' : `last ${selectedRange} days`;
+
   const renderChange = (value) => {
+    if (stats.isAllTime) {
+      return (
+        <div className="flex items-center mt-2">
+          <span className="text-gray-500 text-xs">All time</span>
+        </div>
+      );
+    }
+
     const isPositive = value >= 0;
 
     return (
@@ -104,20 +115,9 @@ export default function AdminDashboard() {
   };
 
   const getStatusBadge = (statusValue) => {
-    const statusText = (statusValue || '').replace(/_/g, ' ');
-
-    if (statusValue === 'completed') {
-      return 'bg-green-100 text-green-700';
-    }
-
-    if (statusValue === 'pending_payment') {
-      return 'bg-yellow-100 text-yellow-700';
-    }
-
-    if (statusValue === 'processing') {
-      return 'bg-blue-100 text-blue-700';
-    }
-
+    if (statusValue === 'completed') return 'bg-green-100 text-green-700';
+    if (statusValue === 'pending_payment') return 'bg-yellow-100 text-yellow-700';
+    if (statusValue === 'processing') return 'bg-blue-100 text-blue-700';
     return 'bg-red-100 text-red-700';
   };
 
@@ -159,15 +159,13 @@ export default function AdminDashboard() {
   return (
     <AdminLayout>
       <div className="p-4 sm:p-6 lg:p-8">
-        {/* Header */}
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-8">
           <div>
             <h1 className="text-2xl sm:text-3xl font-semibold text-gray-900">
               Dashboard
             </h1>
             <p className="text-sm text-gray-500 mt-1">
-              Track performance, monitor transactions, and review growth over the last{' '}
-              {selectedRange} days.
+              Track performance, monitor transactions, and review growth for {rangeLabel}.
             </p>
           </div>
 
@@ -179,6 +177,7 @@ export default function AdminDashboard() {
                 onChange={(e) => setSelectedRange(e.target.value)}
                 className="bg-transparent text-sm font-medium text-gray-700 focus:outline-none"
               >
+                <option value="all">All time</option>
                 <option value="15">Last 15 days</option>
                 <option value="30">Last 30 days</option>
                 <option value="60">Last 60 days</option>
@@ -188,12 +187,11 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* KPI Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-6 mb-8">
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-gray-500 text-sm font-medium">Total Orders</p>
+                <p className="text-gray-500 text-sm font-medium">Orders</p>
                 <h3 className="text-3xl font-semibold text-gray-900 mt-2">
                   {stats.totalOrders}
                 </h3>
@@ -208,7 +206,7 @@ export default function AdminDashboard() {
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-gray-500 text-sm font-medium">Total Revenue</p>
+                <p className="text-gray-500 text-sm font-medium">Revenue</p>
                 <h3 className="text-3xl font-semibold text-gray-900 mt-2">
                   {formatCurrency(stats.totalRevenue)}
                 </h3>
@@ -223,7 +221,7 @@ export default function AdminDashboard() {
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-gray-500 text-sm font-medium">Total Users</p>
+                <p className="text-gray-500 text-sm font-medium">New Users</p>
                 <h3 className="text-3xl font-semibold text-gray-900 mt-2">
                   {stats.totalUsers}
                 </h3>
@@ -261,7 +259,7 @@ export default function AdminDashboard() {
                 </h3>
                 <div className="flex items-center mt-2">
                   <span className="text-gray-500 text-xs">
-                    {stats.paidOrdersInRange + stats.paidTopUpsInRange} paid transactions in range
+                    {stats.paidOrdersInRange + stats.paidTopUpsInRange} paid transactions
                   </span>
                 </div>
               </div>
@@ -272,36 +270,29 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Secondary metrics */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-            <p className="text-sm font-medium text-gray-500 mb-2">Paid Orders in Range</p>
+            <p className="text-sm font-medium text-gray-500 mb-2">Paid Orders</p>
             <div className="flex items-end justify-between">
               <h3 className="text-2xl font-semibold text-gray-900">
                 {stats.paidOrdersInRange}
               </h3>
-              <span className="text-xs text-gray-500">
-                Last {selectedRange} days
-              </span>
+              <span className="text-xs text-gray-500 capitalize">{rangeLabel}</span>
             </div>
           </div>
 
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
-            <p className="text-sm font-medium text-gray-500 mb-2">Paid Top-ups in Range</p>
+            <p className="text-sm font-medium text-gray-500 mb-2">Paid Top-ups</p>
             <div className="flex items-end justify-between">
               <h3 className="text-2xl font-semibold text-gray-900">
                 {stats.paidTopUpsInRange}
               </h3>
-              <span className="text-xs text-gray-500">
-                Last {selectedRange} days
-              </span>
+              <span className="text-xs text-gray-500 capitalize">{rangeLabel}</span>
             </div>
           </div>
         </div>
 
-        {/* Recent Orders & Top Destinations */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-8">
-          {/* Recent Orders */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
             <div className="p-6 border-b border-gray-100 flex items-center justify-between">
               <div>
@@ -358,7 +349,7 @@ export default function AdminDashboard() {
                                 order.orderStatus
                               )}`}
                             >
-                              {order.orderStatus.replace('_', ' ')}
+                              {order.orderStatus.replace(/_/g, ' ')}
                             </span>
                           </td>
                           <td className="px-3 py-4 whitespace-nowrap text-sm font-medium text-gray-700">
@@ -381,12 +372,11 @@ export default function AdminDashboard() {
             </div>
           </div>
 
-          {/* Top Destinations */}
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
             <div className="p-6 border-b border-gray-100">
               <h2 className="text-lg font-semibold text-gray-900">Top Destinations</h2>
               <p className="text-sm text-gray-500 mt-1">
-                Best-performing destinations in the last {selectedRange} days
+                Best-performing destinations for {rangeLabel}
               </p>
             </div>
 
@@ -394,7 +384,7 @@ export default function AdminDashboard() {
               {stats.topDestinations.length > 0 ? (
                 <div className="space-y-5">
                   {stats.topDestinations.map((destination, index) => (
-                    <div key={destination.location}>
+                    <div key={destination.code || destination.location}>
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center min-w-0">
                           <div className="h-8 w-8 rounded-full bg-[#FFF1ED] text-[#F15A25] flex items-center justify-center text-sm font-semibold flex-shrink-0">
@@ -436,7 +426,6 @@ export default function AdminDashboard() {
           </div>
         </div>
 
-        {/* Sales Overview Placeholder */}
         <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
             <div>
@@ -448,7 +437,7 @@ export default function AdminDashboard() {
 
             <div className="inline-flex items-center gap-2 text-sm text-gray-500 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2">
               <BarChart3 className="w-4 h-4" />
-              Range: last {selectedRange} days
+              Range: {rangeLabel}
             </div>
           </div>
 
@@ -461,7 +450,7 @@ export default function AdminDashboard() {
               </div>
               <p className="text-gray-700 font-medium">Sales chart coming soon</p>
               <p className="text-sm text-gray-500 mt-2">
-                You now have range-based metrics ready. The next step is connecting them to a real chart.
+                Your dashboard now supports all-time and custom time range analytics.
               </p>
             </div>
           </div>
