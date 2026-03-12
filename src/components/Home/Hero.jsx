@@ -36,7 +36,7 @@ export default function Hero() {
         if (destination.packageCode) {
             return destination.price;
         }
-        
+
         // Default fallback
         return parseFloat(destination.price || 3.99).toFixed(2);
     };
@@ -50,23 +50,23 @@ export default function Hero() {
             setLoading(true);
             setShowResults(true);
             setError(null);
-            
+
             try {
                 // Use skipCache to ensure fresh data, especially after admin price updates
                 const response = await fetch('/api/esim/locations?skipCache=true', {
-                    cache: 'no-store', 
+                    cache: 'no-store',
                     headers: {
                         'Cache-Control': 'no-cache, no-store, must-revalidate',
                         'Pragma': 'no-cache'
                     }
                 });
-                
+
                 if (!response.ok) {
                     throw new Error(`Failed to fetch destinations: ${response.status}`);
                 }
-                
+
                 const data = await response.json();
-                
+
                 if (data.success) {
                     // Store last updated time if available
                     if (data.data.pricingInfo?.lastUpdated) {
@@ -74,19 +74,19 @@ export default function Hero() {
                     } else if (data.data.cachedAt) {
                         setLastUpdated(new Date(data.data.cachedAt).toLocaleString());
                     }
-                    
+
                     // Format the destinations with enhanced price data
                     const formattedCountries = (data.data.countries || []).map(country => ({
                         id: country.id || country.code,
                         name: country.name || 'Unknown',
                         code: (country.code || country.countryCode || '').toLowerCase(),
                         type: 'country',
-                        price: country.price || '3.99', 
+                        price: country.price || '3.99',
                         retailPriceRaw: country.retailPriceRaw,
                         packageCode: country.packageCode || '',
                         hasCustomPricing: country.hasCustomPricing || false
                     }));
-                    
+
                     const formattedRegions = (data.data.regions || []).map(region => ({
                         id: region.id || region.code,
                         name: region.name || 'Unknown',
@@ -98,10 +98,10 @@ export default function Hero() {
                         slug: region.slug || '',
                         hasCustomPricing: region.hasCustomPricing || false
                     }));
-                    
+
                     // Combine countries and regions
                     const allDestinations = [...formattedCountries, ...formattedRegions];
-                    
+
                     // Filter based on search input
                     const filteredResults = allDestinations
                         .filter(dest => dest.name.toLowerCase().includes(value.toLowerCase()))
@@ -111,18 +111,18 @@ export default function Hero() {
                             const bExact = b.name.toLowerCase() === value.toLowerCase();
                             if (aExact && !bExact) return -1;
                             if (!aExact && bExact) return 1;
-                            
+
                             // Then sort by starts with
                             const aStartsWith = a.name.toLowerCase().startsWith(value.toLowerCase());
                             const bStartsWith = b.name.toLowerCase().startsWith(value.toLowerCase());
                             if (aStartsWith && !bStartsWith) return -1;
                             if (!aStartsWith && bStartsWith) return 1;
-                            
+
                             // Finally sort by price (lowest first)
                             return parseFloat(a.price) - parseFloat(b.price);
                         })
                         .slice(0, 6); // Limit to 6 results for dropdown
-                    
+
                     setSearchResults(filteredResults);
                 } else {
                     setError(data.message || 'Failed to fetch destinations');
@@ -149,24 +149,24 @@ export default function Hero() {
     // Handle clicking on a search result
     const handleResultClick = (destination) => {
         setShowResults(false);
-        
+
         // Determine URL based on destination type
         let url;
         if (destination.type === 'country') {
             url = `/destinations/country/${destination.code}`;
         } else if (destination.type === 'region') {
-            url = destination.slug 
-                ? `/destinations/slug/${destination.slug}` 
+            url = destination.slug
+                ? `/destinations/slug/${destination.slug}`
                 : `/destinations/region/${destination.code}`;
         }
-        
+
         router.push(url);
     };
 
     // Function to get region flag
     const getRegionFlag = (destination) => {
         const name = destination.name.toLowerCase();
-        
+
         if (name.includes('north america')) {
             return 'north_america_flag.svg';
         } else if (name.includes('middle east')) {
@@ -188,7 +188,7 @@ export default function Hero() {
         } else if (name.includes('china') || name.includes('singapore') || name.includes('thailand')) {
             return 'asia_flag.svg';
         }
-        
+
         return `${destination.code.split('-')[0]}_flag.svg`;
     };
 
@@ -225,7 +225,7 @@ export default function Hero() {
                         priority
                     />
                 </div>
-                
+
                 <div className="hidden 2xl:block [min-width:1921px]:hidden">
                     <Image
                         src="/hero.png"
@@ -258,7 +258,7 @@ export default function Hero() {
                                 <div className="md:w-6 md:h-6 w-4 h-4 p-0.5 bg-orange-500 rounded-full flex items-center justify-center text-white">
                                     <Check />
                                 </div>
-                                <span className="text-[18px] max-[426px]:text-[13px] max-[376px]:text-[12px] max-[321px]:text-[10px] font-medium text-gray-800">
+                                <span className="text-[14px] md:text-[16px] lg:text-[18px] max-[426px]:text-[13px] max-[376px]:text-[12px] max-[321px]:text-[10px] font-medium text-gray-800">
                                     Instant Setup
                                 </span>
                             </div>
@@ -268,7 +268,7 @@ export default function Hero() {
                                 <div className="md:w-6 md:h-6 w-4 h-4 p-0.5 bg-orange-500 rounded-full flex items-center justify-center text-white">
                                     <Check />
                                 </div>
-                                <span className="text-[18px] max-[426px]:text-[13px] max-[376px]:text-[12px] max-[321px]:text-[10px] font-medium text-gray-800">
+                                <span className="text-[14px] md:text-[16px] lg:text-[18px] max-[426px]:text-[13px] max-[376px]:text-[12px] max-[321px]:text-[10px] font-medium text-gray-800">
                                     Global Coverage
                                 </span>
                             </div>
@@ -278,7 +278,7 @@ export default function Hero() {
                                 <div className="md:w-6 md:h-6 w-4 h-4 p-0.5 bg-orange-500 rounded-full flex items-center justify-center text-white">
                                     <Check />
                                 </div>
-                                <span className="text-[18px] max-[426px]:text-[13px] max-[376px]:text-[12px] max-[321px]:text-[10px] font-medium text-gray-800">
+                                <span className="text-[14px] md:text-[16px] lg:text-[18px] max-[426px]:text-[13px] max-[376px]:text-[12px] max-[321px]:text-[10px] font-medium text-gray-800">
                                     No Roaming
                                 </span>
                             </div>
@@ -304,7 +304,7 @@ export default function Hero() {
                                 onChange={handleSearchChange}
                                 onClick={() => searchInput.length >= 2 && setShowResults(true)}
                             />
-                            <button 
+                            <button
                                 type="submit"
                                 className="absolute right-5 top-1/2 transform -translate-y-1/2 bg-[#F15A25] p-3 rounded-full text-white"
                             >
@@ -331,7 +331,7 @@ export default function Hero() {
                                 ) : searchResults.length > 0 ? (
                                     <ul>
                                         {searchResults.map((destination) => (
-                                            <li 
+                                            <li
                                                 key={`${destination.type}-${destination.id}`}
                                                 className="hover:bg-gray-50 cursor-pointer transition-colors py-2 px-3 rounded-md"
                                                 onClick={() => handleResultClick(destination)}
@@ -370,22 +370,22 @@ export default function Hero() {
                                                             <p className="text-sm text-gray-500">
                                                                 {destination.type === 'country' ? 'Country' : 'Region'} • From ${formatDestinationPrice(destination)}
                                                             </p>
-                                                            
+
                                                         </div>
                                                     </div>
                                                 </div>
                                             </li>
                                         ))}
-                                        
-                                        
+
+
                                     </ul>
                                 ) : (
                                     <p className="text-center py-3 text-gray-500">No destinations found</p>
                                 )}
-                                
+
                                 <div className="border-t mt-2 pt-2 text-center">
-                                    <Link 
-                                        href="/destinations" 
+                                    <Link
+                                        href="/destinations"
                                         className="text-[#F15A25] text-sm font-medium hover:underline"
                                     >
                                         View all destinations
