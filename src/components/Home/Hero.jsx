@@ -333,14 +333,25 @@ export default function Hero() {
                     {/* Search box with results dropdown */}
                     <div className="max-w-xl px-1.5 mx-auto mb-36 relative" ref={searchRef}>
                         <form onSubmit={handleSearchSubmit}>
-                            <input
-                                type="text"
-                                placeholder="Enter your destination"
-                                className="w-[85%] sm:w-[90%] md:w-full px-6 py-4 rounded-full border-2 border-[#F15A25] bg-white focus:outline-none focus:ring-1 focus:ring-[#F15A25] text-base md:text-lg"
-                                value={searchInput}
-                                onChange={handleSearchChange}
-                                onClick={() => searchInput.length >= 2 && setShowResults(true)}
-                            />
+                            <div className="flex justify-center">
+                                <div className="relative w-[88%] md:w-full max-w-full">
+                                    <input
+                                        type="text"
+                                        placeholder="Enter your destination"
+                                        className="w-full px-6 py-4 pr-16 rounded-full border-2 border-[#F15A25] bg-white focus:outline-none focus:ring-1 focus:ring-[#F15A25] text-base md:text-lg"
+                                        value={searchInput}
+                                        onChange={handleSearchChange}
+                                        onClick={() => searchInput.length >= 2 && setShowResults(true)}
+                                    />
+
+                                    <button
+                                        type="button"
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-[#F15A25] text-white flex items-center justify-center"
+                                    >
+                                        {/* your search icon */}
+                                    </button>
+                                </div>
+                            </div>
                             <button
                                 type="submit"
                                 className="absolute right-5 top-1/2 transform -translate-y-1/2 bg-[#F15A25] p-3 rounded-full text-white"
