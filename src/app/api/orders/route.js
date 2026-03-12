@@ -6,6 +6,7 @@ import dbConnect from '@/lib/mongodb';
 import Order from '@/models/Order';
 import User from '@/models/User';
 import PackagePricing from '@/models/PackagePricing';
+import Coupon from '@/models/Coupon';
 import { v4 as uuidv4 } from 'uuid';
 import { fetchProviderPackagePrice, orderESIMFromProvider } from '@/lib/esim-provider';
 
@@ -205,9 +206,131 @@ export async function POST(request) {
     console.log(`  - Markup: $${markupAmount / 10000}`);
     console.log(`  - Customer pays: $${finalPrice / 10000}`);
 
-    let discountAmount = 0;
+        let discountAmount = 0;
+
     if (couponCode) {
-      // Implement coupon logic
+      const normalizedCouponCode = couponCode.trim().toUpperCase();
+
+      const coupon = await Coupon.findOne({
+        code: normalizedCouponCode,
+        active: true,
+      });
+
+      if (!coupon) {
+        return NextResponse.json({
+          success: false,
+          error: 'Invalid or inactive coupon code'
+        }, { status: 400 });
+      }
+
+      // Expiry check
+      if (coupon.expiresAt && new Date(coupon.expiresAt) < new Date()) {
+        return NextResponse.json({
+          success: false,
+          error: 'This coupon has expired'
+        }, { status: 400 });
+      }
+
+      // Global usage limit check
+      if (coupon.usageLimit !== null && coupon.usedCount >= coupon.usageLimit) {
+        return NextResponse.json({
+          success: false,
+          error: 'This coupon has reached its usage limit'
+        }, { status: 400 });
+      }
+
+      // Package-specific check
+      if (
+        coupon.applicablePackages.length > 0 &&
+        !coupon.applicablePackages.includes(packageCode)
+      ) {
+        return NextResponse.json({
+          success: false,
+          error: 'This coupon is not valid for this package'
+        }, { status: 400 });
+      }
+
+      // Location check
+      if (
+        coupon.applicableLocations.length > 0 &&
+        !coupon.applicableLocations.includes(location)
+      ) {
+        return NextResponse.json({
+          success: false,
+          error: 'This coupon is not valid for this destination'
+        }, { status: 400 });
+      }
+
+      // Data amount check
+      if (
+        coupon.applicableDataAmounts.length > 0 &&
+        !coupon.applicableDataAmounts.includes(dataAmount)
+      ) {
+        return NextResponse.json({
+          success: false,
+          error: 'This coupon is not valid for this data plan'
+        }, { status: 400 });
+      }
+
+      // Duration check
+      if (
+        coupon.applicableDurations.length > 0 &&
+        !coupon.applicableDurations.includes(duration)
+      ) {
+        return NextResponse.json({
+          success: false,
+          error: 'This coupon is not valid for this duration'
+        }, { status: 400 });
+      }
+
+      // First order only check
+      if (coupon.firstOrderOnly) {
+        const previousPaidOrder = await Order.findOne({
+          userId: user._id,
+          paymentStatus: 'paid'
+        });
+
+        if (previousPaidOrder) {
+          return NextResponse.json({
+            success: false,
+            error: 'This coupon is only valid on your first order'
+          }, { status: 400 });
+        }
+      }
+
+      // Use once per customer check
+      if (coupon.useOncePerCustomer) {
+        const previousCouponUse = await Order.findOne({
+          userId: user._id,
+          couponCode: normalizedCouponCode,
+          paymentStatus: 'paid'
+        });
+
+        if (previousCouponUse) {
+          return NextResponse.json({
+            success: false,
+            error: 'You have already used this coupon'
+          }, { status: 400 });
+        }
+      }
+
+      // Calculate discount
+      if (coupon.discountType === 'percentage') {
+        discountAmount = Math.round((finalPrice * coupon.discountValue) / 100);
+      } else if (coupon.discountType === 'fixed') {
+        discountAmount = coupon.discountValue;
+      }
+
+      // Prevent discount from exceeding order total
+      if (discountAmount > finalPrice) {
+        discountAmount = finalPrice;
+      }
+
+      finalPrice = finalPrice - discountAmount;
+
+      console.log(`[Coupon] Applied ${normalizedCouponCode}`);
+      console.log(`[Coupon] Discount amount: $${discountAmount / 10000}`);
+      console.log(`[Coupon] Final price after discount: $${finalPrice / 10000}`);
     }
 
     // ============================================
@@ -233,7 +356,7 @@ export async function POST(request) {
       finalPrice,
       currency,
       taxCountry,
-      couponCode,
+      couponCode: couponCode ? couponCode.trim().toUpperCase() : null,
       paymentMethod,
       paymentStatus: 'pending',
       orderStatus: status,

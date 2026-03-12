@@ -411,11 +411,34 @@ function CheckoutContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('credit');
-  const [couponCode, setCouponCode] = useState('');
+  const [couponCode, setCouponCode] = useState(() => {
+  if (typeof window !== 'undefined') {
+    return localStorage.getItem('checkoutCouponCode') || '';
+  }
+  return '';
+  });
+  const [couponLoading, setCouponLoading] = useState(false);
+  const [couponError, setCouponError] = useState('');
+  const [couponSuccess, setCouponSuccess] = useState('');
+  const [appliedCoupon, setAppliedCoupon] = useState(null);
   const [showCouponInput, setShowCouponInput] = useState(false);
   const [taxCountry, setTaxCountry] = useState('Bangladesh');
   const [paymentSuccess, setPaymentSuccess] = useState(false);
   const [orderId, setOrderId] = useState(null);
+
+  useEffect(() => {
+    if (couponCode) {
+      localStorage.setItem('checkoutCouponCode', couponCode);
+    } else {
+      localStorage.removeItem('checkoutCouponCode');
+    }
+  }, [couponCode]);
+
+  useEffect(() => {
+    if (packageData && couponCode.trim() && !appliedCoupon && !couponLoading) {
+      handleApplyCoupon();
+    }
+  }, [packageData]);
 
   useEffect(() => {
     const fetchPackageData = async () => {
@@ -487,6 +510,42 @@ function CheckoutContent() {
 
   const handlePaymentError = (errorMessage) => {
     setError(errorMessage || 'Payment processing failed. Please try again.');
+  };
+
+    const handleApplyCoupon = async () => {
+    if (!couponCode.trim() || !packageData) return;
+
+    try {
+      setCouponLoading(true);
+      setCouponError('');
+      setCouponSuccess('');
+      setAppliedCoupon(null);
+
+      const response = await fetch('/api/coupons/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          couponCode,
+          packageCode: packageData.packageCode,
+          dataAmount: packageData.dataAmount,
+          duration: packageData.duration,
+          location: packageData.location,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok || !data.success) {
+        throw new Error(data.error || 'Failed to apply coupon');
+      }
+
+      setAppliedCoupon(data.pricing);
+      setCouponSuccess(data.message || 'Coupon applied successfully');
+    } catch (err) {
+      setCouponError(err.message || 'Invalid coupon');
+    } finally {
+      setCouponLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -743,9 +802,17 @@ function CheckoutContent() {
                     <span className="font-medium">{packageData.duration} Days</span>
                   </div>
 
+                  {appliedCoupon && (
+                    <div className="flex justify-between text-green-600">
+                      <span>Discount</span>
+                      <span>- USD {(appliedCoupon.discountAmount / 10000).toFixed(2)}</span>
+                    </div>
+                  )}
                   <div className="border-t pt-4 flex justify-between">
                     <span className="font-semibold">Total</span>
-                    <span className="font-semibold">USD {formatPrice(packageData.price)}</span>
+                    <span className="font-semibold">
+                      USD {appliedCoupon ? (appliedCoupon.finalPrice / 10000).toFixed(2) : formatPrice(packageData.price)}
+                    </span>
                   </div>
                 </div>
 
@@ -757,17 +824,40 @@ function CheckoutContent() {
                     Got a coupon?
                   </button>
                 ) : (
-                  <div className="flex gap-2 mt-4">
-                    <input
-                      type="text"
-                      className="flex-1 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F15A25] focus:border-transparent"
-                      placeholder="Enter coupon code"
-                      value={couponCode}
-                      onChange={(e) => setCouponCode(e.target.value)}
-                    />
-                    <button className="bg-[#F15A25] hover:bg-[#E04E1A] text-white px-4 py-2 rounded-lg transition-colors">
-                      Apply
-                    </button>
+                  <div className="mt-4">
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        className="flex-1 p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#F15A25] focus:border-transparent"
+                        placeholder="Enter coupon code"
+                        value={couponCode}
+                        onChange={(e) => setCouponCode(e.target.value)}
+                      />
+                      <button
+                        onClick={handleApplyCoupon}
+                        disabled={couponLoading || !couponCode.trim()}
+                        className={`px-4 py-2 rounded-lg transition-colors ${
+                          couponLoading || !couponCode.trim()
+                            ? 'bg-[#F15A25]/70 text-white cursor-not-allowed'
+                            : 'bg-[#F15A25] hover:bg-[#E04E1A] text-white'
+                        }`}
+                      >
+                        {couponLoading ? 'Applying...' : 'Apply'}
+                      </button>
+                    </div>
+
+                    {couponError && (
+                      <p className="mt-2 text-sm text-red-600">{couponError}</p>
+                    )}
+
+                    {couponSuccess && appliedCoupon && (
+                      <div className="mt-3 rounded-lg bg-green-50 border border-green-100 p-3">
+                        <p className="text-sm text-green-700 font-medium">{couponSuccess}</p>
+                        <p className="text-sm text-green-700 mt-1">
+                          Discount: USD {(appliedCoupon.discountAmount / 10000).toFixed(2)}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 )}
 

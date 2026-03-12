@@ -4,6 +4,7 @@ import Stripe from 'stripe';
 import dbConnect from '@/lib/mongodb';
 import Order from '@/models/Order';
 import User from '@/models/User';
+import Coupon from '@/models/Coupon';
 import { sendEmail } from '@/lib/email-config'; // Use your working email config
 console.log('Webhook handler loaded');
 export const config = {
@@ -112,6 +113,16 @@ async function handleSuccessfulPayment(paymentIntent) {
         },
       }
     );
+
+    // Increment coupon usage count after successful payment
+    if (order.couponCode) {
+      await Coupon.findOneAndUpdate(
+        { code: order.couponCode },
+        { $inc: { usedCount: 1 } }
+      );
+      console.log(`Incremented coupon usage for ${order.couponCode}`);
+    }
+
     console.log(`Updated order ${orderId} to paymentStatus: completed, orderStatus: processing`);
 
     // Call eSIM API
