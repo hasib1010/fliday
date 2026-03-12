@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Check, AlertTriangle, Smartphone, ChevronLeft } from "lucide-react";
 import { compatibleDevices } from "@/lib/devices";
+import CouponWidget from "./CouponWidget";
 
 function makeSlug(brand, model) {
   return `${brand}-${model}`
@@ -192,6 +193,8 @@ export default function DevicePage({ params }) {
               </div>
             )}
           </div>
+
+          <CouponWidget />
 
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
             <h3 className="text-lg font-semibold mb-3">Important Note</h3>
