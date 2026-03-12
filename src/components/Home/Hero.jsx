@@ -10,6 +10,7 @@ import { Libre_Baskerville } from "next/font/google";
 
 export const libre = Libre_Baskerville({
     weight: ["400", "700"],
+    style: ["normal", "italic"],
     subsets: ["latin"],
 });
 
@@ -293,7 +294,7 @@ export default function Hero() {
                     </div>
 
                     {/* Heading */}
-                    <h1 className="text-center text-[32px] md:text-5xl lg:text-6xl font-semibold pb-8">
+                    <h1 className="text-center text-[28px] md:text-5xl lg:text-6xl font-semibold pb-8">
                         Stay Connected{" "}
                         <span className={`${libre.className} text-[#F15A25] italic`}>
                             Everywhere
