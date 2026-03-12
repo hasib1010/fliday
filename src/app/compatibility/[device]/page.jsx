@@ -88,8 +88,8 @@ export default function DevicePage({ params }) {
 
             <p className="text-base sm:text-lg text-gray-700 max-w-3xl">
               {device.compatible
-                ? `${device.brand} ${device.model} supports eSIM technology, which means you can activate a digital SIM without inserting a physical card. This makes it easy to use Fliday travel eSIM plans while keeping your main number active.`
-                : `${device.brand} ${device.model} does not support eSIM technology. If you need mobile data while traveling, you may need to use a physical SIM card instead.`}
+                ? `Yes, ${device.brand} ${device.model} supports eSIM technology, which means you can activate a digital SIM without inserting a physical card. This makes it easy to use Fliday travel eSIM plans while keeping your main number active.`
+                : `No, ${device.brand} ${device.model} does not support eSIM technology. If you need mobile data while traveling, you may need to use a physical SIM card instead.`}
             </p>
           </div>
         </div>
@@ -99,17 +99,6 @@ export default function DevicePage({ params }) {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Main content */}
         <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-            <h2 className="text-xl font-semibold mb-3">
-              {device.brand} {device.model} eSIM Compatibility
-            </h2>
-            <p className="text-gray-700 leading-7">
-              {device.compatible
-                ? `Yes, ${device.brand} ${device.model} supports eSIM. If your phone is carrier-unlocked and eSIM is available in your region, you can install a Fliday eSIM and use mobile data abroad without swapping your physical SIM card.`
-                : `No, ${device.brand} ${device.model} is not listed as an eSIM-compatible phone. In most cases, this means the device cannot install a travel eSIM profile.`}
-            </p>
-          </div>
-
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
             <h2 className="text-xl font-semibold mb-3">How to check on your phone</h2>
             <p className="text-gray-700 leading-7 mb-4">
