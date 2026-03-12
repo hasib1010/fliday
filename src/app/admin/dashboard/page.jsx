@@ -22,9 +22,9 @@ export default function AdminDashboard() {
   const router = useRouter();
 
   const [loading, setLoading] = useState(true);
-  const [selectedRange, setSelectedRange] = useState('30');
+  const [selectedRange, setSelectedRange] = useState('all');
   const [stats, setStats] = useState({
-    selectedRange: '30',
+    selectedRange: 'all',
     totalOrders: 0,
     totalRevenue: 0,
     totalUsers: 0,
@@ -37,7 +37,7 @@ export default function AdminDashboard() {
     averageOrderValue: 0,
     paidOrdersInRange: 0,
     paidTopUpsInRange: 0,
-    isAllTime: false,
+    isAllTime: true,
   });
 
   useEffect(() => {
@@ -131,7 +131,7 @@ export default function AdminDashboard() {
                 <div className="h-8 w-40 bg-gray-200 rounded mb-3"></div>
                 <div className="h-4 w-64 bg-gray-200 rounded"></div>
               </div>
-              <div className="h-10 w-36 bg-gray-200 rounded-xl"></div>
+              <div className="h-10 w-40 bg-gray-200 rounded-xl"></div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-6">
@@ -221,7 +221,9 @@ export default function AdminDashboard() {
           <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
             <div className="flex items-start justify-between">
               <div>
-                <p className="text-gray-500 text-sm font-medium">New Users</p>
+                <p className="text-gray-500 text-sm font-medium">
+                  {stats.isAllTime ? 'Users' : 'New Users'}
+                </p>
                 <h3 className="text-3xl font-semibold text-gray-900 mt-2">
                   {stats.totalUsers}
                 </h3>
