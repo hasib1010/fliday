@@ -84,6 +84,86 @@ export async function POST(request) {
   }
 }
 
+export async function PUT(request) {
+  try {
+    await dbConnect();
+
+    const body = await request.json();
+
+    const {
+      id,
+      code,
+      discountType,
+      discountValue,
+      usageLimit,
+      expiresAt,
+      firstOrderOnly,
+      useOncePerCustomer,
+      applicablePackages = [],
+      applicableLocations = [],
+      applicableDataAmounts = [],
+      applicableDurations = [],
+      active
+    } = body;
+
+    if (!id || !code || !discountType || !discountValue) {
+      return NextResponse.json(
+        { success: false, error: 'Missing required fields' },
+        { status: 400 }
+      );
+    }
+
+    const existingCoupon = await Coupon.findOne({
+      code: code.toUpperCase(),
+      _id: { $ne: id }
+    });
+
+    if (existingCoupon) {
+      return NextResponse.json(
+        { success: false, error: 'Another coupon with this code already exists' },
+        { status: 400 }
+      );
+    }
+
+    const updatedCoupon = await Coupon.findByIdAndUpdate(
+      id,
+      {
+        code: code.toUpperCase(),
+        discountType,
+        discountValue,
+        usageLimit,
+        expiresAt,
+        firstOrderOnly,
+        useOncePerCustomer,
+        applicablePackages,
+        applicableLocations,
+        applicableDataAmounts,
+        applicableDurations,
+        active
+      },
+      { new: true }
+    );
+
+    if (!updatedCoupon) {
+      return NextResponse.json(
+        { success: false, error: 'Coupon not found' },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      coupon: updatedCoupon
+    });
+  } catch (error) {
+    console.error('Update coupon error:', error);
+    return NextResponse.json(
+      { success: false, error: 'Failed to update coupon' },
+      { status: 500 }
+    );
+  }
+}
+
 export async function DELETE(request) {
   try {
     await dbConnect();

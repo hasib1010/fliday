@@ -110,7 +110,10 @@ export async function POST(request) {
       !allowedDataAmountValues.includes(currentDataAmountValue)
     ) {
       return NextResponse.json(
-        { success: false, error: 'This coupon is not valid for this data plan' },
+        {
+          success: false,
+          error: `This coupon only works for these data plans: ${coupon.applicableDataAmounts.join(', ')}`
+        },
         { status: 400 }
       );
     }

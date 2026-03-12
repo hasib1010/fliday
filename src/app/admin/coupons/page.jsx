@@ -16,6 +16,8 @@ export default function AdminCouponsPage() {
     const [firstOrderOnly, setFirstOrderOnly] = useState(false);
     const [useOncePerCustomer, setUseOncePerCustomer] = useState(false);
     const [applicableDataAmounts, setApplicableDataAmounts] = useState([]);
+    const [editingCouponId, setEditingCouponId] = useState(null);
+    const [active, setActive] = useState(true);
 
     const fetchCoupons = async () => {
         try {
@@ -46,10 +48,14 @@ export default function AdminCouponsPage() {
         try {
             setSubmitting(true);
 
-            const res = await fetch('/api/admin/coupons', {
-                method: 'POST',
+            const endpoint = '/api/admin/coupons';
+            const method = editingCouponId ? 'PUT' : 'POST';
+
+            const res = await fetch(endpoint, {
+                method,
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
+                    id: editingCouponId,
                     code,
                     discountType,
                     discountValue: Number(discountValue),
@@ -57,7 +63,8 @@ export default function AdminCouponsPage() {
                     expiresAt: expiresAt || null,
                     firstOrderOnly,
                     useOncePerCustomer,
-                    applicableDataAmounts
+                    applicableDataAmounts,
+                    active
                 })
             });
 
@@ -71,13 +78,16 @@ export default function AdminCouponsPage() {
                 setExpiresAt('');
                 setFirstOrderOnly(false);
                 setUseOncePerCustomer(false);
+                setApplicableDataAmounts([]);
+                setEditingCouponId(null);
+                setActive(true);
                 fetchCoupons();
             } else {
                 alert(data.error);
             }
         } catch (error) {
-            console.error('Create coupon error:', error);
-            alert('Failed to create coupon');
+            console.error('Save coupon error:', error);
+            alert('Failed to save coupon');
         } finally {
             setSubmitting(false);
         }
@@ -97,6 +107,19 @@ export default function AdminCouponsPage() {
             console.error('Delete coupon error:', error);
             alert('Failed to delete coupon');
         }
+    };
+
+    const startEditCoupon = (coupon) => {
+        setEditingCouponId(coupon._id);
+        setCode(coupon.code);
+        setDiscountType(coupon.discountType);
+        setDiscountValue(coupon.discountValue);
+        setUsageLimit(coupon.usageLimit || '');
+        setExpiresAt(coupon.expiresAt ? coupon.expiresAt.split('T')[0] : '');
+        setFirstOrderOnly(coupon.firstOrderOnly);
+        setUseOncePerCustomer(coupon.useOncePerCustomer);
+        setApplicableDataAmounts(coupon.applicableDataAmounts || []);
+        setActive(coupon.active);
     };
 
     return (
@@ -250,22 +273,43 @@ export default function AdminCouponsPage() {
                                 onClick={createCoupon}
                                 disabled={submitting}
                                 className={`w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium transition-colors ${submitting
-                                    ? 'bg-[#F15A25]/70 text-white cursor-not-allowed'
-                                    : 'bg-[#F15A25] hover:bg-[#E04E1A] text-white'
+                                        ? 'bg-[#F15A25]/70 text-white cursor-not-allowed'
+                                        : 'bg-[#F15A25] hover:bg-[#E04E1A] text-white'
                                     }`}
                             >
                                 {submitting ? (
                                     <>
                                         <Loader2 className="w-4 h-4 animate-spin" />
-                                        Creating...
+                                        {editingCouponId ? 'Updating...' : 'Creating...'}
                                     </>
                                 ) : (
                                     <>
                                         <Plus className="w-4 h-4" />
-                                        Create Coupon
+                                        {editingCouponId ? 'Update Coupon' : 'Create Coupon'}
                                     </>
                                 )}
                             </button>
+
+                            {editingCouponId && (
+                                <button
+                                    type="button"
+                                    onClick={() => {
+                                        setCode('');
+                                        setDiscountType('percentage');
+                                        setDiscountValue('');
+                                        setUsageLimit('');
+                                        setExpiresAt('');
+                                        setFirstOrderOnly(false);
+                                        setUseOncePerCustomer(false);
+                                        setApplicableDataAmounts([]);
+                                        setEditingCouponId(null);
+                                        setActive(true);
+                                    }}
+                                    className="w-full mt-3 border border-gray-300 text-gray-700 px-4 py-3 rounded-xl font-medium hover:bg-gray-50 transition-colors"
+                                >
+                                    Cancel Edit
+                                </button>
+                            )}
                         </div>
                     </div>
 
@@ -350,13 +394,22 @@ export default function AdminCouponsPage() {
                                                 </div>
                                             </div>
 
-                                            <button
-                                                onClick={() => deleteCoupon(coupon._id)}
-                                                className="inline-flex items-center gap-2 text-red-600 hover:text-red-700 font-medium text-sm self-start"
-                                            >
-                                                <Trash2 className="w-4 h-4" />
-                                                Delete
-                                            </button>
+                                            <div className="flex gap-4">
+                                                <button
+                                                    onClick={() => startEditCoupon(coupon)}
+                                                    className="inline-flex items-center gap-2 text-gray-700 hover:text-gray-900 font-medium text-sm"
+                                                >
+                                                    Edit
+                                                </button>
+
+                                                <button
+                                                    onClick={() => deleteCoupon(coupon._id)}
+                                                    className="inline-flex items-center gap-2 text-red-600 hover:text-red-700 font-medium text-sm"
+                                                >
+                                                    <Trash2 className="w-4 h-4" />
+                                                    Delete
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 ))}
