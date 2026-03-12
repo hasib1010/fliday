@@ -69,3 +69,15 @@ body {
 .animate-fade-in {
   animation: fadeIn 0.2s ease-out forwards;
 }
+
+.wave-line {
+  stroke-dasharray: 200;
+  stroke-dashoffset: 200;
+  animation: drawWave 1.8s ease forwards;
+}
+
+@keyframes drawWave {
+  to {
+    stroke-dashoffset: 0;
+  }
+}

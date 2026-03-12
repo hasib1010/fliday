@@ -296,8 +296,25 @@ export default function Hero() {
                     {/* Heading */}
                     <h1 className="text-center text-[36px] sm:text-[44px] lg:text-[56px] font-semibold pb-8">
                         Stay Connected{" "}
-                        <span className={`${libre.className} text-[#F15A25] italic`}>
-                            Everywhere
+                        <span className="relative inline-block">
+                            <span className={`${libre.className} text-[#F15A25] italic`}>
+                                Everywhere
+                            </span>
+
+                            <svg
+                                className="absolute left-0 -bottom-3 w-full h-4"
+                                viewBox="0 0 120 20"
+                                fill="none"
+                                preserveAspectRatio="none"
+                            >
+                                <path
+                                    d="M0 10 Q15 0 30 10 T60 10 T90 10 T120 10"
+                                    stroke="#F15A25"
+                                    strokeWidth="2"
+                                    fill="transparent"
+                                    className="wave-line"
+                                />
+                            </svg>
                         </span>
                     </h1>
 
