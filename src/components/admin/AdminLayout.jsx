@@ -84,6 +84,7 @@ export default function AdminLayout({ children }) {
     { name: 'Users', href: '/admin/users', icon: Users },
     { name: 'Contacts', href: '/admin/contacts', icon: MessageSquare },
     { name: 'Pricing', href: '/admin/pricing', icon: DollarSignIcon },
+    { name: 'Coupons', href: '/admin/coupons', icon: Tag },
     { name: 'Blog', href: '/admin/blog', icon: Edit },
     {
       name: 'Settings',
@@ -101,7 +102,6 @@ export default function AdminLayout({ children }) {
     { name: 'Analytics', href: '/admin/analytics', icon: BarChart },
     { name: 'Destinations', href: '/admin/destinations', icon: Globe },
     { name: 'Payments', href: '/admin/payments', icon: CreditCard },
-    { name: 'Coupons', href: '/admin/coupons', icon: Tag },
     { name: 'Help Center', href: '/admin/help', icon: HelpCircle },
   ];
 
