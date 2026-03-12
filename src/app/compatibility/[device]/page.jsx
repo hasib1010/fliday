@@ -16,6 +16,26 @@ export function generateStaticParams() {
   }));
 }
 
+export async function generateMetadata({ params }) {
+  const slug = params.device;
+
+  const device = compatibleDevices.find(
+    (d) => makeSlug(d.brand, d.model) === slug
+  );
+
+  if (!device) {
+    return {
+      title: "Device Compatibility | Fliday",
+      description: "Check whether your phone supports eSIM technology.",
+    };
+  }
+
+  return {
+    title: `Does ${device.model} Support eSIM? | Fliday Compatibility Guide`,
+    description: `Check if ${device.brand} ${device.model} supports eSIM. Learn whether it works with Fliday travel eSIM plans and how to confirm compatibility on your device.`,
+  };
+}
+
 export default function DevicePage({ params }) {
   const slug = params.device;
 
@@ -42,13 +62,13 @@ export default function DevicePage({ params }) {
 
       {/* Hero */}
       <div className="bg-gradient-to-r from-[#F15A25]/10 to-[#F15A25]/5 rounded-2xl p-8 mb-8 border border-[#F15A25]/10">
-        <div className="flex items-start gap-4">
-          <div className="w-14 h-14 rounded-xl bg-white flex items-center justify-center shadow-sm shrink-0">
+        <div className="flex flex-col sm:flex-row items-start gap-4 sm:gap-5">
+          <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-xl bg-white flex items-center justify-center shadow-sm shrink-0">
             <Smartphone className="text-[#F15A25]" size={28} />
           </div>
 
-          <div className="flex-1">
-            <h1 className="text-3xl md:text-4xl font-bold mb-3">
+          <div className="flex-1 w-full">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold mb-3 leading-tight">
               Does {device.brand} {device.model} Support eSIM?
             </h1>
 
@@ -66,7 +86,7 @@ export default function DevicePage({ params }) {
               )}
             </div>
 
-            <p className="text-lg text-gray-700 max-w-3xl">
+            <p className="text-base sm:text-lg text-gray-700 max-w-3xl">
               {device.compatible
                 ? `${device.brand} ${device.model} supports eSIM technology, which means you can activate a digital SIM without inserting a physical card. This makes it easy to use Fliday travel eSIM plans while keeping your main number active.`
                 : `${device.brand} ${device.model} does not support eSIM technology. If you need mobile data while traveling, you may need to use a physical SIM card instead.`}
