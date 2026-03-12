@@ -16,7 +16,7 @@ export async function POST(request) {
 
     if (!session) {
       return NextResponse.json(
-        { success: false, error: 'Please login before applying the coupon' },
+        { success: false, error: 'Please login before applying a coupon' },
         { status: 401 }
       );
     }
