@@ -286,7 +286,7 @@ export default function Hero() {
                     </div>
 
                     {/* Heading */}
-                    <h1 className="text-center lg:text-[55px] text-3xl md:text-5xl lg:text-6xl font-semibold pb-8">
+                    <h1 className="text-center lg:text-[55px] text-4xl md:text-5xl lg:text-6xl font-semibold pb-8">
                         eSIM for the <span className="text-[#F15A25]">Bold</span> & <span className="text-[#F15A25]">the Curious.</span>
                     </h1>
 
