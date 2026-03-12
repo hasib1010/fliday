@@ -95,14 +95,19 @@ export async function POST(request) {
       );
     }
 
-    const normalizedDataAmount = (dataAmount || '').replace(/\s+/g, '').toLowerCase();
-    const normalizedApplicableDataAmounts = (coupon.applicableDataAmounts || []).map(
-      (amount) => (amount || '').replace(/\s+/g, '').toLowerCase()
-    );
+    const extractDataAmountValue = (value) => {
+      const match = String(value || '').replace(',', '.').match(/(\d+(\.\d+)?)/);
+      return match ? parseFloat(match[1]) : null;
+    };
+
+    const currentDataAmountValue = extractDataAmountValue(dataAmount);
+    const allowedDataAmountValues = (coupon.applicableDataAmounts || [])
+      .map(extractDataAmountValue)
+      .filter((v) => v !== null);
 
     if (
-      normalizedApplicableDataAmounts.length > 0 &&
-      !normalizedApplicableDataAmounts.includes(normalizedDataAmount)
+      allowedDataAmountValues.length > 0 &&
+      !allowedDataAmountValues.includes(currentDataAmountValue)
     ) {
       return NextResponse.json(
         { success: false, error: 'This coupon is not valid for this data plan' },
