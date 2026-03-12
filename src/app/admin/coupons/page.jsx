@@ -15,6 +15,7 @@ export default function AdminCouponsPage() {
     const [expiresAt, setExpiresAt] = useState('');
     const [firstOrderOnly, setFirstOrderOnly] = useState(false);
     const [useOncePerCustomer, setUseOncePerCustomer] = useState(false);
+    const [applicableDataAmounts, setApplicableDataAmounts] = useState([]);
 
     const fetchCoupons = async () => {
         try {
@@ -55,7 +56,8 @@ export default function AdminCouponsPage() {
                     usageLimit: usageLimit ? Number(usageLimit) : null,
                     expiresAt: expiresAt || null,
                     firstOrderOnly,
-                    useOncePerCustomer
+                    useOncePerCustomer,
+                    applicableDataAmounts
                 })
             });
 
@@ -213,12 +215,43 @@ export default function AdminCouponsPage() {
                                 </label>
                             </div>
 
+                            <div>
+                                <label className="block text-sm font-medium text-gray-700 mb-2">
+                                    Applicable Data Plans
+                                </label>
+
+                                <div className="grid grid-cols-3 gap-2">
+                                    {["1GB", "3GB", "5GB", "10GB", "20GB"].map((plan) => (
+                                        <label key={plan} className="flex items-center gap-2 text-sm">
+                                            <input
+                                                type="checkbox"
+                                                checked={applicableDataAmounts.includes(plan)}
+                                                onChange={(e) => {
+                                                    if (e.target.checked) {
+                                                        setApplicableDataAmounts([...applicableDataAmounts, plan]);
+                                                    } else {
+                                                        setApplicableDataAmounts(
+                                                            applicableDataAmounts.filter(p => p !== plan)
+                                                        );
+                                                    }
+                                                }}
+                                            />
+                                            {plan}
+                                        </label>
+                                    ))}
+                                </div>
+
+                                <p className="text-xs text-gray-500 mt-2">
+                                    Leave empty to allow the coupon on all data plans.
+                                </p>
+                            </div>
+
                             <button
                                 onClick={createCoupon}
                                 disabled={submitting}
                                 className={`w-full inline-flex items-center justify-center gap-2 px-4 py-3 rounded-xl font-medium transition-colors ${submitting
-                                        ? 'bg-[#F15A25]/70 text-white cursor-not-allowed'
-                                        : 'bg-[#F15A25] hover:bg-[#E04E1A] text-white'
+                                    ? 'bg-[#F15A25]/70 text-white cursor-not-allowed'
+                                    : 'bg-[#F15A25] hover:bg-[#E04E1A] text-white'
                                     }`}
                             >
                                 {submitting ? (
@@ -274,8 +307,8 @@ export default function AdminCouponsPage() {
                                                         {coupon.code}
                                                     </p>
                                                     <span className={`text-xs px-2 py-1 rounded-full font-medium ${coupon.active
-                                                            ? 'bg-green-100 text-green-700'
-                                                            : 'bg-gray-100 text-gray-600'
+                                                        ? 'bg-green-100 text-green-700'
+                                                        : 'bg-gray-100 text-gray-600'
                                                         }`}>
                                                         {coupon.active ? 'Active' : 'Inactive'}
                                                     </span>
