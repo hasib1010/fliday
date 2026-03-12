@@ -334,47 +334,33 @@ export default function Hero() {
                     <div className="max-w-xl px-1.5 mx-auto mb-36 relative" ref={searchRef}>
                         <form onSubmit={handleSearchSubmit}>
                             <div className="flex justify-center">
-                                <div className="relative w-[88%] md:w-full max-w-full">
-                                    <div className="flex justify-center">
-                                        <div className="relative w-[90%] md:w-full">
-                                            <div className="flex justify-center">
-                                                <div className="relative w-[90%] md:w-full">
-                                                    <input
-                                                        type="text"
-                                                        placeholder="Enter your destination"
-                                                        className="w-full px-6 py-4 pr-16 rounded-full border-2 border-[#F15A25] bg-white focus:outline-none focus:ring-1 focus:ring-[#F15A25] text-base md:text-lg"
-                                                        value={searchInput}
-                                                        onChange={handleSearchChange}
-                                                        onClick={() => searchInput.length >= 2 && setShowResults(true)}
-                                                    />
+                                <div className="relative w-[90%] md:w-full">
+                                    <input
+                                        type="text"
+                                        placeholder="Enter your destination"
+                                        className="w-full px-6 py-4 pr-16 rounded-full border-2 border-[#F15A25] bg-white focus:outline-none focus:ring-1 focus:ring-[#F15A25] text-base md:text-lg"
+                                        value={searchInput}
+                                        onChange={handleSearchChange}
+                                        onClick={() => searchInput.length >= 2 && setShowResults(true)}
+                                    />
 
-                                                    <button
-                                                        type="button"
-                                                        className="absolute right-2 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-[#F15A25] text-white flex items-center justify-center"
-                                                    >
-                                                        {/* search icon */}
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
+                                    <button
+                                        type="submit"
+                                        className="absolute right-2 top-1/2 -translate-y-1/2 bg-[#F15A25] w-11 h-11 rounded-full text-white flex items-center justify-center"
+                                    >
+                                        {loading ? (
+                                            <Loader2 size={20} className="animate-spin" />
+                                        ) : (
+                                            <Search size={20} />
+                                        )}
+                                    </button>
                                 </div>
                             </div>
-                            <button
-                                type="submit"
-                                className="absolute right-5 top-1/2 transform -translate-y-1/2 bg-[#F15A25] p-3 rounded-full text-white"
-                            >
-                                {loading ? (
-                                    <Loader2 size={20} className="animate-spin" />
-                                ) : (
-                                    <Search size={20} />
-                                )}
-                            </button>
                         </form>
 
                         {/* Search results dropdown */}
                         {showResults && (
-                            <div className="absolute w-full mt-2 p-2 bg-white border border-gray-200 shadow-lg rounded-lg z-30 max-h-[350px] overflow-y-auto">
+                            <div className="absolute left-1/2 -translate-x-1/2 md:left-0 md:translate-x-0 w-[90%] md:w-full mt-2 p-2 bg-white border border-gray-200 shadow-lg rounded-lg z-30 max-h-[350px] overflow-y-auto">
                                 {loading ? (
                                     <div className="flex justify-center items-center py-4">
                                         <Loader2 size={24} className="animate-spin text-[#F15A25]" />
@@ -401,10 +387,6 @@ export default function Hero() {
                                                                 fill
                                                                 sizes="32px"
                                                                 className="object-cover"
-                                                                onError={(e) => {
-                                                                    e.target.onerror = null;
-                                                                    e.target.src = '/flags/default.jpg';
-                                                                }}
                                                             />
                                                         ) : (
                                                             <Image
@@ -413,27 +395,19 @@ export default function Hero() {
                                                                 fill
                                                                 sizes="32px"
                                                                 className="object-cover"
-                                                                onError={(e) => {
-                                                                    e.target.onerror = null;
-                                                                    e.target.src = '/flags/default.jpg';
-                                                                }}
                                                             />
                                                         )}
                                                     </div>
                                                     <div className="flex-1">
                                                         <p className="font-medium">{destination.name}</p>
-                                                        <div className="flex items-center justify-between">
-                                                            <p className="text-sm text-gray-500">
-                                                                {destination.type === 'country' ? 'Country' : 'Region'} • From ${formatDestinationPrice(destination)}
-                                                            </p>
-
-                                                        </div>
+                                                        <p className="text-sm text-gray-500">
+                                                            {destination.type === 'country' ? 'Country' : 'Region'} • From $
+                                                            {formatDestinationPrice(destination)}
+                                                        </p>
                                                     </div>
                                                 </div>
                                             </li>
                                         ))}
-
-
                                     </ul>
                                 ) : (
                                     <p className="text-center py-3 text-gray-500">No destinations found</p>
@@ -450,6 +424,7 @@ export default function Hero() {
                             </div>
                         )}
                     </div>
+
                 </div>
             </div>
         </div>
