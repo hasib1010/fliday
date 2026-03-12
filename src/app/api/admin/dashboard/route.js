@@ -9,7 +9,6 @@ import User from '@/models/User';
 
 export async function GET(request) {
   try {
-    // Check if user is authenticated and is an admin
     const session = await getServerSession(authOptions);
 
     if (!session) {
@@ -26,26 +25,45 @@ export async function GET(request) {
       );
     }
 
-    // Connect to the database
     await dbConnect();
 
-    // Get total number of orders and top-ups
+    // Range selection
+    const { searchParams } = new URL(request.url);
+    const rangeParam = searchParams.get('range') || '30';
+    const allowedRanges = [15, 30, 60, 90];
+    const rangeDays = allowedRanges.includes(Number(rangeParam))
+      ? Number(rangeParam)
+      : 30;
+
+    const now = new Date();
+    const rangeStart = new Date();
+    rangeStart.setDate(now.getDate() - rangeDays);
+
+    const previousRangeStart = new Date(rangeStart);
+    previousRangeStart.setDate(rangeStart.getDate() - rangeDays);
+
+    // Totals
     const totalOrders = await Order.countDocuments();
     const totalTopUps = await TopUp.countDocuments();
 
-    // Get recent orders (limited to 5)
+    const totalUsers = await User.countDocuments();
+
+    const activeEsims = await Order.countDocuments({
+      orderStatus: 'completed',
+      'esimDetails.esimStatus': { $ne: 'expired' },
+    });
+
+    // Recent transactions
     const recentOrders = await Order.find()
       .sort({ createdAt: -1 })
       .limit(5)
       .lean();
 
-    // Get recent top-ups (limited to 5)
     const recentTopUps = await TopUp.find()
       .sort({ createdAt: -1 })
       .limit(5)
       .lean();
 
-    // Combine and sort recent transactions by date
     const recentTransactions = [
       ...recentOrders,
       ...recentTopUps.map((topUp) => ({
@@ -62,208 +80,222 @@ export async function GET(request) {
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
       .slice(0, 5);
 
-    // Get total revenue from orders
+    // Total revenue (all time)
     const orderRevenue = await Order.aggregate([
       { $match: { paymentStatus: 'completed' } },
       { $group: { _id: null, total: { $sum: '$finalPrice' } } },
     ]);
 
-    // Get total revenue from top-ups
     const topUpRevenue = await TopUp.aggregate([
       { $match: { paymentStatus: 'completed' } },
       { $group: { _id: null, total: { $sum: '$finalPrice' } } },
     ]);
 
     const totalRevenue =
-      (orderRevenue.length > 0 ? orderRevenue[0].total : 0) +
-      (topUpRevenue.length > 0 ? topUpRevenue[0].total : 0);
+      (orderRevenue[0]?.total || 0) + (topUpRevenue[0]?.total || 0);
 
-    // Get total users
-    const totalUsers = await User.countDocuments();
+    // Range comparison
 
-    // Get active eSIMs
-    const activeEsims = await Order.countDocuments({
-      orderStatus: 'completed',
-      'esimDetails.esimStatus': { $ne: 'expired' },
+    const currentRangeOrders = await Order.countDocuments({
+      createdAt: { $gte: rangeStart, $lte: now },
     });
 
-    // Calculate month-over-month growth for orders and top-ups
-    const now = new Date();
-    const currentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const previousMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-
-    // Orders this month
-    const currentMonthOrders = await Order.countDocuments({
-      createdAt: { $gte: currentMonth },
+    const previousRangeOrders = await Order.countDocuments({
+      createdAt: { $gte: previousRangeStart, $lt: rangeStart },
     });
 
-    // Orders last month
-    const previousMonthOrders = await Order.countDocuments({
-      createdAt: { $gte: previousMonth, $lt: currentMonth },
+    const currentRangeTopUps = await TopUp.countDocuments({
+      createdAt: { $gte: rangeStart, $lte: now },
     });
 
-    // Top-ups this month
-    const currentMonthTopUps = await TopUp.countDocuments({
-      createdAt: { $gte: currentMonth },
+    const previousRangeTopUps = await TopUp.countDocuments({
+      createdAt: { $gte: previousRangeStart, $lt: rangeStart },
     });
 
-    // Top-ups last month
-    const previousMonthTopUps = await TopUp.countDocuments({
-      createdAt: { $gte: previousMonth, $lt: currentMonth },
-    });
+    const currentRangeTransactions =
+      currentRangeOrders + currentRangeTopUps;
 
-    // Total transactions this month vs. last month
-    const currentMonthTransactions = currentMonthOrders + currentMonthTopUps;
-    const previousMonthTransactions = previousMonthOrders + previousMonthTopUps;
+    const previousRangeTransactions =
+      previousRangeOrders + previousRangeTopUps;
 
-    // Orders revenue this month
-    const currentMonthOrderRevenue = await Order.aggregate([
+    // Revenue comparison
+    const currentRangeOrderRevenue = await Order.aggregate([
       {
         $match: {
           paymentStatus: 'completed',
-          createdAt: { $gte: currentMonth },
+          createdAt: { $gte: rangeStart, $lte: now },
         },
       },
       { $group: { _id: null, total: { $sum: '$finalPrice' } } },
     ]);
 
-    // Orders revenue last month
-    const previousMonthOrderRevenue = await Order.aggregate([
+    const previousRangeOrderRevenue = await Order.aggregate([
       {
         $match: {
           paymentStatus: 'completed',
-          createdAt: { $gte: previousMonth, $lt: currentMonth },
+          createdAt: { $gte: previousRangeStart, $lt: rangeStart },
         },
       },
       { $group: { _id: null, total: { $sum: '$finalPrice' } } },
     ]);
 
-    // Top-ups revenue this month
-    const currentMonthTopUpRevenue = await TopUp.aggregate([
+    const currentRangeTopUpRevenue = await TopUp.aggregate([
       {
         $match: {
           paymentStatus: 'completed',
-          createdAt: { $gte: currentMonth },
+          createdAt: { $gte: rangeStart, $lte: now },
         },
       },
       { $group: { _id: null, total: { $sum: '$finalPrice' } } },
     ]);
 
-    // Top-ups revenue last month
-    const previousMonthTopUpRevenue = await TopUp.aggregate([
+    const previousRangeTopUpRevenue = await TopUp.aggregate([
       {
         $match: {
           paymentStatus: 'completed',
-          createdAt: { $gte: previousMonth, $lt: currentMonth },
+          createdAt: { $gte: previousRangeStart, $lt: rangeStart },
         },
       },
       { $group: { _id: null, total: { $sum: '$finalPrice' } } },
     ]);
 
-    // Total revenue this month
-    const currentMonthTotalRevenue =
-      (currentMonthOrderRevenue.length > 0
-        ? currentMonthOrderRevenue[0].total
-        : 0) +
-      (currentMonthTopUpRevenue.length > 0
-        ? currentMonthTopUpRevenue[0].total
-        : 0);
+    const currentRangeTotalRevenue =
+      (currentRangeOrderRevenue[0]?.total || 0) +
+      (currentRangeTopUpRevenue[0]?.total || 0);
 
-    // Total revenue last month
-    const previousMonthTotalRevenue =
-      (previousMonthOrderRevenue.length > 0
-        ? previousMonthOrderRevenue[0].total
-        : 0) +
-      (previousMonthTopUpRevenue.length > 0
-        ? previousMonthTopUpRevenue[0].total
-        : 0);
+    const previousRangeTotalRevenue =
+      (previousRangeOrderRevenue[0]?.total || 0) +
+      (previousRangeTopUpRevenue[0]?.total || 0);
 
-    // Calculate month-over-month growth for users
-    const currentMonthUsers = await User.countDocuments({
-      createdAt: { $gte: currentMonth },
+    // Users growth
+    const currentRangeUsers = await User.countDocuments({
+      createdAt: { $gte: rangeStart, $lte: now },
     });
 
-    const previousMonthUsers = await User.countDocuments({
-      createdAt: { $gte: previousMonth, $lt: currentMonth },
+    const previousRangeUsers = await User.countDocuments({
+      createdAt: { $gte: previousRangeStart, $lt: rangeStart },
     });
 
-    // Calculate growth percentages
     const orderChange =
-      previousMonthTransactions === 0
-        ? 100
+      previousRangeTransactions === 0
+        ? currentRangeTransactions > 0
+          ? 100
+          : 0
         : Math.round(
-            ((currentMonthTransactions - previousMonthTransactions) /
-              previousMonthTransactions) *
+            ((currentRangeTransactions - previousRangeTransactions) /
+              previousRangeTransactions) *
               100
           );
 
     const revenueChange =
-      previousMonthTotalRevenue === 0
-        ? 100
+      previousRangeTotalRevenue === 0
+        ? currentRangeTotalRevenue > 0
+          ? 100
+          : 0
         : Math.round(
-            ((currentMonthTotalRevenue - previousMonthTotalRevenue) /
-              previousMonthTotalRevenue) *
+            ((currentRangeTotalRevenue - previousRangeTotalRevenue) /
+              previousRangeTotalRevenue) *
               100
           );
 
     const userChange =
-      previousMonthUsers === 0
-        ? 100
+      previousRangeUsers === 0
+        ? currentRangeUsers > 0
+          ? 100
+          : 0
         : Math.round(
-            ((currentMonthUsers - previousMonthUsers) / previousMonthUsers) * 100
+            ((currentRangeUsers - previousRangeUsers) /
+              previousRangeUsers) *
+              100
           );
 
-    // Get top destinations from both orders and top-ups
+    // Additional metrics
+    const paidOrdersInRange = await Order.countDocuments({
+      paymentStatus: 'completed',
+      createdAt: { $gte: rangeStart, $lte: now },
+    });
+
+    const paidTopUpsInRange = await TopUp.countDocuments({
+      paymentStatus: 'completed',
+      createdAt: { $gte: rangeStart, $lte: now },
+    });
+
+    const averageOrderValue =
+      paidOrdersInRange + paidTopUpsInRange > 0
+        ? Math.round(
+            currentRangeTotalRevenue /
+              (paidOrdersInRange + paidTopUpsInRange)
+          )
+        : 0;
+
+    // Top destinations within range
     const orderDestinations = await Order.aggregate([
-      { $match: { orderStatus: 'completed' } },
+      {
+        $match: {
+          orderStatus: 'completed',
+          createdAt: { $gte: rangeStart, $lte: now },
+        },
+      },
       { $group: { _id: '$location', count: { $sum: 1 } } },
     ]);
 
     const topUpDestinations = await TopUp.aggregate([
-      { $match: { topUpStatus: 'completed' } },
+      {
+        $match: {
+          topUpStatus: 'completed',
+          createdAt: { $gte: rangeStart, $lte: now },
+        },
+      },
       { $group: { _id: '$location', count: { $sum: 1 } } },
     ]);
 
-    // Combine destination data
     const destinationsMap = {};
 
     orderDestinations.forEach((dest) => {
-      destinationsMap[dest._id] = (destinationsMap[dest._id] || 0) + dest.count;
+      destinationsMap[dest._id] =
+        (destinationsMap[dest._id] || 0) + dest.count;
     });
 
     topUpDestinations.forEach((dest) => {
-      destinationsMap[dest._id] = (destinationsMap[dest._id] || 0) + dest.count;
+      destinationsMap[dest._id] =
+        (destinationsMap[dest._id] || 0) + dest.count;
     });
 
-    // Convert to array and sort
     const combinedDestinations = Object.entries(destinationsMap)
       .map(([location, count]) => ({ location, count }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 5);
 
-    // Calculate total completed transactions for percentage
     const totalCompletedTransactions =
-      (await Order.countDocuments({ orderStatus: 'completed' })) +
-      (await TopUp.countDocuments({ topUpStatus: 'completed' }));
+      paidOrdersInRange + paidTopUpsInRange;
 
-    // Format top destinations with percentage
-    const formattedTopDestinations = combinedDestinations.map((destination) => ({
-      location: destination.location,
-      count: destination.count,
-      percentage:
-        Math.round((destination.count / totalCompletedTransactions) * 100) || 0,
-    }));
+    const formattedTopDestinations = combinedDestinations.map(
+      (destination) => ({
+        location: destination.location,
+        count: destination.count,
+        percentage:
+          Math.round(
+            (destination.count / totalCompletedTransactions) * 100
+          ) || 0,
+      })
+    );
 
-    // Return the response
     return NextResponse.json({
       totalOrders: totalOrders + totalTopUps,
       totalRevenue,
       totalUsers,
       activeEsims,
+
       recentOrders: recentTransactions,
+
       orderChange,
       revenueChange,
       userChange,
+
+      averageOrderValue,
+      paidOrdersInRange,
+      paidTopUpsInRange,
+
       topDestinations: formattedTopDestinations,
     });
   } catch (error) {

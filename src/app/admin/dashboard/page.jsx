@@ -3,25 +3,27 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { 
-  BarChart, 
-  ShoppingBag, 
-  Users, 
-  DollarSign, 
-  ArrowUp, 
+import {
+  BarChart3,
+  ShoppingBag,
+  Users,
+  DollarSign,
+  ArrowUp,
   ArrowDown,
   Globe,
-  Calendar
+  Activity,
+  Loader2,
+  CreditCard,
 } from 'lucide-react';
 import Link from 'next/link';
-
-// Admin layout component with sidebar
 import AdminLayout from '@/components/admin/AdminLayout';
 
 export default function AdminDashboard() {
   const { data: session, status } = useSession();
   const router = useRouter();
+
   const [loading, setLoading] = useState(true);
+  const [selectedRange, setSelectedRange] = useState('30');
   const [stats, setStats] = useState({
     totalOrders: 0,
     totalRevenue: 0,
@@ -31,11 +33,13 @@ export default function AdminDashboard() {
     revenueChange: 0,
     orderChange: 0,
     userChange: 0,
-    topDestinations: []
+    topDestinations: [],
+    averageOrderValue: 0,
+    paidOrdersInRange: 0,
+    paidTopUpsInRange: 0,
   });
 
   useEffect(() => {
-    // Check authentication and admin status
     if (status === 'unauthenticated') {
       router.push('/auth/signin');
       return;
@@ -49,17 +53,17 @@ export default function AdminDashboard() {
     if (status === 'authenticated' && session?.user?.role === 'admin') {
       fetchDashboardData();
     }
-  }, [status, session, router]);
+  }, [status, session, router, selectedRange]);
 
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/admin/dashboard');
-      
+      const response = await fetch(`/api/admin/dashboard?range=${selectedRange}`);
+
       if (!response.ok) {
         throw new Error('Failed to fetch dashboard data');
       }
-      
+
       const data = await response.json();
       setStats(data);
     } catch (error) {
@@ -72,16 +76,81 @@ export default function AdminDashboard() {
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'USD'
-    }).format(amount / 10000); // Divide by 10000 since 10000 = $1.00
+      currency: 'USD',
+    }).format((amount || 0) / 10000);
   };
 
-  // Loading state
+  const renderChange = (value) => {
+    const isPositive = value >= 0;
+
+    return (
+      <div className="flex items-center mt-2">
+        {isPositive ? (
+          <span className="text-green-600 flex items-center text-xs font-medium">
+            <ArrowUp size={14} className="mr-1" />
+            {value}%
+          </span>
+        ) : (
+          <span className="text-red-600 flex items-center text-xs font-medium">
+            <ArrowDown size={14} className="mr-1" />
+            {Math.abs(value)}%
+          </span>
+        )}
+        <span className="text-gray-500 text-xs ml-1">
+          vs previous {selectedRange} days
+        </span>
+      </div>
+    );
+  };
+
+  const getStatusBadge = (statusValue) => {
+    const statusText = (statusValue || '').replace(/_/g, ' ');
+
+    if (statusValue === 'completed') {
+      return 'bg-green-100 text-green-700';
+    }
+
+    if (statusValue === 'pending_payment') {
+      return 'bg-yellow-100 text-yellow-700';
+    }
+
+    if (statusValue === 'processing') {
+      return 'bg-blue-100 text-blue-700';
+    }
+
+    return 'bg-red-100 text-red-700';
+  };
+
   if (loading) {
     return (
       <AdminLayout>
-        <div className="flex justify-center items-center h-full">
-          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#F15A25]"></div>
+        <div className="p-4 sm:p-6 lg:p-8">
+          <div className="animate-pulse space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="h-8 w-40 bg-gray-200 rounded mb-3"></div>
+                <div className="h-4 w-64 bg-gray-200 rounded"></div>
+              </div>
+              <div className="h-10 w-36 bg-gray-200 rounded-xl"></div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-6">
+              {Array.from({ length: 5 }).map((_, index) => (
+                <div key={index} className="bg-white rounded-2xl border border-gray-200 p-6">
+                  <div className="h-4 w-24 bg-gray-200 rounded mb-4"></div>
+                  <div className="h-8 w-20 bg-gray-200 rounded mb-3"></div>
+                  <div className="h-3 w-28 bg-gray-200 rounded"></div>
+                </div>
+              ))}
+            </div>
+
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+              <div className="bg-white rounded-2xl border border-gray-200 p-6 h-80"></div>
+              <div className="bg-white rounded-2xl border border-gray-200 p-6 h-80"></div>
+            </div>
+
+            <div className="bg-white rounded-2xl border border-gray-200 p-6 h-72"></div>
+          </div>
         </div>
       </AdminLayout>
     );
@@ -89,151 +158,210 @@ export default function AdminDashboard() {
 
   return (
     <AdminLayout>
-      <div className="p-6">
-        <h1 className="text-2xl font-bold mb-6">Dashboard</h1>
-        
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {/* Orders Card */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex justify-between items-start">
+      <div className="p-4 sm:p-6 lg:p-8">
+        {/* Header */}
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-8">
+          <div>
+            <h1 className="text-2xl sm:text-3xl font-semibold text-gray-900">
+              Dashboard
+            </h1>
+            <p className="text-sm text-gray-500 mt-1">
+              Track performance, monitor transactions, and review growth over the last{' '}
+              {selectedRange} days.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="inline-flex items-center gap-2 bg-white border border-gray-200 rounded-xl px-4 py-2.5 shadow-sm">
+              <Activity className="w-4 h-4 text-[#F15A25]" />
+              <select
+                value={selectedRange}
+                onChange={(e) => setSelectedRange(e.target.value)}
+                className="bg-transparent text-sm font-medium text-gray-700 focus:outline-none"
+              >
+                <option value="15">Last 15 days</option>
+                <option value="30">Last 30 days</option>
+                <option value="60">Last 60 days</option>
+                <option value="90">Last 90 days</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        {/* KPI Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-6 mb-8">
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+            <div className="flex items-start justify-between">
               <div>
                 <p className="text-gray-500 text-sm font-medium">Total Orders</p>
-                <h3 className="text-2xl font-bold mt-1">{stats.totalOrders}</h3>
-                <div className="flex items-center mt-2">
-                  {stats.orderChange >= 0 ? (
-                    <span className="text-green-500 flex items-center text-xs">
-                      <ArrowUp size={14} className="mr-1" /> {stats.orderChange}%
-                    </span>
-                  ) : (
-                    <span className="text-red-500 flex items-center text-xs">
-                      <ArrowDown size={14} className="mr-1" /> {Math.abs(stats.orderChange)}%
-                    </span>
-                  )}
-                  <span className="text-gray-500 text-xs ml-1">vs last month</span>
-                </div>
+                <h3 className="text-3xl font-semibold text-gray-900 mt-2">
+                  {stats.totalOrders}
+                </h3>
+                {renderChange(stats.orderChange)}
               </div>
-              <div className="bg-blue-100 p-3 rounded-full">
-                <ShoppingBag size={24} className="text-blue-600" />
+              <div className="bg-blue-50 p-3 rounded-2xl">
+                <ShoppingBag size={22} className="text-blue-600" />
               </div>
             </div>
           </div>
-          
-          {/* Revenue Card */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex justify-between items-start">
+
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+            <div className="flex items-start justify-between">
               <div>
                 <p className="text-gray-500 text-sm font-medium">Total Revenue</p>
-                <h3 className="text-2xl font-bold mt-1">{formatCurrency(stats.totalRevenue)}</h3>
-                <div className="flex items-center mt-2">
-                  {stats.revenueChange >= 0 ? (
-                    <span className="text-green-500 flex items-center text-xs">
-                      <ArrowUp size={14} className="mr-1" /> {stats.revenueChange}%
-                    </span>
-                  ) : (
-                    <span className="text-red-500 flex items-center text-xs">
-                      <ArrowDown size={14} className="mr-1" /> {Math.abs(stats.revenueChange)}%
-                    </span>
-                  )}
-                  <span className="text-gray-500 text-xs ml-1">vs last month</span>
-                </div>
+                <h3 className="text-3xl font-semibold text-gray-900 mt-2">
+                  {formatCurrency(stats.totalRevenue)}
+                </h3>
+                {renderChange(stats.revenueChange)}
               </div>
-              <div className="bg-green-100 p-3 rounded-full">
-                <DollarSign size={24} className="text-green-600" />
+              <div className="bg-green-50 p-3 rounded-2xl">
+                <DollarSign size={22} className="text-green-600" />
               </div>
             </div>
           </div>
-          
-          {/* Users Card */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex justify-between items-start">
+
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+            <div className="flex items-start justify-between">
               <div>
                 <p className="text-gray-500 text-sm font-medium">Total Users</p>
-                <h3 className="text-2xl font-bold mt-1">{stats.totalUsers}</h3>
-                <div className="flex items-center mt-2">
-                  {stats.userChange >= 0 ? (
-                    <span className="text-green-500 flex items-center text-xs">
-                      <ArrowUp size={14} className="mr-1" /> {stats.userChange}%
-                    </span>
-                  ) : (
-                    <span className="text-red-500 flex items-center text-xs">
-                      <ArrowDown size={14} className="mr-1" /> {Math.abs(stats.userChange)}%
-                    </span>
-                  )}
-                  <span className="text-gray-500 text-xs ml-1">vs last month</span>
-                </div>
+                <h3 className="text-3xl font-semibold text-gray-900 mt-2">
+                  {stats.totalUsers}
+                </h3>
+                {renderChange(stats.userChange)}
               </div>
-              <div className="bg-purple-100 p-3 rounded-full">
-                <Users size={24} className="text-purple-600" />
+              <div className="bg-purple-50 p-3 rounded-2xl">
+                <Users size={22} className="text-purple-600" />
               </div>
             </div>
           </div>
-          
-          {/* Active eSIMs Card */}
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex justify-between items-start">
+
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+            <div className="flex items-start justify-between">
               <div>
                 <p className="text-gray-500 text-sm font-medium">Active eSIMs</p>
-                <h3 className="text-2xl font-bold mt-1">{stats.activeEsims}</h3>
+                <h3 className="text-3xl font-semibold text-gray-900 mt-2">
+                  {stats.activeEsims}
+                </h3>
                 <div className="flex items-center mt-2">
                   <span className="text-gray-500 text-xs">Currently active</span>
                 </div>
               </div>
-              <div className="bg-orange-100 p-3 rounded-full">
-                <Globe size={24} className="text-orange-600" />
+              <div className="bg-orange-50 p-3 rounded-2xl">
+                <Globe size={22} className="text-orange-600" />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+            <div className="flex items-start justify-between">
+              <div>
+                <p className="text-gray-500 text-sm font-medium">Avg. Order Value</p>
+                <h3 className="text-3xl font-semibold text-gray-900 mt-2">
+                  {formatCurrency(stats.averageOrderValue)}
+                </h3>
+                <div className="flex items-center mt-2">
+                  <span className="text-gray-500 text-xs">
+                    {stats.paidOrdersInRange + stats.paidTopUpsInRange} paid transactions in range
+                  </span>
+                </div>
+              </div>
+              <div className="bg-[#FFF1ED] p-3 rounded-2xl">
+                <CreditCard size={22} className="text-[#F15A25]" />
               </div>
             </div>
           </div>
         </div>
-        
-        {/* Recent Orders & Top Destinations */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-          {/* Recent Orders */}
-          <div className="bg-white rounded-lg shadow">
-            <div className="p-6 border-b border-gray-100">
-              <h2 className="text-lg font-semibold">Recent Orders</h2>
+
+        {/* Secondary metrics */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+            <p className="text-sm font-medium text-gray-500 mb-2">Paid Orders in Range</p>
+            <div className="flex items-end justify-between">
+              <h3 className="text-2xl font-semibold text-gray-900">
+                {stats.paidOrdersInRange}
+              </h3>
+              <span className="text-xs text-gray-500">
+                Last {selectedRange} days
+              </span>
             </div>
+          </div>
+
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+            <p className="text-sm font-medium text-gray-500 mb-2">Paid Top-ups in Range</p>
+            <div className="flex items-end justify-between">
+              <h3 className="text-2xl font-semibold text-gray-900">
+                {stats.paidTopUpsInRange}
+              </h3>
+              <span className="text-xs text-gray-500">
+                Last {selectedRange} days
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Recent Orders & Top Destinations */}
+        <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-8">
+          {/* Recent Orders */}
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
+            <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+              <div>
+                <h2 className="text-lg font-semibold text-gray-900">Recent Transactions</h2>
+                <p className="text-sm text-gray-500 mt-1">
+                  Latest orders and top-ups across the platform
+                </p>
+              </div>
+              <Link
+                href="/admin/orders"
+                className="text-sm font-medium text-[#F15A25] hover:underline"
+              >
+                View all
+              </Link>
+            </div>
+
             <div className="p-6">
               {stats.recentOrders.length > 0 ? (
                 <div className="overflow-x-auto">
                   <table className="min-w-full">
-                    <thead className="bg-gray-50">
-                      <tr>
-                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Order ID
+                    <thead>
+                      <tr className="border-b border-gray-100">
+                        <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                          ID
                         </th>
-                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                           Date
                         </th>
-                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                           Status
                         </th>
-                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        <th className="px-3 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
                           Amount
                         </th>
                       </tr>
                     </thead>
-                    <tbody className="bg-white divide-y divide-gray-200">
+                    <tbody>
                       {stats.recentOrders.map((order) => (
-                        <tr key={order.orderId} className="hover:bg-gray-50">
-                          <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-blue-600">
+                        <tr
+                          key={order.orderId}
+                          className="border-b border-gray-50 last:border-b-0 hover:bg-gray-50/70 transition-colors"
+                        >
+                          <td className="px-3 py-4 whitespace-nowrap text-sm font-medium text-[#F15A25]">
                             <Link href={`/admin/orders/${order.orderId}`}>
                               {order.orderId}
                             </Link>
                           </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                          <td className="px-3 py-4 whitespace-nowrap text-sm text-gray-500">
                             {new Date(order.createdAt).toLocaleDateString()}
                           </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm">
-                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                              ${order.orderStatus === 'completed' ? 'bg-green-100 text-green-800' : 
-                                order.orderStatus === 'pending_payment' ? 'bg-yellow-100 text-yellow-800' : 
-                                order.orderStatus === 'processing' ? 'bg-blue-100 text-blue-800' : 
-                                'bg-red-100 text-red-800'}`}>
+                          <td className="px-3 py-4 whitespace-nowrap text-sm">
+                            <span
+                              className={`px-2.5 py-1 inline-flex text-xs font-semibold rounded-full ${getStatusBadge(
+                                order.orderStatus
+                              )}`}
+                            >
                               {order.orderStatus.replace('_', ' ')}
                             </span>
                           </td>
-                          <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                          <td className="px-3 py-4 whitespace-nowrap text-sm font-medium text-gray-700">
                             {formatCurrency(order.finalPrice)}
                           </td>
                         </tr>
@@ -242,64 +370,99 @@ export default function AdminDashboard() {
                   </table>
                 </div>
               ) : (
-                <p className="text-gray-500 text-center py-4">No recent orders</p>
+                <div className="py-12 text-center">
+                  <ShoppingBag className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+                  <p className="text-gray-600 font-medium">No recent transactions</p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Orders and top-ups will appear here.
+                  </p>
+                </div>
               )}
-              <div className="mt-4 text-center">
-                <Link href="/admin/orders" className="text-[#F15A25] text-sm hover:underline">
-                  View all orders
-                </Link>
-              </div>
             </div>
           </div>
-          
+
           {/* Top Destinations */}
-          <div className="bg-white rounded-lg shadow">
+          <div className="bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
             <div className="p-6 border-b border-gray-100">
-              <h2 className="text-lg font-semibold">Top Destinations</h2>
+              <h2 className="text-lg font-semibold text-gray-900">Top Destinations</h2>
+              <p className="text-sm text-gray-500 mt-1">
+                Best-performing destinations in the last {selectedRange} days
+              </p>
             </div>
+
             <div className="p-6">
               {stats.topDestinations.length > 0 ? (
-                <div className="space-y-4">
+                <div className="space-y-5">
                   {stats.topDestinations.map((destination, index) => (
-                    <div key={destination.location} className="flex items-center justify-between">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0 h-8 w-8 bg-gray-100 rounded-full flex items-center justify-center">
-                          <span className="text-sm font-medium text-gray-800">{index + 1}</span>
+                    <div key={destination.location}>
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center min-w-0">
+                          <div className="h-8 w-8 rounded-full bg-[#FFF1ED] text-[#F15A25] flex items-center justify-center text-sm font-semibold flex-shrink-0">
+                            {index + 1}
+                          </div>
+                          <div className="ml-3 min-w-0">
+                            <p className="text-sm font-semibold text-gray-900 truncate">
+                              {destination.location}
+                            </p>
+                            <p className="text-xs text-gray-500">
+                              {destination.count} transactions
+                            </p>
+                          </div>
                         </div>
-                        <div className="ml-4">
-                          <p className="text-sm font-medium text-gray-900">{destination.location}</p>
-                          <p className="text-sm text-gray-500">{destination.count} orders</p>
-                        </div>
+                        <span className="text-sm font-semibold text-gray-900">
+                          {destination.percentage}%
+                        </span>
                       </div>
-                      <div className="flex items-center">
-                        <span className="text-sm font-medium text-gray-900">{destination.percentage}%</span>
+
+                      <div className="w-full bg-gray-100 rounded-full h-2">
+                        <div
+                          className="bg-[#F15A25] h-2 rounded-full transition-all"
+                          style={{ width: `${destination.percentage}%` }}
+                        />
                       </div>
                     </div>
                   ))}
                 </div>
               ) : (
-                <p className="text-gray-500 text-center py-4">No data available</p>
+                <div className="py-12 text-center">
+                  <Globe className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+                  <p className="text-gray-600 font-medium">No destination data</p>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Completed transactions will populate this section.
+                  </p>
+                </div>
               )}
             </div>
           </div>
         </div>
-        
-        {/* Sales Chart - Coming Soon */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold">Sales Overview</h2>
-            <select className="bg-gray-50 border border-gray-300 text-gray-900 text-sm rounded-lg focus:ring-[#F15A25] focus:border-[#F15A25] p-2.5">
-              <option value="7days">Last 7 days</option>
-              <option value="30days">Last 30 days</option>
-              <option value="90days">Last 90 days</option>
-            </select>
+
+        {/* Sales Overview Placeholder */}
+        <div className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900">Sales Overview</h2>
+              <p className="text-sm text-gray-500 mt-1">
+                Revenue and transaction trends visualization
+              </p>
+            </div>
+
+            <div className="inline-flex items-center gap-2 text-sm text-gray-500 bg-gray-50 border border-gray-200 rounded-xl px-3 py-2">
+              <BarChart3 className="w-4 h-4" />
+              Range: last {selectedRange} days
+            </div>
           </div>
-          <div className="h-64 flex items-center justify-center bg-gray-50 rounded-lg">
-            <div className="text-center">
+
+          <div className="h-72 rounded-2xl border border-dashed border-gray-300 bg-gray-50 flex items-center justify-center">
+            <div className="text-center max-w-sm px-6">
               <div className="flex justify-center mb-4">
-                <BarChart size={48} className="text-gray-400" />
+                <div className="w-14 h-14 rounded-2xl bg-white border border-gray-200 flex items-center justify-center shadow-sm">
+                  <BarChart3 size={28} className="text-gray-400" />
+                </div>
               </div>
-              <p className="text-gray-500">Sales chart coming soon</p>
+              <p className="text-gray-700 font-medium">Sales chart coming soon</p>
+              <p className="text-sm text-gray-500 mt-2">
+                You now have range-based metrics ready. The next step is connecting them to a real chart.
+              </p>
             </div>
           </div>
         </div>
