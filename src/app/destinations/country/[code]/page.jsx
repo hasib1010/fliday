@@ -123,106 +123,47 @@ async function getCountryMetadata(code) {
   };
 }
 
-// Generate metadata with real data
+// Generate metadata
 export async function generateMetadata({ params }) {
-  const { code } = await params; // Await params to access code
+  const { code } = params;
   const countryCode = code.toLowerCase();
   const countryName = getCountryName(countryCode);
   const metadata = await getCountryMetadata(countryCode);
 
-  // Create SEO-optimized title and description
-  const title = `${countryName} eSIM Travel Data Plans from ${metadata.currency} ${metadata.startingPrice}`;
+  const title = `${countryName} eSIM – Travel Data Plans from ${metadata.currency} ${metadata.startingPrice}`;
 
   const description = `Buy a prepaid ${countryName} eSIM with instant activation. ${metadata.packageCount} travel data plans available from ${metadata.minData}GB to ${metadata.maxData}GB. No roaming fees. Works on iPhone and Android.`;
-
-  // Country keywords (not critical for Google but fine to keep)
-  const keywords = [
-    `${countryName} esim`,
-    `esim ${countryName}`,
-    `${countryName} travel esim`,
-    `${countryName} prepaid esim`,
-    `${countryName} mobile data`,
-    `${countryName} internet`,
-    `${countryName} tourist esim`,
-    `travel esim`,
-    `international esim`,
-    `prepaid esim`,
-    `mobile data for travel`,
-    `roaming alternative`
-  ];
 
   return {
     title,
     description,
-    keywords: keywords.join(', '),
-
-    openGraph: {
-      title,
-      description,
-      type: 'website',
-      locale: 'en_US',
-      url: `https://fliday.com/destinations/country/${countryCode}`,
-      siteName: 'Fliday',
-      images: [
-        {
-          url: `https://fliday.com/flags/${countryCode}_flag.jpeg`,
-          width: 1200,
-          height: 630,
-          alt: `${countryName} eSIM travel data plans starting from ${metadata.currency} ${metadata.startingPrice}`,
-        }
-      ],
-    },
-
-    twitter: {
-      card: 'summary_large_image',
-      title,
-      description,
-      images: [`https://fliday.com/flags/${countryCode}_flag.jpeg`],
-    },
-
-    alternates: {
-      canonical: `https://fliday.com/destinations/country/${countryCode}`,
-    },
-
-    robots: {
-      index: true,
-      follow: true,
-    },
-
-    // Additional metadata signals
-    other: {
-      'product:price:amount': metadata.startingPrice,
-      'product:price:currency': metadata.currency,
-      'geo.region': countryCode.toUpperCase(),
-      'geo.placename': countryName,
-    },
   };
+}
 
-  // Generate static params for popular countries (optional for better performance)
-  export async function generateStaticParams() {
-    // Return first 50 most popular countries for static generation
-    const popularCountries = [
-      'us', 'gb', 'fr', 'de', 'it', 'es', 'ca', 'au', 'jp', 'kr',
-      'sg', 'th', 'in', 'cn', 'mx', 'br', 'ar', 'nl', 'ch', 'at',
-      'be', 'se', 'no', 'dk', 'fi', 'ie', 'pt', 'gr', 'tr', 'pl',
-      'cz', 'hu', 'ro', 'bg', 'hr', 'si', 'sk', 'ee', 'lv', 'lt',
-      'is', 'mt', 'cy', 'lu', 'nz', 'za', 'eg', 'ma', 'tn', 'ke'
-    ];
 
-    return popularCountries.map((code) => ({
-      code: code,
-    }));
-  }
+// ✅ OUTSIDE the function
+export async function generateStaticParams() {
+  const popularCountries = [
+    'us','gb','fr','de','it','es','ca','au','jp','kr',
+    'sg','th','in','cn','mx','br','ar','nl','ch','at',
+    'be','se','no','dk','fi','ie','pt','gr','tr','pl',
+    'cz','hu','ro','bg','hr','si','sk','ee','lv','lt',
+    'is','mt','cy','lu','nz','za','eg','ma','tn','ke'
+  ];
 
-  // Server component - just passes data to client component
-  export default async function DestinationCountryPage({ params }) {
-    const { code } = await params; // Await params to access code
-    const countryName = getCountryName(code);
+  return popularCountries.map(code => ({ code }));
+}
 
-    return (
-      <DestinationCountryPage2
-        code={code}
-        countryName={countryName}
-      />
-    );
-  }
+
+// ✅ page component
+export default async function DestinationCountryPage({ params }) {
+  const { code } = params;
+  const countryName = getCountryName(code);
+
+  return (
+    <DestinationCountryPage2
+      code={code}
+      countryName={countryName}
+    />
+  );
+}
