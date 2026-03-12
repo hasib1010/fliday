@@ -257,7 +257,7 @@ export default function Hero() {
 
             {/* Content */}
             <div className="relative z-10 w-full flex items-start justify-center min-h-[710px]">
-                <div className="md:pt-[85px] pt-36">
+                <div className="md:pt-[85px] pt-24">
                     {/* Feature badges */}
                     <div className="md:py-9 py-3 block relative w-full px-1">
                         <div className="flex justify-center mb-10 md:mb-0 items-center">
