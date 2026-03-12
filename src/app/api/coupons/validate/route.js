@@ -16,7 +16,7 @@ export async function POST(request) {
 
     if (!session) {
       return NextResponse.json(
-        { success: false, error: 'Unauthorized' },
+        { success: false, error: 'Please login to your account before applying the coupon' },
         { status: 401 }
       );
     }
@@ -95,9 +95,14 @@ export async function POST(request) {
       );
     }
 
+    const normalizedDataAmount = (dataAmount || '').replace(/\s+/g, '').toLowerCase();
+    const normalizedApplicableDataAmounts = (coupon.applicableDataAmounts || []).map(
+      (amount) => (amount || '').replace(/\s+/g, '').toLowerCase()
+    );
+
     if (
-      coupon.applicableDataAmounts.length > 0 &&
-      !coupon.applicableDataAmounts.includes(dataAmount)
+      normalizedApplicableDataAmounts.length > 0 &&
+      !normalizedApplicableDataAmounts.includes(normalizedDataAmount)
     ) {
       return NextResponse.json(
         { success: false, error: 'This coupon is not valid for this data plan' },
@@ -150,7 +155,7 @@ export async function POST(request) {
       const providerPackageData = await fetchProviderPackagePrice(packageCode);
       currentProviderPrice = providerPackageData.price;
     } catch (providerError) {
-      let customPricing = await PackagePricing.findOne({ packageCode });
+      const customPricing = await PackagePricing.findOne({ packageCode });
 
       if (customPricing) {
         currentProviderPrice = customPricing.originalPrice;
@@ -162,7 +167,7 @@ export async function POST(request) {
       }
     }
 
-    let originalPrice = currentProviderPrice;
+    const originalPrice = currentProviderPrice;
     let markupAmount;
     let finalPrice;
 
