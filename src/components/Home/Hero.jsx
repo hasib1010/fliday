@@ -294,7 +294,7 @@ export default function Hero() {
                     </div>
 
                     {/* Heading */}
-                    <h1 className="text-center text-[36px] sm:text-[44px] lg:text-[56px] font-semibold pb-8">
+                    <h1 className="text-center text-[36px] sm:text-[44px] lg:text-[52px] font-semibold pb-8">
                         Stay Connected{" "}
                         <span className="relative inline-block">
                             <span className={`${libre.className} text-[#F15A25] italic`}>
@@ -302,17 +302,26 @@ export default function Hero() {
                             </span>
 
                             <svg
-                                className="absolute left-0 -bottom-3 w-full h-4"
-                                viewBox="0 0 120 20"
+                                className="absolute left-0 -bottom-3 w-full h-5"
+                                viewBox="0 0 160 28"
                                 fill="none"
                                 preserveAspectRatio="none"
+                                aria-hidden="true"
                             >
                                 <path
-                                    d="M0 10 Q15 0 30 10 T60 10 T90 10 T120 10"
+                                    d="M6 18C22 24 38 22 54 18C70 14 86 10 102 13C118 16 132 22 154 16"
                                     stroke="#F15A25"
-                                    strokeWidth="2"
-                                    fill="transparent"
-                                    className="wave-line"
+                                    strokeWidth="5"
+                                    strokeLinecap="round"
+                                    className="brush-underline"
+                                />
+                                <path
+                                    d="M8 20C24 26 40 24 56 20C72 16 88 12 104 15C120 18 134 24 152 18"
+                                    stroke="#F15A25"
+                                    strokeWidth="3"
+                                    strokeLinecap="round"
+                                    strokeOpacity="0.55"
+                                    className="brush-underline brush-underline-delay"
                                 />
                             </svg>
                         </span>
