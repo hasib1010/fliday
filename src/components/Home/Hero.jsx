@@ -6,6 +6,13 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Check, Search, Loader2, AlertCircle } from 'lucide-react';
 
+import { Libre_Baskerville } from "next/font/google";
+
+export const libre = Libre_Baskerville({
+    weight: ["400", "700"],
+    subsets: ["latin"],
+});
+
 export default function Hero() {
     const [searchInput, setSearchInput] = useState('');
     const [searchResults, setSearchResults] = useState([]);
@@ -286,8 +293,11 @@ export default function Hero() {
                     </div>
 
                     {/* Heading */}
-                    <h1 className="text-center lg:text-[55px] text-4xl md:text-5xl lg:text-6xl font-semibold pb-8">
-                        eSIM for the <span className="text-[#F15A25]">Bold</span> & <span className="text-[#F15A25]">the Curious.</span>
+                    <h1 className="text-center text-[32px] md:text-5xl lg:text-6xl font-semibold pb-8">
+                        Stay Connected{" "}
+                        <span className={`${libre.className} text-[#F15A25] italic`}>
+                            Everywhere
+                        </span>
                     </h1>
 
                     {/* Subheading */}
