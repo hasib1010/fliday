@@ -168,31 +168,6 @@ export default function DevicePage({ params }) {
 
         {/* Sidebar */}
         <div className="space-y-6">
-          <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
-            <h3 className="text-lg font-semibold mb-4">Quick Answer</h3>
-
-            {device.compatible ? (
-              <div className="rounded-xl bg-green-50 border border-green-100 p-4">
-                <div className="flex items-center text-green-700 font-semibold mb-2">
-                  <Check size={18} className="mr-2" />
-                  Yes, supported
-                </div>
-                <p className="text-sm text-green-700">
-                  {device.brand} {device.model} supports eSIM.
-                </p>
-              </div>
-            ) : (
-              <div className="rounded-xl bg-yellow-50 border border-yellow-100 p-4">
-                <div className="flex items-center text-yellow-700 font-semibold mb-2">
-                  <AlertTriangle size={18} className="mr-2" />
-                  No, not supported
-                </div>
-                <p className="text-sm text-yellow-700">
-                  {device.brand} {device.model} does not support eSIM.
-                </p>
-              </div>
-            )}
-          </div>
 
           <CouponWidget />
 
