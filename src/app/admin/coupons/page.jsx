@@ -1,4 +1,4 @@
-'use client';
+'use client';import AdminLayout from '@/components/admin/AdminLayout';
 
 import { useEffect, useState } from 'react';
 import { Tag, Plus, Trash2, Loader2, TicketPercent, Calendar, Hash } from 'lucide-react';
@@ -98,6 +98,7 @@ export default function AdminCouponsPage() {
   };
 
   return (
+    <AdminLayout>
     <div className="p-4 sm:p-6 lg:p-8">
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-2">
@@ -333,5 +334,6 @@ export default function AdminCouponsPage() {
         </div>
       </div>
     </div>
+    <AdminLayout>
   );
 }
