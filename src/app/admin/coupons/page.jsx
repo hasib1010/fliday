@@ -287,7 +287,7 @@ export default function AdminCouponsPage() {
                           <TicketPercent className="w-4 h-4" />
                           {coupon.discountType === 'percentage'
                             ? `${coupon.discountValue}% off`
-                            : `Fixed discount`}
+                            : `$${(coupon.discountValue / 10000).toFixed(2)} off`}
                         </span>
 
                         <span className="inline-flex items-center gap-1">
