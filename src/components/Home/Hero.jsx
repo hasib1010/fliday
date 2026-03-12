@@ -336,7 +336,7 @@ export default function Hero() {
                             <input
                                 type="text"
                                 placeholder="Enter your destination"
-                                className="w-full px-6 py-4 rounded-full border-2 border-[#F15A25] bg-white focus:outline-none focus:ring-1 focus:ring-[#F15A25] text-base md:text-lg"
+                                className="w-[85%] sm:w-[90%] md:w-full px-6 py-4 rounded-full border-2 border-[#F15A25] bg-white focus:outline-none focus:ring-1 focus:ring-[#F15A25] text-base md:text-lg"
                                 value={searchInput}
                                 onChange={handleSearchChange}
                                 onClick={() => searchInput.length >= 2 && setShowResults(true)}
