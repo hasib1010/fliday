@@ -123,11 +123,10 @@ export default function DevicePage({ params }) {
           {device.compatible && (
             <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6">
               <h2 className="text-xl font-semibold mb-3">
-                Can you use Fliday on {device.model}?
+                Start using eSIM on your {device.model}
               </h2>
               <p className="text-gray-700 leading-7 mb-4">
-                Yes. If your {device.model} is unlocked and supports eSIM in your region,
-                you can use it with Fliday travel eSIM plans for destinations around the world.
+                Your {device.model} supports eSIM, which means you can activate a Fliday travel eSIM in seconds and get affordable mobile data wherever you travel. Just choose your destination, install the eSIM, and you're ready to go.
               </p>
 
               <div className="flex flex-col sm:flex-row gap-3">
