@@ -335,21 +335,29 @@ export default function Hero() {
                         <form onSubmit={handleSearchSubmit}>
                             <div className="flex justify-center">
                                 <div className="relative w-[88%] md:w-full max-w-full">
-                                    <input
-                                        type="text"
-                                        placeholder="Enter your destination"
-                                        className="w-full px-6 py-4 pr-16 rounded-full border-2 border-[#F15A25] bg-white focus:outline-none focus:ring-1 focus:ring-[#F15A25] text-base md:text-lg"
-                                        value={searchInput}
-                                        onChange={handleSearchChange}
-                                        onClick={() => searchInput.length >= 2 && setShowResults(true)}
-                                    />
+                                    <div className="flex justify-center">
+                                        <div className="relative w-[90%] md:w-full">
+                                            <div className="flex justify-center">
+                                                <div className="relative w-[90%] md:w-full">
+                                                    <input
+                                                        type="text"
+                                                        placeholder="Enter your destination"
+                                                        className="w-full px-6 py-4 pr-16 rounded-full border-2 border-[#F15A25] bg-white focus:outline-none focus:ring-1 focus:ring-[#F15A25] text-base md:text-lg"
+                                                        value={searchInput}
+                                                        onChange={handleSearchChange}
+                                                        onClick={() => searchInput.length >= 2 && setShowResults(true)}
+                                                    />
 
-                                    <button
-                                        type="button"
-                                        className="absolute right-2 top-1/2 -translate-y-1/2 w-12 h-12 rounded-full bg-[#F15A25] text-white flex items-center justify-center"
-                                    >
-                                        {/* your search icon */}
-                                    </button>
+                                                    <button
+                                                        type="button"
+                                                        className="absolute right-2 top-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-[#F15A25] text-white flex items-center justify-center"
+                                                    >
+                                                        {/* search icon */}
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             <button
