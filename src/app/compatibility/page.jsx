@@ -3,23 +3,30 @@ import CompatibilityPage from './CompatibilityPage';
 
 // Define metadata for SEO
 export const metadata = {
-  title: 'eSIM Compatibility Checker for Smartphones and Tablets',
-  description: 'Check if your iPhone, Samsung Galaxy, Google Pixel, or other device supports eSIM with our compatibility checker. Explore compatible devices and browse eSIM plans.',
-  keywords: 'eSIM compatibility, eSIM checker, iPhone eSIM, Samsung Galaxy eSIM, Google Pixel eSIM, device compatibility',
+  title: 'eSIM Compatible Phones – iPhone & Android Compatibility Checker',
+
+  description:
+    'Check if your phone supports eSIM. Use our compatibility checker for iPhone, Samsung Galaxy, Google Pixel and other Android devices.',
+
   robots: 'index, follow',
+
   openGraph: {
-    title: 'eSIM Compatibility Checker for Smartphones and Tablets',
-    description: 'Verify if your device supports eSIM technology with our easy-to-use compatibility checker. Supports Apple, Samsung, Google, and more.',
+    title: 'eSIM Compatible Phones – iPhone & Android Checker',
+    description:
+      'Verify if your device supports eSIM technology. Compatible with iPhone, Samsung Galaxy, Google Pixel and more.',
     type: 'website',
     url: 'https://fliday.com/compatibility',
     images: ['https://fliday.com/images/esim-compatibility.jpg'],
   },
+
   twitter: {
     card: 'summary_large_image',
-    title: 'eSIM Compatibility Checker for Smartphones and Tablets',
-    description: 'Verify if your device supports eSIM technology with our easy-to-use compatibility checker. Supports Apple, Samsung, Google, and more.',
+    title: 'eSIM Compatible Phones – iPhone & Android Checker',
+    description:
+      'Check if your smartphone supports eSIM with our compatibility checker for Apple, Samsung and Pixel devices.',
     images: ['https://fliday.com/images/esim-compatibility.jpg'],
   },
+
   alternates: {
     canonical: 'https://fliday.com/compatibility',
   },

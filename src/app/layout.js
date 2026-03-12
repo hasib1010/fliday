@@ -13,70 +13,38 @@ const poppins = Poppins({
 });
 
 export const metadata = {
-  title: "Fliday: Your Travel eSIM Companion | Fast, Easy & Affordable Connectivity",
-  description: "Say goodbye to roaming fees. Fliday offers instant eSIMs for 100+ countries. Get connected in minutes with affordable prepaid data plans starting at just $3.99.",
-  keywords: [
-    "esim",
-    "travel esim",
-    "international esim",
-    "esim for travel",
-    "buy esim online",
-    "best esim",
-    "digital sim",
-    "global esim",
-    "prepaid esim",
-    "esim for iPhone",
-    "esim for Android",
-    "esim app",
-    "instant esim delivery",
-    "esim plans",
-    "esim countries",
-    "mobile data for travel",
-    "no roaming charges",
-    "travel sim",
-    "e sim card",
-    "virtual sim",
-    "esim europe",
-    "esim usa",
-    "esim france",
-    "esim japan",
-    "esim canada",
-    "esim australia",
-    "esim for tourists",
-    "data roaming alternative"
-  ].join(", "),
+  title: "Fliday: Travel eSIM for 100+ Countries | Instant Prepaid Data",
+  description:
+    "Buy travel eSIMs for 100+ countries with instant activation. Affordable prepaid data plans for iPhone and Android with no roaming fees.",
+
+  alternates: {
+    canonical: "https://fliday.com",
+  },
+
   openGraph: {
-    title: "Fliday: Your Travel eSIM Companion | Fast, Easy & Affordable Connectivity",
-    description: "Say goodbye to roaming fees. Fliday offers instant eSIMs for 100+ countries. Get connected in minutes with affordable prepaid data plans starting at just $3.99.",
-    url: 'https://fliday.com',
-    siteName: 'Fliday',
+    title: "Travel eSIM for 100+ Countries | Instant Prepaid Data – Fliday",
+    description:
+      "Buy travel eSIMs for 100+ countries with instant activation. Affordable prepaid data plans for iPhone and Android with no roaming fees.",
+    url: "https://fliday.com",
+    siteName: "Fliday",
     images: [
       {
-        url: 'https://fliday.com/og-image.png',
+        url: "https://fliday.com/og-image.png",
         width: 1200,
         height: 630,
-        alt: 'Fliday eSIM - Your Travel Connectivity Companion',
+        alt: "Fliday travel eSIM",
       },
     ],
-    locale: 'en_US',
-    type: 'website',
+    locale: "en_US",
+    type: "website",
   },
+
   twitter: {
     card: "summary_large_image",
-    title: "Fliday: Your Travel eSIM Companion | Fast, Easy & Affordable Connectivity",
-    description: "Say goodbye to roaming fees. Fliday offers instant eSIMs for 100+ countries. Get connected in minutes with affordable prepaid data plans starting at just $3.99.",
-    images: ['https://fliday.com/og-image.png'],
-  },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-    },
-  },
-  verification: {
-
+    title: "Travel eSIM for 100+ Countries | Instant Prepaid Data – Fliday",
+    description:
+      "Buy travel eSIMs for 100+ countries with instant activation and affordable prepaid data plans.",
+    images: ["https://fliday.com/og-image.png"],
   },
 };
 

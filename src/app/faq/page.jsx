@@ -3,26 +3,38 @@ import FAQ from './FAQ';
 
 // Define metadata for SEO
 export const metadata = {
-  title: 'Fliday FAQ | eSIM, Travel Connectivity & Support Questions',
-  description: 'Find answers to common questions about eSIM, travel connectivity, and Fliday’s services in our FAQ. Learn how to use eSIM, troubleshoot issues, and more.',
-  keywords: 'eSIM FAQ, Fliday FAQ, travel connectivity, eSIM support, travel questions, Fliday support, global connectivity',
-  robots: 'index, follow',
-  openGraph: {
-    title: 'Fliday FAQ | eSIM, Travel Connectivity & Support Questions',
-    description: 'Find answers to common questions about eSIM, travel connectivity, and Fliday’s services in our FAQ. Learn how to use eSIM, troubleshoot issues, and more.',
-    type: 'website',
-    url: 'https://fliday.com/faq',
-    images: ['https://fliday.com/images/faq-hero.jpg'],
-    siteName: 'Fliday',
-  },
-  twitter: {
-    card: 'summary_large_image',
-    title: 'Fliday FAQ | eSIM, Travel Connectivity & Support Questions',
-    description: 'Find answers to common questions about eSIM, travel connectivity, and Fliday’s services in our FAQ. Learn how to use eSIM, troubleshoot issues, and more.',
-    images: ['https://fliday.com/images/faq-hero.jpg'],
-  },
+  title: 'eSIM FAQ – Setup, Activation & Travel eSIM Questions',
+
+  description:
+    'Find answers to common eSIM questions including setup, activation, compatibility, and troubleshooting for travel eSIM plans.',
+
   alternates: {
     canonical: 'https://fliday.com/faq',
+  },
+
+  openGraph: {
+    title: 'eSIM FAQ – Setup, Activation & Travel eSIM Questions',
+    description:
+      'Learn how eSIM works, how to activate your eSIM, and get answers to common travel eSIM questions.',
+    type: 'website',
+    url: 'https://fliday.com/faq',
+    siteName: 'Fliday',
+    images: [
+      {
+        url: 'https://fliday.com/images/faq-hero.jpg',
+        width: 1200,
+        height: 630,
+        alt: 'eSIM FAQ – Fliday',
+      },
+    ],
+  },
+
+  twitter: {
+    card: 'summary_large_image',
+    title: 'eSIM FAQ – Setup & Activation Questions',
+    description:
+      'Answers to common questions about activating, installing and using travel eSIMs.',
+    images: ['https://fliday.com/images/faq-hero.jpg'],
   },
 };
 

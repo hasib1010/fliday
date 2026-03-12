@@ -4,8 +4,36 @@ import dynamic from 'next/dynamic';
 
 // Static metadata
 export const metadata = {
-  title: 'All Destinations | Fliday',
-  description: 'Explore eSIM plans for 100+ countries worldwide',
+  title: 'All Destinations – Prepaid Travel eSIM Data Plans for 100+ Countries',
+  description:
+    'Browse travel eSIM data plans for 100+ countries. Get instant prepaid eSIM activation for iPhone and Android with fast international mobile data.',
+
+  keywords: [
+    'travel esim',
+    'prepaid esim',
+    'international esim',
+    'esim destinations',
+    'esim data plans',
+    'esim iphone',
+    'esim android',
+    'esim countries'
+  ],
+
+  openGraph: {
+    title: 'All Destinations – Prepaid Travel eSIM Data Plans for 100+ Countries',
+    description:
+      'Browse travel eSIM plans for over 100 destinations worldwide with instant activation.',
+    url: 'https://fliday.com/destinations',
+    siteName: 'Fliday',
+    type: 'website',
+  },
+
+  twitter: {
+    card: 'summary_large_image',
+    title: 'All Destinations – Prepaid Travel Data Plans',
+    description:
+      'Explore eSIM data plans for 100+ travel destinations with instant activation.',
+  },
 };
 
 // Load the component dynamically to improve initial page load

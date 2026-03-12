@@ -3,7 +3,7 @@ import { Metadata } from 'next';
 import TermsOfService from './TermsOfService';
 
 export const metadata = {
-  title: 'Terms of Service | Fliday eSIM',
+  title: 'Terms of Service - Fliday',
   description: 'Read Fliday eSIM\'s terms of service. Understand your rights and responsibilities when using our eSIM services and travel connectivity solutions.',
   openGraph: {
     title: 'Terms of Service | Fliday eSIM',

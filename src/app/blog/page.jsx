@@ -5,7 +5,7 @@ import Blog from './Blog';
 export const metadata = {
   title: 'Fliday Blog | Travel Tips, eSIM Guides & Telecom Insights',
   description: 'Explore the Fliday blog for expert travel tips, eSIM setup guides, and telecom insights to stay connected globally. Discover the best eSIM plans and travel hacks.',
-  keywords: 'travel blog, eSIM guides, telecom insights, Fliday blog, eSIM plans, travel tips, global connectivity',
+  keywords: 'travel blog, eSIM guides, telecom insights, Fliday blog, eSIM plans, travel tips, global connectivity, travel eSIM, eSIM iPhone, eSIM Android, Best Travel eSIM',
   robots: 'index, follow',
   openGraph: {
     title: 'Fliday Blog | Travel Tips, eSIM Guides & Telecom Insights',
