@@ -294,7 +294,7 @@ export default function Hero() {
                     </div>
 
                     {/* Heading */}
-                    <h1 className="text-center text-[28px] md:text-5xl lg:text-6xl font-semibold pb-8">
+                    <h1 className="text-center text-[36px] sm:text-[44px] lg:text-[56px] font-semibold pb-8">
                         Stay Connected{" "}
                         <span className={`${libre.className} text-[#F15A25] italic`}>
                             Everywhere
