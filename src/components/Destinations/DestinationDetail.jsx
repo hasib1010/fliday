@@ -27,7 +27,7 @@ export default function DestinationDetail({ params }) {
         console.log('DestinationDetail received params:', params);
         console.log('ID extracted:', id);
         console.log('Formatted title:', formattedTitle);
-    }, [params, id, formattedTitle]);
+    }, [params, id, formattedTitle]);            
     
     // Sample eSIM plans data
     const plans = [

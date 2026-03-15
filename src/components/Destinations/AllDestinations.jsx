@@ -4,32 +4,112 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { Search } from 'lucide-react';
+import { getRegionUrl } from '@/lib/regionSlugMap';
 
 // Debounce hook for search input
 const useDebounce = (value, delay) => {
   const [debouncedValue, setDebouncedValue] = useState(value);
-
   useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedValue(value);
-    }, delay);
-
-    return () => {
-      clearTimeout(handler);
-    };
+    const handler = setTimeout(() => setDebouncedValue(value), delay);
+    return () => clearTimeout(handler);
   }, [value, delay]);
-
   return debouncedValue;
 };
 
+// ─── Dynamic slug generation from country NAME ────────────────────────────────
+// Overrides for names that don't slugify cleanly or have well-known short forms
+const NAME_OVERRIDES = {
+  'united states':                          'usa',
+  'united states of america':               'usa',
+  'united arab emirates':                   'uae',
+  'south korea':                            'south-korea',
+  'republic of korea':                      'south-korea',
+  'north korea':                            'north-korea',
+  "democratic people's republic of korea":  'north-korea',
+  'czech republic':                         'czechia',
+  "cote d'ivoire":                          'ivory-coast',
+  "côte d'ivoire":                          'ivory-coast',
+  'ivory coast':                            'ivory-coast',
+  'trinidad and tobago':                    'trinidad-tobago',
+  'bosnia and herzegovina':                 'bosnia',
+  'north macedonia':                        'north-macedonia',
+  'papua new guinea':                       'papua-new-guinea',
+  'china mainland':                         'china-mainland',
+  'hong kong (china)':                      'hong-kong',
+  'macao (china)':                          'macao',
+  'virgin islands- british':                'virgin-islands-british',
+  'brunei darussalam':                      'brunei',
+  'democratic republic of the congo':       'democratic-republic-of-the-congo',
+  'republic of the congo':                  'republic-of-the-congo',
+  'central african republic':               'central-african-republic',
+  'saint kitts and nevis':                  'saint-kitts-and-nevis',
+  'saint vincent and the grenadines':       'saint-vincent-and-the-grenadines',
+  'saint pierre and miquelon':              'saint-pierre-and-miquelon',
+  'sao tome and principe':                  'sao-tome-and-principe',
+  'svalbard and jan mayen':                 'svalbard',
+  'wallis and futuna':                      'wallis-and-futuna',
+  'antigua and barbuda':                    'antigua-and-barbuda',
+  'turks and caicos islands':               'turks-and-caicos-islands',
+  'cayman islands':                         'cayman-islands',
+  'solomon islands':                        'solomon-islands',
+  'marshall islands':                       'marshall-islands',
+  'virgin islands- us':                     'us-virgin-islands',
+  'us virgin islands':                      'us-virgin-islands',
+  'northern mariana islands':               'northern-mariana-islands',
+  'faroe islands':                          'faroe-islands',
+  'aland islands':                          'aland-islands',
+  'cape verde':                             'cape-verde',
+  'guinea-bissau':                          'guinea-bissau',
+  'equatorial guinea':                      'equatorial-guinea',
+  'sierra leone':                           'sierra-leone',
+  'burkina faso':                           'burkina-faso',
+  'south africa':                           'south-africa',
+  'south sudan':                            'south-sudan',
+  'saudi arabia':                           'saudi-arabia',
+  'sri lanka':                              'sri-lanka',
+  'new zealand':                            'new-zealand',
+  'new caledonia':                          'new-caledonia',
+  'french guiana':                          'french-guiana',
+  'french polynesia':                       'french-polynesia',
+  'costa rica':                             'costa-rica',
+  'puerto rico':                            'puerto-rico',
+  'dominican republic':                     'dominican-republic',
+  'el salvador':                            'el-salvador',
+  'isle of man':                            'isle-of-man',
+  'timor-leste':                            'timor-leste',
+  'united kingdom':                         'united-kingdom',
+};
+
+/**
+ * Convert a country name from the API into a URL slug.
+ * 1. Check NAME_OVERRIDES for exact match (handles edge cases)
+ * 2. Otherwise: lowercase → strip accents → strip special chars → spaces to hyphens
+ */
+const nameToSlug = (name) => {
+  if (!name) return '';
+  const lower = name.toLowerCase().trim();
+  if (NAME_OVERRIDES[lower]) return NAME_OVERRIDES[lower];
+  return lower
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')  // strip accent marks (ç→c, é→e, etc.)
+    .replace(/[''`]/g, '')             // strip apostrophes
+    .replace(/[^a-z0-9\s-]/g, '')     // strip remaining special chars
+    .trim()
+    .replace(/\s+/g, '-');            // spaces → hyphens
+};
+
+const getCountryUrl = (name) => {
+  const slug = nameToSlug(name);
+  return slug ? `/esim-country/${slug}` : '#';
+};
+// ─────────────────────────────────────────────────────────────────────────────
+
 const AllDestinations = () => {
-  // State for data
   const [countries, setCountries] = useState([]);
   const [regions, setRegions] = useState([]);
   const [filteredDestinations, setFilteredDestinations] = useState([]);
-  const [visibleCount, setVisibleCount] = useState(24); // Initial visible items
-  
-  // UI states
+  const [visibleCount, setVisibleCount] = useState(24);
+
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchInput, setSearchInput] = useState('');
@@ -37,17 +117,13 @@ const AllDestinations = () => {
   const [activeFilterButton, setActiveFilterButton] = useState(null);
   const [activeDestination, setActiveDestination] = useState(null);
 
-  // Refs to maintain focus
   const searchInputRef = useRef(null);
-  
-  // Debounce search to prevent excessive filtering
   const debouncedSearchQuery = useDebounce(searchInput, 300);
 
-  // Function to apply filtering logic
   const applyFilter = useMemo(() => {
     return (countriesList, regionsList, filter, query) => {
       let results = [];
-      
+
       if (filter === 'Countries') {
         results = countriesList.filter(dest => !dest.name.toLowerCase().startsWith('global'));
       } else if (filter === 'Regions') {
@@ -57,42 +133,31 @@ const AllDestinations = () => {
           dest.name.toLowerCase().startsWith('global')
         );
       }
-      
+
       if (query) {
         results = results.filter(dest =>
           dest.name.toLowerCase().includes(query.toLowerCase())
         );
       }
-      
+
       return results;
     };
   }, []);
 
-  // Load more destinations
-  const loadMore = () => {
-    setVisibleCount(prev => prev + 24);
-  };
+  const loadMore = () => setVisibleCount(prev => prev + 24);
+  const handleSearchInputChange = (e) => setSearchInput(e.target.value);
 
-  // Handle search input change
-  const handleSearchInputChange = (e) => {
-    const value = e.target.value;
-    setSearchInput(value);
-  };
-
-  // Fetch locations initially - separate from filter effect
   useEffect(() => {
     const controller = new AbortController();
     const signal = controller.signal;
-    
+
     const fetchLocations = async () => {
       try {
         setIsLoading(true);
-        
-        // FIXED: Changed cache strategy to ensure we always get fresh data
-        // Use cache: 'no-store' to bypass browser cache, ensuring we get updated prices
-        const response = await fetch('/api/esim/locations?skipCache=true', { 
-          cache: 'no-store', // Don't use cached version
-          signal 
+
+        const response = await fetch('/api/esim/locations?skipCache=true', {
+          cache: 'no-store',
+          signal,
         });
 
         if (!response.ok) {
@@ -108,10 +173,13 @@ const AllDestinations = () => {
         const formattedCountries = (data.data.countries || []).map((country, index) => ({
           id: country.id || country.code || `country-${index}`,
           name: country.name || 'Unknown',
+          // lowercase code is used only for flag image filenames
           code: (country.code || country.countryCode || '').toLowerCase(),
           type: 'country',
           price: parseFloat(country.price || 3.99).toFixed(2),
-          packageCode: country.packageCode || '',  // Include packageCode reference
+          packageCode: country.packageCode || '',
+          // Pre-compute the SEO URL from the API name — no static map needed
+          url: getCountryUrl(country.name),
         }));
 
         const formattedRegions = (data.data.regions || []).map((region, index) => ({
@@ -121,10 +189,11 @@ const AllDestinations = () => {
           slug: region.slug || '',
           type: 'region',
           price: parseFloat(region.price || 7.99).toFixed(2),
-          packageCode: region.packageCode || '',  // Include packageCode reference
+          packageCode: region.packageCode || '',
+          // Pre-compute SEO URL — uses name for slug, original API slug as ?s= param
+          url: getRegionUrl(region.slug || '', region.name || ''),
         }));
 
-        // Store data in state
         setCountries(formattedCountries);
         setRegions(formattedRegions);
         setError(null);
@@ -137,109 +206,46 @@ const AllDestinations = () => {
           setFilteredDestinations([]);
         }
       } finally {
-        // Use requestAnimationFrame for smoother UI updates
         if (!signal.aborted) {
-          requestAnimationFrame(() => {
-            setIsLoading(false);
-          });
+          requestAnimationFrame(() => setIsLoading(false));
         }
       }
     };
 
     fetchLocations();
-
-    // Cleanup function to abort fetch on unmount
     return () => controller.abort();
-  }, []); // Only run on mount
+  }, []);
 
-  // Update filtered destinations when filter or search changes - in a separate effect
   useEffect(() => {
     if (countries.length === 0 && regions.length === 0) return;
-    
     const results = applyFilter(countries, regions, activeFilter, debouncedSearchQuery);
     setFilteredDestinations(results);
   }, [debouncedSearchQuery, activeFilter, countries, regions, applyFilter]);
 
-  // Touch handlers for mobile
-  const handleFilterTouchStart = (filter) => {
-    setActiveFilterButton(filter);
+  const handleFilterTouchStart = (filter) => setActiveFilterButton(filter);
+  const handleFilterTouchEnd = () => setActiveFilterButton(null);
+  const handleDestinationTouchStart = (id) => setActiveDestination(id);
+  const handleDestinationTouchEnd = () => setActiveDestination(null);
+
+  // ── Generate the correct URL per destination ──────────────────────────────
+  const getDestinationUrl = (destination) => {
+    // url is pre-computed for both countries and regions during data load
+    return destination.url || '#';
   };
+  // ─────────────────────────────────────────────────────────────────────────
 
-  const handleFilterTouchEnd = () => {
-    setActiveFilterButton(null);
-  };
-
-  const handleDestinationTouchStart = (id) => {
-    setActiveDestination(id);
-  };
-
-  const handleDestinationTouchEnd = () => {
-    setActiveDestination(null);
-  };
-
-  // Function to refresh data (for testing)
-  const refreshData = async () => {
-    setIsLoading(true);
-    try {
-      // Force a fresh fetch by adding a timestamp to the URL
-      const response = await fetch(`/api/esim/locations?skipCache=true&t=${Date.now()}`, {
-        cache: 'no-store'
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Failed to refresh: ${response.status}`);
-      }
-      
-      const data = await response.json();
-      
-      if (!data.success) {
-        throw new Error(data.message || 'Failed to refresh data');
-      }
-      
-      const formattedCountries = (data.data.countries || []).map((country, index) => ({
-        id: country.id || country.code || `country-${index}`,
-        name: country.name || 'Unknown',
-        code: (country.code || country.countryCode || '').toLowerCase(),
-        type: 'country',
-        price: parseFloat(country.price || 3.99).toFixed(2),
-        packageCode: country.packageCode || '',
-      }));
-
-      const formattedRegions = (data.data.regions || []).map((region, index) => ({
-        id: region.id || region.code || `region-${index}`,
-        name: region.name || 'Unknown',
-        code: (region.code || region.regionCode || '').toLowerCase(),
-        slug: region.slug || '',
-        type: 'region',
-        price: parseFloat(region.price || 7.99).toFixed(2),
-        packageCode: region.packageCode || '',
-      }));
-      
-      setCountries(formattedCountries);
-      setRegions(formattedRegions);
-      setError(null);
-    } catch (err) {
-      console.error('Error refreshing data:', err);
-      setError(`Failed to refresh: ${err.message}`);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // Render flag/icon with optimized image loading
   const renderDestinationIcon = (destination, index) => {
     const isCountry = destination.type === 'country';
-    const isPriority = index < 12; // Prioritize first 12 images
-    
+    const isPriority = index < 12;
+
     if (isCountry) {
-      const imageSrc = `/flags/${destination.code}_flag.jpeg`;
       return (
         <Image
-          src={imageSrc}
+          src={`/flags/${destination.code}_flag.jpeg`}
           alt={`${destination.name} flag`}
           fill
           sizes="36px"
-          loading={isPriority ? "eager" : "lazy"}
+          loading={isPriority ? 'eager' : 'lazy'}
           className="object-cover"
           onError={(e) => {
             e.target.onerror = null;
@@ -248,39 +254,26 @@ const AllDestinations = () => {
         />
       );
     } else {
-      let regionFlag = '';
       const name = destination.name.toLowerCase();
-      if (name.includes('north america')) {
-        regionFlag = 'north_america_flag.svg';
-      } else if (name.includes('middle east')) {
-        regionFlag = 'middle_east_flag.svg';
-      } else if (name.includes('global')) {
-        regionFlag = 'global_flag.svg';
-      } else if (name.includes('south america')) {
-        regionFlag = 'south_america_flag.svg';
-      } else if (name.includes('europe')) {
-        regionFlag = 'europe_flag.svg';
-      } else if (name.includes('africa')) {
-        regionFlag = 'africa_flag.svg';
-      } else if (name.includes('asia')) {
-        regionFlag = 'asia_flag.svg';
-      } else if (name.includes('caribbean')) {
-        regionFlag = 'caribbean_flag.svg';
-      } else if (name.includes('gulf')) {
-        regionFlag = 'middle_east_flag.svg';
-      } else if (name.includes('china') || name.includes('singapore') || name.includes('thailand')) {
-        regionFlag = 'asia_flag.svg';
-      } else {
-        regionFlag = `${destination.code.split('-')[0]}_flag.svg`;
-      }
-      
+      const regionFlag =
+        name.includes('north america') ? 'north_america_flag.svg' :
+        name.includes('middle east')   ? 'middle_east_flag.svg'   :
+        name.includes('global')        ? 'global_flag.svg'        :
+        name.includes('south america') ? 'south_america_flag.svg' :
+        name.includes('europe')        ? 'europe_flag.svg'        :
+        name.includes('africa')        ? 'africa_flag.svg'        :
+        name.includes('asia')          ? 'asia_flag.svg'          :
+        name.includes('caribbean')     ? 'caribbean_flag.svg'     :
+        name.includes('gulf')          ? 'middle_east_flag.svg'   :
+        `${destination.code.split('-')[0]}_flag.svg`;
+
       return (
         <Image
           src={`/flags/${regionFlag}`}
           alt={`${destination.name} flag`}
           fill
           sizes="36px"
-          loading={isPriority ? "eager" : "lazy"}
+          loading={isPriority ? 'eager' : 'lazy'}
           className="object-cover"
           onError={(e) => {
             e.target.onerror = null;
@@ -291,22 +284,8 @@ const AllDestinations = () => {
     }
   };
 
-  // Generate appropriate destination URL
-  const getDestinationUrl = (destination) => {
-    if (destination.type === 'country') {
-      return `/destinations/country/${destination.code}`;
-    } else if (destination.type === 'region') {
-      if (destination.slug) {
-        return `/destinations/slug/${destination.slug}`;
-      }
-      return `/destinations/region/${destination.code}`;
-    }
-    return '#';
-  };
-
-  // Render skeleton during loading
-  const renderSkeletons = () => {
-    return Array.from({ length: 12 }).map((_, index) => (
+  const renderSkeletons = () =>
+    Array.from({ length: 12 }).map((_, index) => (
       <div key={index} className="bg-[#f7f7f8] rounded-lg p-4 animate-pulse">
         <div className="flex items-center">
           <div className="w-[36px] h-[36px] bg-gray-300 rounded-full mr-3"></div>
@@ -317,7 +296,6 @@ const AllDestinations = () => {
         </div>
       </div>
     ));
-  };
 
   return (
     <div className="max-w-[1220px] mx-auto pt-32 px-3 lg:px-0">
@@ -356,11 +334,9 @@ const AllDestinations = () => {
             {filter}
           </button>
         ))}
-        
-         
       </div>
 
-      {/* Search box with debounced input */}
+      {/* Search box */}
       <div className="mb-8 relative">
         <input
           type="text"
@@ -376,7 +352,7 @@ const AllDestinations = () => {
         </div>
       </div>
 
-      {/* Destinations grid with lazy loading */}
+      {/* Destinations grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {isLoading ? (
           renderSkeletons()
@@ -430,11 +406,11 @@ const AllDestinations = () => {
         )}
       </div>
 
-      {/* Load more button - only if there are more items to load */}
+      {/* Load more */}
       {filteredDestinations.length > visibleCount && (
         <div className="text-center mt-8 mb-12">
-          <button 
-            onClick={loadMore} 
+          <button
+            onClick={loadMore}
             className="bg-[#F15A25] text-white px-6 py-2 rounded-full hover:bg-[#d14415] transition-colors"
           >
             Load More Destinations

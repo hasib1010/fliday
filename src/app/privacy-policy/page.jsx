@@ -1,6 +1,6 @@
 // app/privacy/page.js
 import { Metadata } from 'next';
-import PrivacyPolicy from './PrivacyPolicy';
+import PrivacyPolicy from '@/app/privacy-policy/PrivacyPolicy';
 
 export const metadata = {
   title: 'Privacy Policy – Fliday',

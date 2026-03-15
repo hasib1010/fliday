@@ -69,8 +69,7 @@ UserSchema.pre('findOneAndUpdate', function () {
 });
 
 // Add indexes for better query performance
-UserSchema.index({ email: 1, provider: 1 });
-UserSchema.index({ appleUser: 1 });
+UserSchema.index({ email: 1, provider: 1 }); 
 
 // Create model if it doesn't exist already
 const User = mongoose.models.User || mongoose.model('User', UserSchema);
