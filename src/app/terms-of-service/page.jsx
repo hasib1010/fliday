@@ -1,6 +1,6 @@
 // app/terms/page.js
 import { Metadata } from 'next';
-import TermsOfService from './TermsOfService';
+import TermsOfService from '@/app/terms-of-service/TermsOfService';
 
 export const metadata = {
   title: 'Terms of Service | Fliday eSIM',

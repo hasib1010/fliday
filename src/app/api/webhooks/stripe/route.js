@@ -17,7 +17,7 @@ const ESIM_API_BASE_URL = process.env.ESIM_API_BASE_URL || 'https://api.esimacce
 const ESIM_ACCESS_CODE = process.env.ESIM_ACCESS_CODE;
 
 export async function POST(request) {
- 
+
   try {
     const body = await request.text();
     const signature = request.headers.get('stripe-signature');
@@ -70,6 +70,45 @@ export async function POST(request) {
     console.error('Stripe webhook error:', error);
     return NextResponse.json({ error: 'Webhook handler failed' }, { status: 500 });
   }
+}
+function getLocationDisplayName(order, countryCodeToName) {
+  const location = order.location || '';
+  const packageName = order.packageName || '';
+
+  // Extract from package name first — e.g. "Europe 5GB 30Days" → "Europe"
+  if (packageName) {
+    const nameMatch = packageName.match(/^([A-Za-z][A-Za-z\s]+?)(?:\s+\d|\s*$)/);
+    if (nameMatch?.[1]) {
+      const extracted = nameMatch[1].trim();
+      if (extracted.length > 3) return extracted;
+    }
+  }
+
+  // Global slug detection
+  if (/^gl/i.test(location) || location.toLowerCase().includes('global')) return 'Global';
+
+  // Region prefix map
+  const regionMap = {
+    EU: 'Europe', AS: 'Asia', AF: 'Africa', NA: 'North America',
+    SA: 'South America', ME: 'Middle East', CA: 'Caribbean',
+    OC: 'Oceania', AP: 'Asia Pacific', LA: 'Latin America',
+  };
+  const prefix = location.toUpperCase().split(/[-_,]/)[0];
+  if (regionMap[prefix]) return regionMap[prefix];
+
+  // Single ISO country code
+  if (location.length === 2 && countryCodeToName[location.toUpperCase()]) {
+    return countryCodeToName[location.toUpperCase()];
+  }
+
+  // Comma-separated list (multi-country region)
+  if (location.includes(',')) {
+    const codes = location.split(',').map(c => c.trim());
+    const first = countryCodeToName[codes[0]] || codes[0];
+    return codes.length > 1 ? `${first} & ${codes.length - 1} more` : first;
+  }
+
+  return packageName.split(/\s+\d/)[0] || location || 'Travel';
 }
 
 async function handleSuccessfulPayment(paymentIntent) {
@@ -818,7 +857,7 @@ async function handleSuccessfulPayment(paymentIntent) {
           ZM: 'Zambia',
           ZW: 'Zimbabwe'
         };
-        let countryName = countryCodeToName[updatedOrder.location] || 'Unknown Country';
+        let countryName = getLocationDisplayName(updatedOrder, countryCodeToName);
         // Send the email using your working email configuration
         const emailSent = await sendEmail({
           to: user.email,
@@ -893,30 +932,73 @@ async function orderESIM(order, txnId) {
     if (!process.env.ESIM_ACCESS_CODE || !process.env.ESIM_API_BASE_URL) {
       throw new Error('Missing eSIM API configuration');
     }
-
-    // IMPORTANT: Use originalPrice (provider's price without markup) for the API call
-    const apiAmount = order.originalPrice; // Price without markup
-
+ 
+    // ── Step 1: Always fetch LIVE price from provider ──────────────────────
+    // Never trust stored originalPrice — provider prices change without notice.
+    // Error 200005 = "price expired" = we sent a stale price.
+    console.log(`Fetching live price for package: ${order.packageCode}`);
+ 
+    const priceRes = await fetch(`${process.env.ESIM_API_BASE_URL}/open/package/list`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'RT-AccessCode': process.env.ESIM_ACCESS_CODE,
+      },
+      body: JSON.stringify({ packageCode: order.packageCode }),
+    });
+ 
+    if (!priceRes.ok) {
+      throw new Error(`Failed to fetch live price: ${priceRes.status}`);
+    }
+ 
+    const priceData = await priceRes.json();
+    const livePkg   = priceData?.obj?.packageList?.[0];
+ 
+    if (!livePkg) {
+      throw new Error(`Package ${order.packageCode} not found in provider catalog`);
+    }
+ 
+    const liveProviderPrice = parseInt(livePkg.price || 0);
+    if (!liveProviderPrice) {
+      throw new Error(`Invalid live price for package ${order.packageCode}`);
+    }
+ 
+    console.log(`Live provider price for ${order.packageCode}: ${liveProviderPrice} (stored was: ${order.originalPrice})`);
+ 
+    // Update DB silently if price changed (so future orders are correct)
+    if (liveProviderPrice !== order.originalPrice) {
+      console.log(`Price changed — updating PackagePricing for ${order.packageCode}`);
+      try {
+        await import('@/lib/mongodb').then(m => m.default());
+        const { default: PackagePricing } = await import('@/models/PackagePricing');
+        await PackagePricing.findOneAndUpdate(
+          { packageCode: order.packageCode },
+          { $set: { originalPrice: liveProviderPrice, updatedAt: new Date() } },
+          { upsert: false }
+        );
+      } catch (dbErr) {
+        console.warn('Could not update PackagePricing (non-fatal):', dbErr.message);
+      }
+    }
+ 
+    // ── Step 2: Place the order using LIVE price ───────────────────────────
     const orderRequest = {
       transactionId: txnId,
-      amount: apiAmount,
-      packageInfoList: [
-        {
-          packageCode: order.packageCode,
-          count: 1,
-          price: apiAmount
-        },
-      ],
+      amount: liveProviderPrice,
+      packageInfoList: [{
+        packageCode: order.packageCode,
+        count: 1,
+        price: liveProviderPrice,
+      }],
     };
-
+ 
     console.log('eSIM API order request:', {
       txnId,
-      packageCode: order.packageCode,
-      amount: apiAmount,
-      customerPrice: order.finalPrice,
-      markup: order.markupAmount || (order.finalPrice - order.originalPrice)
+      packageCode:   order.packageCode,
+      providerPrice: liveProviderPrice,
+      customerPays:  order.finalPrice,
     });
-
+ 
     const orderResponse = await fetch(`${process.env.ESIM_API_BASE_URL}/open/esim/order`, {
       method: 'POST',
       headers: {
@@ -925,35 +1007,32 @@ async function orderESIM(order, txnId) {
       },
       body: JSON.stringify(orderRequest),
     });
-
+ 
     const orderData = await orderResponse.json();
     console.log('eSIM API order response:', orderData);
-
+ 
     if (!orderResponse.ok || !orderData.success) {
       if (orderData.errorCode === '200007') {
-        return {
-          status: 'error',
-          errorMessage: 'the balance is insufficient',
-        };
+        return { status: 'error', errorMessage: 'the balance is insufficient' };
       }
       throw new Error(orderData.errorMsg || `Failed to order eSIM: ${orderResponse.status}`);
     }
-
-    if (!orderData.obj || !orderData.obj.orderNo) {
+ 
+    if (!orderData.obj?.orderNo) {
       throw new Error('Invalid eSIM order response: missing orderNo');
     }
-
+ 
     const { orderNo } = orderData.obj;
-    console.log(`Order placed, orderNo: ${orderNo}`);
-
+    console.log(`eSIM order placed, orderNo: ${orderNo}`);
+ 
+    // ── Step 3: Query for eSIM profiles (up to 3 attempts × 5s) ───────────
     let esimDetails = {
       orderNo,
       transactionId: txnId,
-      esimStatus: 'PAYING',
-      packageList: [],
+      esimStatus:    'PAYING',
+      packageList:   [],
     };
-
-    // Query for eSIM profiles - make multiple attempts
+ 
     for (let attempt = 1; attempt <= 3; attempt++) {
       try {
         console.log(`Querying eSIM profiles, attempt ${attempt}/3 for orderNo: ${orderNo}`);
@@ -969,77 +1048,74 @@ async function orderESIM(order, txnId) {
             pager: { pageNum: 1, pageSize: 20 },
           }),
         });
-
+ 
         const queryData = await queryResponse.json();
         console.log(`eSIM query response (attempt ${attempt}):`, queryData);
-
+ 
         if (queryData.success && queryData.obj?.esimList?.length > 0) {
-          const esimData = queryData.obj.esimList[0];
+          const e = queryData.obj.esimList[0];
           esimDetails = {
-            esimTranNo: esimData.esimTranNo || '',
-            orderNo: esimData.orderNo || orderNo,
-            transactionId: esimData.transactionId || txnId,
-            imsi: esimData.imsi || '',
-            iccid: esimData.iccid || '',
-            smsStatus: esimData.smsStatus || 0,
-            msisdn: esimData.msisdn || '',
-            ac: esimData.ac || '',
-            qrCodeUrl: esimData.qrCodeUrl || '',
-            shortUrl: esimData.shortUrl || '',
-            smdpStatus: esimData.smdpStatus || '',
-            eid: esimData.eid || '',
-            activeType: esimData.activeType || 1,
-            dataType: esimData.dataType || 1,
-            activateTime: esimData.activateTime || null,
-            expiredTime: esimData.expiredTime || '',
-            totalVolume: esimData.totalVolume || 0,
-            totalDuration: esimData.totalDuration || 0,
-            durationUnit: esimData.durationUnit || '',
-            orderUsage: esimData.orderUsage || 0,
-            pin: esimData.pin || '',
-            puk: esimData.puk || '',
-            apn: esimData.apn || '',
-            esimStatus: esimData.esimStatus || 'GOT_RESOURCE',
-            packageList: esimData.packageList?.length
-              ? esimData.packageList
-              : [
-                {
-                  packageName: order.packageName || '',
-                  packageCode: order.packageCode || '',
-                  slug: esimData.packageList?.[0]?.slug || '',
-                  duration: order.duration || esimData.totalDuration || 0,
-                  volume: esimData.totalVolume || 0,
-                  locationCode: order.location || '',
-                  createTime: new Date().toISOString(),
-                },
-              ],
-            instructions: generateInstructions(esimData),
+            esimTranNo:    e.esimTranNo    || '',
+            orderNo:       e.orderNo       || orderNo,
+            transactionId: e.transactionId || txnId,
+            imsi:          e.imsi          || '',
+            iccid:         e.iccid         || '',
+            smsStatus:     e.smsStatus      || 0,
+            msisdn:        e.msisdn         || '',
+            ac:            e.ac             || '',
+            qrCodeUrl:     e.qrCodeUrl      || '',
+            shortUrl:      e.shortUrl       || '',
+            smdpStatus:    e.smdpStatus     || '',
+            eid:           e.eid            || '',
+            activeType:    e.activeType     || 1,
+            dataType:      e.dataType       || 1,
+            activateTime:  e.activateTime   || null,
+            expiredTime:   e.expiredTime    || '',
+            totalVolume:   e.totalVolume    || 0,
+            totalDuration: e.totalDuration  || 0,
+            durationUnit:  e.durationUnit   || '',
+            orderUsage:    e.orderUsage     || 0,
+            pin:           e.pin            || '',
+            puk:           e.puk            || '',
+            apn:           e.apn            || '',
+            esimStatus:    e.esimStatus     || 'GOT_RESOURCE',
+            packageList: e.packageList?.length
+              ? e.packageList
+              : [{
+                  packageName:  order.packageName || '',
+                  packageCode:  order.packageCode || '',
+                  slug:         '',
+                  duration:     order.duration    || e.totalDuration || 0,
+                  volume:       e.totalVolume     || 0,
+                  locationCode: order.location    || '',
+                  createTime:   new Date().toISOString(),
+                }],
+            instructions: generateInstructions(e),
           };
           console.log(`eSIM profile found for orderNo: ${orderNo}`, {
             qrCodeUrl: esimDetails.qrCodeUrl ? 'Present' : 'Missing',
-            iccid: esimDetails.iccid,
+            iccid:     esimDetails.iccid,
           });
           break;
         } else if (queryData.errorCode === '200010') {
           console.log(`Profiles not ready for orderNo: ${orderNo}, attempt ${attempt}`);
         } else {
-          console.warn(`No profiles found for orderNo: ${orderNo}, attempt ${attempt}`);
+          console.warn(`No profiles for orderNo: ${orderNo}, attempt ${attempt}`);
         }
       } catch (queryError) {
-        console.warn(`eSIM query attempt ${attempt} failed for orderNo: ${orderNo}:`, queryError.message);
+        console.warn(`Query attempt ${attempt} failed:`, queryError.message);
       }
-      await new Promise((resolve) => setTimeout(resolve, 5000));
+      await new Promise(resolve => setTimeout(resolve, 5000));
     }
-
+ 
     return esimDetails;
+ 
   } catch (error) {
-    console.error(`Error ordering eSIM for order: ${txnId}:`, error);
-    return {
-      status: 'error',
-      errorMessage: error.message || 'Failed to order eSIM',
-    };
+    console.error(`Error ordering eSIM for order ${txnId}:`, error);
+    return { status: 'error', errorMessage: error.message || 'Failed to order eSIM' };
   }
 }
+ 
 
 // Helper function to parse SM-DP+ Address and Activation Code
 function parseActivationCode(ac) {
