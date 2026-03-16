@@ -46,7 +46,7 @@ export default async function sitemap() {
 
   // ── Country pages  /esim-country/[slug] ───────────────────────────────────
   const countryPages = Object.keys(slugToCountry).map(slug => ({
-    url:             `${baseUrl}/esim-country/${slug}`,
+    url:             `${baseUrl}/esim-${slug}`,
     lastModified:    new Date(),
     changeFrequency: 'weekly',
     priority:        0.8,
