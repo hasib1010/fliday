@@ -1,9 +1,11 @@
-// src/app/(countries)/esim-[country]/page.jsx
-// URLs: /esim-australia, /esim-turkey, /esim-germany etc.
+// src/app/esim-[country]/page.jsx
 
 import { notFound } from 'next/navigation';
-import { getCountryBySlug } from '@/lib/countrySlugMap';
+import { getCountryBySlug, slugToCountry } from '@/lib/countrySlugMap';
 import DestinationCountryContent from '@/components/Destinations/DestinationCountryContent';
+
+// Tell Next.js this is fully dynamic — don't try to prerender
+export const dynamic = 'force-dynamic';
 
 export async function generateMetadata({ params }) {
   const { country: slug } = await params;
